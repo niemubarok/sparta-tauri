@@ -1,0 +1,2 @@
+tauri/src-tauri/scripts/ffmpeg/*.exe filter=lfs diff=lfs merge=lfs -text
+tauri/src-tauri/scripts/vcpkg/** filter=lfs diff=lfs merge=lfs -text

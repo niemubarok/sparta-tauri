@@ -1,0 +1,12 @@
+token.txt
+dist
+
+src-tauri/scripts/vcpkg
+tauri/src-tauri/scripts/ffmpeg/*.exe
+
+tauri/.quasar/
+tauri/dist/
+tauri/node_modules/
+tauri/src-tauri/gen/
+tauri/src-tauri/target/
+alpr/

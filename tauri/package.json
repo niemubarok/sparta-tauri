@@ -1,0 +1,77 @@
+{
+  "name": "tauri-quasar",
+  "version": "0.0.1",
+  "description": "A Quasar Project",
+  "productName": "Quasar App",
+  "author": "taiyuuki <taiyuuki@qq.com>",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "quasar dev",
+    "build": "quasar build",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.16.17",
+    "@tauri-apps/api": ">=2.4.1",
+    "@tauri-apps/plugin-shell": ">=2.2.1",
+    "axios": "^1.2.1",
+    "axios-digest": "^0.3.0",
+    "buffer": "^6.0.3",
+    "html-to-image": "^1.11.11",
+    "js-md5": "^0.8.3",
+    "jsbarcode": "^3.11.6",
+    "localstorage-slim": "^2.7.0",
+    "numeral": "^2.0.6",
+    "pdf-to-printer": "^5.6.0",
+    "pdfkit": "^0.14.0",
+    "pinia": "^3.0.2",
+    "pouchdb-browser": "^9.0.0",
+    "pouchdb-find": "^9.0.0",
+    "qrcode-decoder": "^0.3.4",
+    "quasar": "^2.18.1",
+    "socket.io-client": "^4.8.1",
+    "uuid": "^9.0.1",
+    "vue": "^3.5.13",
+    "vue-image-zoomer": "^2.2.3",
+    "vue-router": "^4.5.0",
+    "vue-to-print": "^1.1.0",
+    "vue3-html2pdf": "^1.1.2",
+    "vue3-to-pdf": "^1.0.8",
+    "vue3-use-print": "^1.0.0"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": ">=2.2.0",
+    "@tauri-apps/cli": ">=2.4.1",
+    "@types/node": "^22.14.1",
+    "@types/pouchdb-browser": "^6.1.5",
+    "@unocss/preset-attributify": "^66.0.0",
+    "@unocss/preset-icons": "^66.0.0",
+    "@unocss/preset-uno": "^66.0.0",
+    "@unocss/preset-wind3": "66.1.0-beta.6",
+    "autoprefixer": "^10.4.21",
+    "internal-ip": "^8.0.0",
+    "typescript": "~5.8.3",
+    "unocss": "^66.0.0",
+    "unplugin-auto-import": "^19.1.2",
+    "unplugin-vue-components": "^28.5.0",
+    "vite-plugin-pages": "^0.33.0",
+    "vite-plugin-vue-layouts": "^0.11.0"
+  },
+  "engines": {
+    "node": "^24 || ^22 || ^20 || ^18",
+    "npm": ">= 6.13.4",
+    "yarn": ">= 1.21.1"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "eslint": "9"
+      }
+    },
+    "ignoredBuiltDependencies": [
+      "leveldown"
+    ]
+  }
+}

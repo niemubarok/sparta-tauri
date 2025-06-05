@@ -1,0 +1,42 @@
+[
+  {
+    "id": "PLATE_CAM_DEFAULT",
+    "name": "Kamera Plat Nomor (Contoh)",
+    "username": "",
+    "password": "",
+    "ip_address": "",
+    "rtsp_stream_path": ""
+  },
+  {
+    "id": "DRIVER_CAM_DEFAULT",
+    "name": "Kamera Pengemudi (Contoh)",
+    "username": "",
+    "password": "",
+    "ip_address": "",
+    "rtsp_stream_path": ""
+  },
+  {
+    "id": "SCANNER_CAM_DEFAULT",
+    "name": "Kamera Pemindai QR (Contoh)",
+    "username": "",
+    "password": "",
+    "ip_address": "",
+    "rtsp_stream_path": ""
+  },
+  {
+    "id": "CAM_HIKVISION_101",
+    "name": "CCTV Hikvision (Streaming/Channels/101)",
+    "username": "admin",
+    "password": "password123",
+    "ip_address": "192.168.1.64",
+    "rtsp_stream_path": "Streaming/Channels/101"
+  },
+  {
+    "id": "CAM_GENERIC_LIVE",
+    "name": "CCTV Generic (live/ch00_0)",
+    "username": "user",
+    "password": "pass",
+    "ip_address": "192.168.1.65",
+    "rtsp_stream_path": "live/ch00_0"
+  }
+]
