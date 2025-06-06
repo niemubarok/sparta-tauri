@@ -2,7 +2,7 @@
 <template>
   <div
     class="manless-entry fixed-center full-width"
-    :class="[{ 'dark-mode': isDark }, $attrs.class]"
+    :class="[{ 'dark-mode': isDark }]"
   >
     <div class="row q-gutter-sm">
       <div class="col-6 q-gutter-md q-mt-sm">
@@ -1349,30 +1349,4 @@ onUnmounted(async () => {
 }
 </style>
 
-<q-dialog v-model="showCctvImageDialog">
-  <q-card style="width: 700px; max-width: 80vw;">
-    <q-card-section class="row items-center q-pb-none">
-      <div class="text-h6">Gambar CCTV - {{ currentCctvConfig?.name }}</div>
-      <q-space />
-      <q-btn icon="close" flat round dense v-close-popup />
-    </q-card-section>
 
-    <q-card-section class="q-pt-none">
-      <q-img
-        v-if="cctvImageUrl"
-        :src="cctvImageUrl"
-        spinner-color="primary"
-        style="height: 400px; max-width: 100%"
-        fit="contain"
-      />
-      <div v-else class="text-center q-pa-md">
-        <q-spinner-dots color="primary" size="40px" />
-        <p>Memuat gambar...</p>
-      </div>
-    </q-card-section>
-
-    <q-card-actions align="right">
-      <q-btn flat label="Tutup" color="primary" v-close-popup />
-    </q-card-actions>
-  </q-card>
-</q-dialog>

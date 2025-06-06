@@ -191,7 +191,7 @@
           v-if="componentStore.currentPage === 'payment'"
           class="rounded-corner"
           camera-location="out"
-          :camera-url="gateSettings.value?.DRIVER_CAM_URL || gateSettings.value?.SCANNER_CAM_URL || ''" // Diubah, asumsi DRIVER_CAM_URL atau SCANNER_CAM_URL
+          :camera-url="gateSettings.value?.DRIVER_CAM_URL || gateSettings.value?.SCANNER_CAM_URL || ''" 
           :file-name="cameraOutFileName"
           :isInterval="false"
           :style="{

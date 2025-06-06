@@ -1,11 +1,13 @@
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from 'vue';
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { Notify, useQuasar } from 'quasar'; // Ditambahkan useQuasar
+import { Notify, useQuasar } from 'quasar';
 import { useSettingsService } from 'stores/settings-service';
+import { useAlprStore } from 'stores/alpr-store';
 
-const $q = useQuasar(); // Ditambahkan untuk akses properti Quasar
+const $q = useQuasar();
+const alprStore = useAlprStore();
 
 // Reactive state
 // const connectionStatus = ref('disconnected'); // Global status removed, will be per camera
@@ -22,6 +24,10 @@ const cameras = ref([]); // Ini akan menyimpan kamera dari ALPR service
 const cctvCamerasByGate = ref({}); // Ini akan menyimpan kamera CCTV dari settings-service
 const recentDetections = ref([]);
 const settingsService = useSettingsService();
+
+// ALPR Mode settings
+const useExternalAlpr = ref(false);
+const wsStatus = ref('disconnected');
 
 // Event listeners
 let unlistenStatus = null;
@@ -60,11 +66,50 @@ const toggleConnection = async () => {
 const checkHealth = async () => {
   checkingHealth.value = true;
   try {
-    const health = await invoke('check_alpr_service_health');
-    serviceHealth.value = health;
+    if (useExternalAlpr.value) {
+      // Check external ALPR WebSocket health
+      if (!alprStore.isWsConnected) {
+        throw new Error('WebSocket not connected');
+      }
+
+      // Send health check message through WebSocket
+      const message = {
+        message_type: 'health_check',
+        payload: {}
+      };
+
+      const response = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Health check timeout'));
+        }, 5000); // 5 second timeout
+
+        const messageHandler = (event) => {
+          try {
+            const response = JSON.parse(event.data);
+            if (response.message_type === 'health_response') {
+              clearTimeout(timeout);
+              alprStore.wsConnection.removeEventListener('message', messageHandler);
+              resolve(response.payload.healthy);
+            }
+          } catch (error) {
+            // Keep listening for the correct response
+          }
+        };
+
+        alprStore.wsConnection.addEventListener('message', messageHandler);
+        alprStore.wsConnection.send(JSON.stringify(message));
+      });
+
+      serviceHealth.value = response;
+    } else {
+      // Check internal ALPR health
+      const health = await invoke('check_alpr_service_health');
+      serviceHealth.value = health;
+    }
+
     Notify.create({
-      type: health ? 'positive' : 'negative',
-      message: `Service is ${health ? 'healthy' : 'unhealthy'}`,
+      type: serviceHealth.value ? 'positive' : 'negative',
+      message: `${useExternalAlpr.value ? 'External' : 'Internal'} ALPR service is ${serviceHealth.value ? 'healthy' : 'unhealthy'}`,
     });
   } catch (error) {
     serviceHealth.value = false;
@@ -219,6 +264,19 @@ const formatTimestamp = (timestamp) => {
 
 // Lifecycle
 onMounted(async () => {
+  // Initialize ALPR store from settings
+  await alprStore.initializeFromSettings();
+  
+  // Initialize ALPR store and connect if using external ALPR
+  if (useExternalAlpr.value) {
+    await connectToExternalAlpr();
+  }
+
+  // Watch for WebSocket connection status
+  watch(() => alprStore.isWsConnected, (newStatus) => {
+    wsStatus.value = newStatus ? 'connected' : 'disconnected';
+  });
+
   // Load initial data
   // await loadAlprServiceCameras(); // Jika masih menggunakan service ALPR terpisah untuk beberapa kamera
   await loadCctvCamerasFromSettings();
@@ -277,49 +335,12 @@ onMounted(async () => {
   // For simplicity, we'll rely on the initial load and potential manual refresh.
 });
 
-const captureAndShowCctvImage = async (camera) => {
-  cctvImageLoading.value = true;
-  showCctvImageDialog.value = true;
-  cctvImageUrl.value = ''; // Clear previous image
-  currentCctvConfig.value = camera; // Store camera config for dialog title
-
-  try {
-    const config = {
-      username: camera.username,
-      password: camera.password,
-      ipAddress: camera.ip_address, // Mengubah ip_address menjadi ipAddress
-      rtspStreamPath: camera.rtsp_path, // Mengubah rtsp_stream_path menjadi rtspStreamPath
-    };
-    console.log('🚀 ~ captureAndShowCctvImage ~ config:', config);
-
-    const response = await invoke('capture_cctv_image', { args: config });
-    console.log('🚀 ~ captureAndShowCctvImage ~ response:', response);
-
-    if (response.is_success && response.base64) {
-      cctvImageUrl.value = response.base64;
-      Notify.create({
-        type: 'positive',
-        message: `Gambar dari ${camera.name} berhasil diambil.`,
-      });
-    } else {
-      Notify.create({
-        type: 'negative',
-        message: `Gagal mengambil gambar: ${
-          response.message || 'Error tidak diketahui'
-        }`,
-      });
-    }
-  } catch (error) {
-    Notify.create({
-      type: 'negative',
-      message: `Error saat mengambil gambar CCTV: ${error}`,
-    });
-  } finally {
-    cctvImageLoading.value = false;
-  }
-};
-
 onUnmounted(() => {
+  // Disconnect from external ALPR if connected
+  if (useExternalAlpr.value) {
+    disconnectFromExternalAlpr();
+  }
+
   // Clean up event listeners
   if (unlistenStatus) unlistenStatus();
   if (unlistenDetection) unlistenDetection();
@@ -340,56 +361,113 @@ const handleImageUpload = (event) => {
   reader.readAsDataURL(file);
 };
 
+const connectToExternalAlpr = async () => {
+  try {
+    await alprStore.connectWebSocket();
+    
+    // Wait for the connection to be established
+    const timeout = 5000; // 5 seconds timeout
+    const startTime = Date.now();
+    
+    while (!alprStore.isWsConnected && Date.now() - startTime < timeout) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    if (!alprStore.isWsConnected) {
+      throw new Error('Connection timeout');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Connection error:', error);
+    throw new Error(`Failed to connect to external ALPR: ${error.message}`);
+  }
+};
+
+const disconnectFromExternalAlpr = () => {
+  alprStore.disconnect();
+  Notify.create({
+    type: 'info',
+    message: 'Disconnected from external ALPR service',
+  });
+};
+
+const toggleAlprMode = async (newValue) => {
+  try {
+    useExternalAlpr.value = newValue;
+    
+    if (useExternalAlpr.value) {
+      await connectToExternalAlpr();
+      if (!alprStore.isWsConnected) {
+        throw new Error('Failed to connect to external ALPR');
+      }
+    } else {
+      disconnectFromExternalAlpr();
+    }
+
+    alprStore.updateAlprMode(useExternalAlpr.value);
+    
+    Notify.create({
+      type: 'positive',
+      message: `Switched to ${useExternalAlpr.value ? 'external' : 'internal'} ALPR`,
+    });
+  } catch (error) {
+    console.error('Error toggling ALPR mode:', error);
+    useExternalAlpr.value = !newValue; // Revert the toggle
+    Notify.create({
+      type: 'negative',
+      message: `Failed to switch ALPR mode: ${error.message}`,
+    });
+  }
+};
+
 const processAlpr = async () => {
   if (!uploadedImage.value) return;
   uploading.value = true;
   try {
-    // Extract base64 data from the data URL by removing the prefix
     const base64Image = uploadedImage.value.split(',')[1];
+    
+    // Menggunakan alprStore.processImage untuk kedua mode
+    const result = await alprStore.processImage(base64Image, 'simulator');
+    console.log("🚀 ~ processAlpr ~ result:", result);
 
-    const result = await invoke('process_alpr_image', {
-      base64Image: base64Image,
-      cameraId: 'simulator',
-    });
-    console.log('🚀 ~ processAlpr ~ result:', result);
-
-    if (result.success) {
-      alprResult.value = result.detected_plates[0];
-      if (alprResult.value) {
-        console.log('ALPR Result from backend:', alprResult.value);
-        console.log('Confidence value:', alprResult.value.confidence);
-        console.log('Plate image exists:', !!alprResult.value.plate_image);
-        const detection = {
-          label: 'License Plate',
-          confidence: alprResult.value.confidence,
-          bounding_box: {
-            x1: alprResult.value.bbox.x,
-            y1: alprResult.value.bbox.y,
-            x2: alprResult.value.bbox.x + alprResult.value.bbox.width,
-            y2: alprResult.value.bbox.y + alprResult.value.bbox.height,
-          },
-        };
-        const ocr = {
-          text: alprResult.value.plate_number,
-          confidence: alprResult.value.confidence,
-        };
-        console.log('Final detection object:', detection);
-        console.log('Final OCR object:', ocr);
-        alprResult.value = {
-          detection,
-          ocr,
-          plate_image: alprResult.value.plate_image,
-        };
-      }
+    // Gunakan hasil langsung dari alprStore
+    if (result && result.detectedPlate && result.detectedPlate.length > 0) {
+      alprResult.value = {
+        plateImage: result.processedImage,
+        plateNumber: result.detectedPlate[0].plate_number,
+        confidence: result.detectedPlate[0].confidence,
+        processingTime: result.processingTime
+      };
     } else {
-      console.error('ALPR processing failed:', result.message);
+      alprResult.value = null;
+      Notify.create({
+        type: 'warning',
+        message: 'No license plate detected',
+      });
     }
   } catch (error) {
     console.error('Error processing ALPR:', error);
+    alprResult.value = null;
+    Notify.create({
+      type: 'negative',
+      message: `Error processing ALPR: ${error}`,
+    });
   } finally {
     uploading.value = false;
   }
 };
+
+// Watch WebSocket connection status
+watch(() => alprStore.isWsConnected, (newStatus) => {
+  if (useExternalAlpr.value && !newStatus) {
+    // Connection lost while in external mode
+    Notify.create({
+      type: 'warning',
+      message: 'External ALPR connection lost. Attempting to reconnect...',
+    });
+  }
+}, { immediate: true });
 </script>
 
 <template>
@@ -409,7 +487,19 @@ const processAlpr = async () => {
               </div>
             </div>
             <div class="row q-gutter-sm">
-              <!-- Global connection toggle removed -->
+              <!-- ALPR Mode Toggle -->                  <q-btn-toggle
+                    v-model="useExternalAlpr"
+                    :options="[
+                      { label: 'Internal ALPR', value: false },
+                      { label: 'External ALPR', value: true }
+                    ]"
+                    color="primary"
+                    text-color="white"
+                    toggle-color="secondary"
+                    @update:model-value="toggleAlprMode"
+                    :loading="connecting"
+                    :disable="connecting"
+                  />
               <q-btn
                 color="secondary"
                 icon="health_and_safety"
@@ -422,7 +512,21 @@ const processAlpr = async () => {
 
           <!-- Status Indicators -->
           <div class="row q-gutter-sm q-mt-md">
-            <!-- Global connection status chip removed -->
+            <q-chip
+              :color="useExternalAlpr ? 'purple' : 'primary'"
+              text-color="white"
+              icon="settings"
+            >
+              {{ useExternalAlpr ? 'External ALPR' : 'Internal ALPR' }}
+            </q-chip>
+            <q-chip
+              v-if="useExternalAlpr"
+              :color="alprStore.isWsConnected ? 'positive' : 'negative'"
+              text-color="white"
+              :icon="alprStore.isWsConnected ? 'wifi' : 'wifi_off'"
+            >
+              WebSocket {{ alprStore.isWsConnected ? 'Connected' : 'Disconnected' }}
+            </q-chip>
             <q-chip
               v-if="serviceHealth !== null"
               :color="serviceHealth ? 'positive' : 'negative'"
@@ -469,28 +573,42 @@ const processAlpr = async () => {
                       : 'bg-grey-2 text-black'
                   "
                 >
-                  <div v-if="alprResult?.ocr.text">
+                  <div v-if="alprResult?.plateNumber">
                     <div class="row items-center">
-                      <div class="col-auto" v-if="alprResult.plate_image">
+                        <div class="col-auto" v-if="alprResult.plateImage">
                         <img
-                          :src="`data:image/jpeg;base64,${alprResult.plate_image}`"
+                          :src="`data:image/jpeg;base64,${alprResult.plateImage}`"
                           alt="Plate Image"
-                          style="
-                            max-width: 100px;
-                            max-height: 60px;
-                            margin-right: 10px;
-                          "
+                          style="max-width: 100px; max-height: 60px; margin-right: 10px;"
                         />
-                      </div>
-                      <div class="col">
-                        <b>Plat:</b> {{ alprResult?.ocr?.text }}<br />
-                        <b>Confidence:</b>
-                        {{
-                          (
-                            Number(alprResult?.detection.confidence) * 100
-                          ).toFixed(2)
-                        }}%
-                      </div>
+                        </div>
+                        <div class="col">
+                        <div class="row q-gutter-sm">
+                          <q-chip
+                          color="primary"
+                          text-color="white"
+                          icon="directions_car"
+                          >
+                          {{ alprResult?.plateNumber }}
+                          </q-chip>
+                          
+                          <q-chip
+                          :color="Number(alprResult?.confidence) > 0.7 ? 'positive' : 'warning'"
+                          text-color="white"
+                          icon="verified"
+                          >
+                          {{ (Number(alprResult?.confidence) * 100).toFixed(2) }}%
+                          </q-chip>
+
+                          <q-chip
+                          color="secondary"
+                          text-color="white"
+                          icon="timer"
+                          >
+                          {{ (alprResult?.processingTime).toFixed(2) }} s
+                          </q-chip>
+                        </div>
+                        </div>
                     </div>
                   </div>
                   <div v-else>Tidak ada plat terdeteksi.</div>

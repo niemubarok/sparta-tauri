@@ -1,6 +1,6 @@
 <!-- eslint-disable no-console -->
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { api, detectedPlates } from 'src/boot/axios';
 import { invoke } from '@tauri-apps/api/core';
@@ -85,6 +85,10 @@ import { useSettingsService } from 'src/stores/settings-service'; // Tambahkan i
 
 const settingsService = useSettingsService();
 const gateSettings = computed(() => settingsService.gateSettings);
+const globalSettings = computed(() => settingsService.globalSettings);
+
+// ALPR Mode settings
+const useExternalAlpr = computed(() => globalSettings.value?.USE_EXTERNAL_ALPR || false);
 
 const plateCameraType = computed(() => {
   if (gateSettings.value?.PLATE_CAM_DEVICE_ID) return 'usb';
@@ -143,6 +147,13 @@ const error = ref(null);
 const plateResult = ref(null);
 const plateImage = ref(null);
 
+// Manual capture state variables
+const uploadedImage = ref(null);
+const manualCaptureMode = ref(false);
+const uploading = ref(false);
+const showUploadDialog = ref(false);
+const fileModel = ref(null);
+
 // Watch for new detected plates from WebSocket
 // (WebSocket logic removed, now handled by Tauri events)
 watch(
@@ -193,6 +204,9 @@ watch(
   { deep: true }
 );
 const gateStatus = ref('CLOSED');
+const gateStatusTranslated = computed(() => {
+  return gateStatus.value === 'OPEN' ? 'BUKA' : 'TUTUP';
+});
 const isAutoCaptureActive = ref(true); // Auto capture flag
 // const isDark = ref(false)
 
@@ -254,44 +268,46 @@ const detectPlate = async () => {
     const imageData = await plateCameraRef.value.getImage();
     if (!imageData) {
       throw new Error('Failed to capture image from camera');
+    }    // Handle different types of image data
+    let imageBase64;
+    if (typeof imageData === 'string') {
+      // If it's a string, check if it's a base64 data URL
+      imageBase64 = imageData.startsWith('data:image') 
+        ? imageData.split(',')[1]
+        : imageData; // Assume it's already base64 without prefix
+    } else {
+      // If it's a File object, convert it to base64
+      imageBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(imageData);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+      });
     }
-
-    // Use image data directly if it's already base64, otherwise convert
-    const imageBase64 = imageData.startsWith('data:image') 
-      ? imageData.split(',')[1]
-      : await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(imageData);
-          reader.onload = () => resolve(reader.result.split(',')[1]);
-          reader.onerror = error => reject(error);
-        });
 
     if (!imageBase64) {
       throw new Error('Failed to get image data');
     }
 
-    // Use Tauri invoke for ALPR
-    const alprResponse = await invoke('process_alpr_image', {
-      base64Image: imageBase64,
-      cameraId:
-        plateCameraType.value === 'usb'
-          ? ls.get('plateCameraDevice')
-          : ls.get('plateCameraUrl') || '',
-    });
-    if (
-      alprResponse.success &&
-      alprResponse.detected_plates &&
-      alprResponse.detected_plates.length > 0
-    ) {
+    // Get camera ID for ALPR processing
+    const cameraId = plateCameraType.value === 'usb'
+      ? ls.get('plateCameraDevice') || 'plate_camera'
+      : ls.get('plateCameraUrl') || 'plate_camera';
+
+    // Use alprStore.processImage for both internal and external ALPR
+    const alprResponse = await alprStore.processImage(imageBase64, cameraId);
+      if (alprResponse && alprResponse.detectedPlate && alprResponse.detectedPlate.length > 0) {
+      const bestMatch = alprResponse.detectedPlate[0];
+      plateResult.value = bestMatch; // Store the whole object
+      addActivityLog(`Plat terdeteksi: ${bestMatch.plate_number}`);
+    } else if (alprResponse && alprResponse.success && alprResponse.detected_plates && alprResponse.detected_plates.length > 0) {
+      // Handle direct response format (internal ALPR)
       const bestMatch = alprResponse.detected_plates[0];
       plateResult.value = bestMatch; // Store the whole object
-      // capturedPlate will be updated by the watcher or onPlateCaptured
-      // plateImage.value = `data:image/jpeg;base64,${bestMatch.plate_image}` // This can be removed if capturedPlate is used consistently
-      addActivityLog(`Plate detected: ${bestMatch.plate_number}`);
+      addActivityLog(`Plat terdeteksi: ${bestMatch.plate_number}`);
     } else {
       plateResult.value = null; // Clear previous result if no plate detected
       capturedPlate.value = null; // Clear previous image
-      // plateImage.value = null // Clear previous image
       $q.notify({
         type: 'warning',
         message: 'No plate detected',
@@ -344,20 +360,23 @@ const onPlateCaptured = async () => {
   for (let i = 0; i < 5; i++) {
     await detectPlate();
     if (plateResult.value && plateResult.value?.confidence >= 0.8) {
+       addActivityLog(
+          `Plat ${plateResult.value?.plate_number} terdeteksi dengan waktu ${plateResult.value?.processing_time?.toFixed(2)}s`
+        );
       addDetectedPlate(plateResult.value);
       const isMember = await checkMembership(plateResult.value?.plate_number);
       console.log("🚀 ~ onPlateCaptured ~ isMember:", isMember)
 
       if (isMember) {
         addActivityLog(
-          `Plate ${plateResult.value?.plate_number} is a valid member`
+          `Plat ${plateResult.value?.plate_number} terdeteksi sebagai anggota yang valid`
         );
 
         // Open gate for valid member
         if (gateStatus.value === 'CLOSED') {
           gateStatus.value = 'OPEN';
           addActivityLog(
-            `Gate opened automatically for plate ${plateResult.value?.plate_number}`
+            `Pintu dibuka otomatis untuk plat ${plateResult.value?.plate_number}`
           );
 
           // Save transaction for valid member
@@ -392,7 +411,7 @@ const onPlateCaptured = async () => {
 
     // Show dialog if no valid member found after all attempts
     if (i === 4 && gateStatus.value === 'CLOSED') {
-      addActivityLog(`No valid member detected after ${i + 1} attempts`, true);
+      addActivityLog(`Tidak ada member valid terdeteksi setelah ${i + 1} percobaan`, true);
 
       $q.dialog({
         component: NotMemberCard,
@@ -432,7 +451,7 @@ const manualOpen = async () => {
       // gateStore.writeToPort('entry', ' *OUT1OFF#')
       gateStatus.value = 'OPEN';
       gateStore.loop2 = true;
-      addActivityLog('Gate opened manually by operator');
+      addActivityLog('Pintu dibuka secara manual oleh operator');
     // }
 
     // Auto close after 30 seconds
@@ -440,14 +459,14 @@ const manualOpen = async () => {
       if (gateStatus.value === 'OPEN') {
         gateStatus.value = 'CLOSED';
         gateStore.loop2 = false;
-        addActivityLog('Gate closed automatically after timeout');
+        addActivityLog('Pintu ditutup otomatis setelah timeout');
       }
     }, 3000);
   } catch (err) {
     console.error('Manual open error:', err);
     error.value = 'Failed to open gate manually';
     errorDialog.value = true;
-    addActivityLog('Failed to open gate manually', true);
+    addActivityLog('Gagal membuka pintu secara manual', true);
 
     $q.notify({
       type: 'negative',
@@ -536,11 +555,11 @@ const saveTransactionToLocal = async (transactionData) => {
       entry_time: new Date().toISOString(),
       status: '1', // 1 for antry 0 for exit
     });
-    addActivityLog(`Transaction ${response.id} saved locally.`);
+    addActivityLog(`Transaksi ${response.id} disimpan secara lokal.`);
     console.log('Transaction saved locally:', response);
     return response;
   } catch (err) {
-    addActivityLog('Failed to save transaction locally.', true);
+    addActivityLog('Gagal menyimpan transaksi secara lokal.', true);
     console.error('Error saving transaction locally:', err);
     $q.notify({
       type: 'negative',
@@ -584,17 +603,17 @@ const checkMembership = async (plateNumber) => {
   try {
     const member = await memberShipStore.checkMembership(plateNumber);
     if (member) {
-      addActivityLog(`Plate ${plateNumber} is a valid member`);
+      addActivityLog(`Plat ${plateNumber} adalah member yang valid`);
 
       return true;
     } else {
-      addActivityLog(`Plate ${plateNumber} is not a valid member`, true);
+      addActivityLog(`Plat ${plateNumber} bukan member yang valid`, true);
 
       return false;
     }
   } catch (error) {
     console.error('Error checking membership:', error);
-    addActivityLog('Failed to check membership', true);
+    addActivityLog('Gagal memeriksa keanggotaan', true);
 
     return false;
   }
@@ -647,21 +666,20 @@ const openSettingsFromError = () => {
 
 const handleSerialData = async (data) => {
   if (data) {
-    if(data === '*IN1ON#') {
-      await onPushLoop1()
-      addActivityLog('Gate opened by serial command');
+    if(data === '*IN1ON#') {      await onPushLoop1()
+      addActivityLog('Pintu dibuka oleh perintah serial');
     } else if (data === '*IN1OFF#') {
       gateStore.loop1 = false;
       gateStatus.value = 'CLOSED';
-      addActivityLog('Gate closed by serial command');
+      addActivityLog('Pintu ditutup oleh perintah serial');
     } else if (data === '*OUT1ON#') {
       gateStore.loop2 = true;
       gateStatus.value = 'OPEN';
-      addActivityLog('Gate opened by serial command');
+      addActivityLog('Pintu dibuka oleh perintah serial');
     } else if (data === '*OUT1OFF#') {
       gateStore.loop2 = false;
       gateStatus.value = 'CLOSED';
-      addActivityLog('Gate closed by serial command');
+      addActivityLog('Pintu ditutup oleh perintah serial');
     }
     // await onPlateCaptured();
     // gateStatus.value = 'OPEN';
@@ -688,6 +706,23 @@ onMounted(async () => {
   // Pastikan settingsService sudah diinisialisasi
   if (!settingsService.activeGateId) {
     await settingsService.initializeSettings();
+  }
+
+  // Initialize ALPR store from settings
+  await alprStore.initializeFromSettings();
+  
+  // Connect to external ALPR if enabled
+  if (useExternalAlpr.value) {
+    try {
+      await alprStore.connectWebSocket();
+    } catch (error) {
+      console.error('Failed to connect to external ALPR:', error);
+      $q.notify({
+        type: 'warning',
+        message: 'Failed to connect to external ALPR service. Using internal ALPR.',
+        position: 'top'
+      });
+    }
   }
 
   setupSerialListener();
@@ -730,6 +765,14 @@ onBeforeUnmount(() => {
     plateCameraRef.value.stopInterval();
   }
 });
+
+onUnmounted(() => {
+  // Disconnect from external ALPR if connected
+  if (useExternalAlpr.value) {
+    alprStore.disconnect();
+  }
+});
+
 // Clean up on component destroy
 // onUnmounted(async () => {
 //   // await gateStore.closeSerialPort('entry');
@@ -755,6 +798,179 @@ watch(
     }
   }
 );
+
+// Watch for ALPR mode changes and handle connection
+watch(useExternalAlpr, async (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    if (newValue) {
+      // Switch to external ALPR
+      try {
+        await alprStore.connectWebSocket();
+        $q.notify({
+          type: 'positive',
+          message: 'Connected to external ALPR service',
+          position: 'top'
+        });
+      } catch (error) {
+        console.error('Failed to connect to external ALPR:', error);
+        $q.notify({
+          type: 'warning',
+          message: 'Failed to connect to external ALPR service. Using internal ALPR.',
+          position: 'top'
+        });
+      }
+    } else {
+      // Switch to internal ALPR
+      alprStore.disconnect();
+      $q.notify({
+        type: 'info',
+        message: 'Switched to internal ALPR service',
+        position: 'top'
+      });
+    }
+  }
+}, { immediate: false });
+
+// Watch WebSocket connection status for external ALPR
+watch(() => alprStore.isWsConnected, (newStatus) => {
+  if (useExternalAlpr.value && !newStatus) {
+    // Connection lost while in external mode
+    $q.notify({
+      type: 'warning',
+      message: 'External ALPR connection lost. Check WebSocket service.',
+      position: 'top'
+    });
+  }
+}, { immediate: true });
+
+// Manual capture functions
+const toggleManualCaptureMode = () => {
+  manualCaptureMode.value = !manualCaptureMode.value;
+  if (!manualCaptureMode.value) {
+    // Reset uploaded image when switching back to camera mode
+    uploadedImage.value = null;
+    plateResult.value = null;
+    fileModel.value = null;
+    showUploadDialog.value = false;
+  } else {
+    // Reset plate result when switching to upload mode
+    plateResult.value = null;
+  }
+};
+
+const handleImageUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    uploadedImage.value = e.target.result;
+    // Auto process ALPR after upload
+    await processUploadedImage();
+  };
+  reader.readAsDataURL(file);
+};
+
+const handleFileSelect = (file) => {
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    uploadedImage.value = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+const processUploadedImage = async () => {
+  if (!uploadedImage.value) return;
+  
+  uploading.value = true;
+  try {
+    const base64Image = uploadedImage.value.split(',')[1];
+    
+    // Use alprStore.processImage for both internal and external ALPR
+    const result = await alprStore.processImage(base64Image, 'manual_upload');
+    console.log("🚀 ~ processUploadedImage ~ result:", result);
+
+    // Handle the result similar to camera detection
+    if (result && result.detectedPlate && result.detectedPlate.length > 0) {
+      const bestMatch = result.detectedPlate[0];
+      plateResult.value = bestMatch;
+      addActivityLog(`Manual upload - Plate detected: ${bestMatch.plate_number}`);
+      
+      // Close upload dialog after successful detection
+      showUploadDialog.value = false;
+      
+      // Check membership
+      const isMember = await checkMembership(bestMatch.plate_number);
+      console.log("🚀 ~ processUploadedImage ~ isMember:", isMember);
+
+      if (isMember) {
+        addActivityLog(`Plate ${bestMatch.plate_number} is a valid member`);
+        gateStatus.value = 'OPEN';
+        
+        // Auto close gate after 5 seconds
+        setTimeout(() => {
+          gateStatus.value = 'CLOSED';
+          addActivityLog('Pintu ditutup otomatis');
+        }, 5000);
+      } else {
+        addActivityLog(`Plate ${bestMatch.plate_number} is not a member`, true);
+        // Show not member dialog
+        $q.dialog({
+          component: NotMemberCard,
+          componentProps: {
+            plateNumber: bestMatch.plate_number,
+            plateImage: uploadedImage.value,
+            onPayment: () => {
+              gateStatus.value = 'OPEN';
+              setTimeout(() => {
+                gateStatus.value = 'CLOSED';
+                addActivityLog('Pintu ditutup setelah pembayaran');
+              }, 5000);
+            }
+          }
+        });
+      }
+    } else {
+      plateResult.value = null;
+      addActivityLog('No license plate detected in uploaded image', true);
+      $q.notify({
+        type: 'warning',
+        message: 'No license plate detected in uploaded image',
+      });
+    }
+  } catch (error) {
+    console.error('Error processing uploaded image:', error);
+    plateResult.value = null;
+    addActivityLog(`Error processing uploaded image: ${error.message}`, true);
+    $q.notify({
+      type: 'negative',
+      message: `Error processing uploaded image: ${error}`,
+    });
+  } finally {
+    uploading.value = false;
+  }
+};
+
+const openUploadDialog = () => {
+  showUploadDialog.value = true;
+};
+
+const closeUploadDialog = () => {
+  showUploadDialog.value = false;
+  uploadedImage.value = null;
+  plateResult.value = null;
+  fileModel.value = null;
+};
+
+const clearUploadedImage = () => {
+  uploadedImage.value = null;
+  plateResult.value = null;
+  fileModel.value = null;
+};
+
+// ...existing code...
 </script>
 
 <template>
@@ -770,7 +986,7 @@ watch(
         >
           <!-- <q-card-section> -->
           <div class="row items-center justify-between">
-            <div class="text-h5">Manless Entry System</div>
+            <div class="text-h5">ALPR Manless Gate</div>
             <div class="row items-center q-gutter-md">
               <Clock />
               <q-toggle
@@ -781,6 +997,7 @@ watch(
                 @update:model-value="toggleDarkMode"
               />
               <ConnectionIndicator class="indicator-item" />
+
               <q-btn
                 flat
                 dense
@@ -807,23 +1024,46 @@ watch(
           <!-- <q-card-section class="plate-camera-container"> -->
           <!-- <div class="row items-center justify-between q-mb-sm"> -->
           <!-- <q-badge outline color="dark" text-color="dark" class="text-body1 "  :class="{'text-white': isDark}">License Plate Camera</q-badge> -->
-          <!-- <div class="text-h6">License Plate Camera</div> -->
-          <q-btn
-            dense
-            push
-            :loading="isCapturing"
-            :disable="isCapturing"
-            label="Manual Capture"
-            color="white"
-            text-color="primary"
-            class="text-bold absolute-bottom-left z-top q-ma-lg"
-            icon="camera"
-            @click="onPlateCaptured"
-          />
+          <!-- <div class="text-h6">License Plate Camera</div> -->          <div class="absolute-bottom-left z-top q-ma-lg">
+            <q-btn
+              dense
+              push
+              :color="manualCaptureMode ? 'primary' : 'white'"
+              :text-color="manualCaptureMode ? 'white' : 'primary'"
+              :label="manualCaptureMode ? 'Mode Kamera' : 'Mode Upload'"
+              class="text-bold q-mr-sm"
+              :icon="manualCaptureMode ? 'videocam' : 'upload'"
+              @click="toggleManualCaptureMode"
+            />
+            <q-btn
+              v-if="!manualCaptureMode"
+              dense
+              push
+              :loading="isCapturing"
+              :disable="isCapturing"
+              label="Ambil Gambar"
+              color="white"
+              text-color="primary"
+              class="text-bold"
+              icon="camera"
+              @click="onPlateCaptured"
+            />
+            <q-btn
+              v-else
+              dense
+              push
+              label="Upload Gambar"
+              color="white"
+              text-color="primary"
+              class="text-bold"
+              icon="image"
+              @click="openUploadDialog"
+            />
+          </div>
           <!-- </div> -->
 
 <Camera
-              
+              v-if="!manualCaptureMode"
               ref="plateCameraRef"
               :username="gateSettings.PLATE_CAM_USERNAME"
               :password="gateSettings.PLATE_CAM_PASSWORD"
@@ -835,10 +1075,33 @@ watch(
               @captured="onPlateCaptured"
               @error="onCameraError"
               class="camera-feed"
-              label="License Plate Camera"
+              label="Kamera Kendaraan"
             />
-            <q-btn
-              v-if="plateCameraType === 'cctv' && !base64String"
+              <!-- Manual Upload Image Display -->
+            <div v-else class="camera-feed manual-upload-container">
+              <div v-if="!uploadedImage" class="upload-placeholder">
+                <q-icon name="image" size="xl" color="grey-5" />                <div class="text-h6 text-grey-5 q-mt-md">Upload gambar untuk deteksi plat</div>
+                <div class="text-body2 text-grey-6">Klik tombol "Upload Gambar" di bawah</div>
+              </div>
+              <div v-else class="uploaded-image-container">
+                <img :src="uploadedImage" alt="Uploaded image" class="uploaded-image" />
+                <q-btn
+                  icon="clear"
+                  dense flat round
+                  @click="clearUploadedImage"
+                  class="absolute-top-right q-ma-xs"
+                  style="z-index: 1; background-color: rgba(0,0,0,0.6);"
+                  color="white"
+                >
+                  <q-tooltip>Hapus Gambar</q-tooltip>
+                </q-btn>                <div v-if="uploading" class="processing-overlay">
+                  <q-spinner color="primary" size="3em" />
+                  <div class="text-white q-mt-md">Memproses ALPR...</div>
+                </div>
+              </div>
+            </div>
+              <q-btn
+              v-if="plateCameraType === 'cctv' && !base64String && !manualCaptureMode"
               icon="refresh"
               dense flat round
               @click="plateCameraRef?.fetchCameraImage()"
@@ -846,31 +1109,11 @@ watch(
               style="z-index: 1; background-color: rgba(0,0,0,0.3); margin-top: 35px;"
               color="white"
             >
-              <q-tooltip>Refresh CCTV Image</q-tooltip>
+              <q-tooltip>Refresh Gambar CCTV</q-tooltip>
             </q-btn>
 
-            <!-- <Camera
-              v-if="base64String"
-              ref="plateCameraRef" 
-              :manual-base64="base64String"
-              :username="plateCameraCredentials.username"
-              :password="plateCameraCredentials.password"
-              :ipAddress="plateCameraCredentials.ip_address"
-              :fileName="'plate'"
-              :isInterval="isAutoCaptureActive"
-              :intervalTime="3000"
-              cameraLocation="plate"
-              :cameraType="plateCameraType === 'usb' ? 'usb' : 'manual'"
-              :deviceId="plateCameraDeviceId"
-              @captured="onPlateCaptured"
-              @error="onCameraError"
-              class="camera-feed"
-              label="License Plate Camera"
-              style="margin-top: -2dvh"
-            /> -->
-          <!-- :cropArea="{ x: 200, y: 50, width: 400, height: 200 }" -->
-
-          <div v-if="plateResult?.plate_number && capturedPlate">
+          <!-- :cropArea="{ x: 200, y: 50, width: 400, height: 200 }" -->          
+           <div v-if="plateResult?.plate_number && (capturedPlate || (manualCaptureMode && plateResult))">
             <q-card
               class="plate-detection-overlay bg-dark q-pa-xs"
               :class="{ 'bg-white ': isDark }"
@@ -878,7 +1121,7 @@ watch(
               <q-badge
                 style="top: -10px; left: 7px"
                 class="bg-dark text-white absolute-top-left inset-shadow"
-                label="Plat Image"
+                label="Plat Terdeteksi"
               />
               <!-- <q-card-section> -->
               <img
@@ -910,9 +1153,8 @@ watch(
               :deviceId="driverCameraDeviceId"
               @error="onCameraError"
               class="camera-feed"
-              label="Driver Camera"
-            />
-            <q-btn
+              label="Kamera Pengemudi"
+            />            <q-btn
               v-if="driverCameraType === 'cctv'"
               icon="refresh"
               dense flat round
@@ -921,7 +1163,7 @@ watch(
               style="z-index: 1; background-color: rgba(0,0,0,0.3); margin-top: 35px;"
               color="white"
             >
-              <q-tooltip>Refresh CCTV Image</q-tooltip>
+              <q-tooltip>Refresh Gambar CCTV</q-tooltip>
             </q-btn>
         </q-card>
       </div>
@@ -939,7 +1181,7 @@ watch(
               class="absolute text-body2 text-white"
               :class="{ 'text-white': isDark }"
             >
-              Detected Plates
+              Plat Terdeteksi
             </q-badge>
           </div>
           <q-card-section>
@@ -1004,7 +1246,7 @@ watch(
                   class="text-h6"
                   icon="door_front"
                 >
-                  Gate Status: {{ gateStatus }}
+                  Status Gate: {{ gateStatusTranslated }}
                 </q-chip>
               </div>
               <div class="row q-gutter-md">
@@ -1023,7 +1265,7 @@ watch(
                   dense
                   push
                   :color="gateStore.loop2 ? 'positive' : 'grey-7'"
-                  label="OPEN GATE"
+                  label="BUKA PINTU"
                   :loading="isProcessing"
                   class="text-bold"
                   size="md"
@@ -1067,7 +1309,7 @@ watch(
               class="absolute text-body2 text-white"
               :class="{ 'text-white': isDark }"
             >
-              Recent Activity
+              Aktivitas Terbaru
             </q-badge>
           </div>
           <q-card-section>
@@ -1151,6 +1393,50 @@ watch(
       </q-card-actions>
     </q-card>
   </q-dialog>
+
+  <!-- Upload Image Dialog -->
+  <q-dialog v-model="showUploadDialog">
+    <q-card style="width: 500px; max-width: 80vw;">
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6">Upload Gambar untuk ALPR</div>
+        <q-space />
+        <q-btn icon="close" flat round dense @click="closeUploadDialog" />
+      </q-card-section>
+
+      <q-card-section class="q-pt-none">
+        <div class="text-center">
+          <q-file
+            v-model="fileModel"
+            label="Pilih file gambar"
+            accept="image/*"
+            outlined
+            @update:model-value="handleFileSelect"
+            class="q-mb-md"
+          >
+            <template v-slot:prepend>
+              <q-icon name="image" />
+            </template>          </q-file>
+          
+          <div v-if="uploading" class="q-mt-md text-center">
+            <q-spinner color="primary" size="2em" />
+            <div class="text-body2 q-mt-sm">Memproses ALPR...</div>
+          </div>
+        </div>
+      </q-card-section>
+
+      <q-card-actions align="right">        <q-btn flat label="Batal" color="grey" @click="closeUploadDialog" />
+        <q-btn 
+          flat 
+          label="Proses ALPR" 
+          color="primary" 
+          :disable="!uploadedImage || uploading"
+          :loading="uploading"
+          @click="processUploadedImage"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
   </div>
 </template>
 
@@ -1413,5 +1699,49 @@ watch(
   .plate-detection-overlay {
     width: 250px;
   }
+}
+
+/* Manual upload styles */
+.manual-upload-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40vh;
+}
+
+.upload-placeholder {
+  text-align: center;
+  padding: 2rem;
+}
+
+.uploaded-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uploaded-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.processing-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
 }
 </style>

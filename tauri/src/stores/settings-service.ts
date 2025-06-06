@@ -90,43 +90,95 @@ export const useSettingsService = defineStore('settings-service', () => {
       rtspStreamPath: gateSettings.value.SCANNER_CAM_RTSP_PATH || '',
       deviceId: gateSettings.value.SCANNER_CAM_DEVICE_ID,
     },
-  }));
-
-  async function loadActiveGateId() {
+  }));  async function loadActiveGateId() {
     isLoading.value = true;
     error.value = null;
+    console.log('Loading active gate ID...');
+    
     try {
-      // Ini adalah command Tauri yang perlu Anda buat di backend Rust
+      // Coba load dari Tauri command dulu
+      console.log('Trying to load active gate ID from Tauri...');
       const id = await invoke('get_active_gate_id');
-      activeGateId.value = typeof id === 'string' ? id : '1'; // Default to '1' if id is not a string
+      console.log("🚀 ~ cctvConfig ~ id:", id)
+      activeGateId.value = typeof id === 'string' ? id : 'entry_1'; // Default to '1' if id is not a string
+      console.log('Active gate ID loaded successfully from Tauri:', activeGateId.value);
     } catch (e) {
-      console.error('Failed to load active gate ID:', e);
-      error.value = e;
-      // Mungkin set default gateId jika gagal?
-      // activeGateId.value = 'default_gate'; 
+      console.warn('Failed to load active gate ID from Tauri, trying localStorage fallback:', e);
+      
+      try {
+        // Fallback ke localStorage
+        const storedId = localStorage.getItem('activeGateId');
+        if (storedId) {
+          activeGateId.value = storedId;
+          console.log('Active gate ID loaded from localStorage:', activeGateId.value);
+        } else {
+          // Set default jika tidak ada di localStorage juga
+          activeGateId.value = 'entry_1';
+          localStorage.setItem('activeGateId', 'entry_1');
+          console.log('Using default active gate ID:', activeGateId.value);
+        }
+      } catch (localStorageError) {
+        console.error('Failed to access localStorage:', localStorageError);
+        // Fallback terakhir
+        activeGateId.value = 'entry_1';
+        console.log('Using final fallback active gate ID:', activeGateId.value);
+      }
+      
+      error.value = null; // Clear error since we have fallback
+    } finally {
+      isLoading.value = false;
     }
-  }
-
-  async function loadGlobalSettings() {
+  }async function loadGlobalSettings() {
+    console.log('loadGlobalSettings called');
+    console.log('localDbs.config available:', !!localDbs.config);
+    
     try {
+      console.log('Attempting to get global_settings document...');
       const settings = await localDbs.config.get('global_settings');
+      console.log('Global settings loaded from database:', settings);
       globalSettings.value = settings;
     } catch (e) {
+      console.log('Error occurred while loading global settings:', e);
       if ((e as { name: string }).name === 'not_found') {
         console.log('Global settings not found, creating default.');
+        
         // Buat dan simpan pengaturan global default jika tidak ada
         const defaultGlobal = {
           _id: 'global_settings',
           API_IP: 'http://localhost:3333',
           ALPR_IP: 'http://localhost:8000',
           WS_IP: 'ws://localhost:3333',
+          WS_URL: 'ws://localhost:8001/ws', // Add WebSocket URL for ALPR
+          USE_EXTERNAL_ALPR: false, // Add ALPR mode setting
           darkMode: false,
+          LOCATION: null,
           // ... tambahkan default lainnya
         };
-        await localDbs.config.put(defaultGlobal);
-        globalSettings.value = defaultGlobal;
+        
+        try {
+          console.log('Creating default global settings:', defaultGlobal);
+          await localDbs.config.put(defaultGlobal);
+          globalSettings.value = defaultGlobal;
+          console.log('Default global settings saved and set to state');
+        } catch (putError) {
+          console.error('Failed to save default global settings:', putError);
+          // Use default even if save fails
+          globalSettings.value = defaultGlobal;
+        }
       } else {
         console.error('Failed to load global settings:', e);
+        // Use default global settings as fallback
+        globalSettings.value = {
+          _id: 'global_settings',
+          API_IP: 'http://localhost:3333',
+          ALPR_IP: 'http://localhost:8000',
+          WS_IP: 'ws://localhost:3333',
+          WS_URL: 'ws://localhost:8001/ws',
+          USE_EXTERNAL_ALPR: false,
+          darkMode: false,
+          LOCATION: null,
+        };
+        console.log('Using fallback global settings due to error');
       }
     }
   }
@@ -163,16 +215,36 @@ export const useSettingsService = defineStore('settings-service', () => {
         gateSettings.value = { ...defaultGateSettings, _id: `gate_${gateId}`, gateId: gateId };
       }
     }
-  }
-
-  async function initializeSettings() {
+  }  async function initializeSettings() {
+    console.log('Initializing settings...');
     isLoading.value = true;
-    await loadActiveGateId();
-    await loadGlobalSettings();
-    if (activeGateId.value) {
-      await loadGateSettings(activeGateId.value);
+    error.value = null;
+    
+    try {
+      // Load active gate ID first
+      await loadActiveGateId();
+      console.log('Active gate ID loaded:', activeGateId.value);
+      
+      // Load global settings
+      await loadGlobalSettings();
+      console.log('Global settings loaded:', globalSettings.value);
+      
+      // Load gate settings if we have an active gate ID
+      if (activeGateId.value) {
+        await loadGateSettings(activeGateId.value);
+        console.log('Gate settings loaded:', gateSettings.value);
+      } else {
+        console.warn('No active gate ID found, skipping gate settings load');
+      }
+      
+      console.log('Settings initialization complete');
+    } catch (e) {
+      console.error('Error during settings initialization:', e);
+      error.value = e;
+      // Continue even if there are errors - use defaults
+    } finally {
+      isLoading.value = false;
     }
-    isLoading.value = false;
   }
 
   async function getAllGateSettings(): Promise<GateSetting[]> {
@@ -192,32 +264,56 @@ export const useSettingsService = defineStore('settings-service', () => {
     } finally {
       isLoading.value = false;
     }
-  }
-
-  async function saveGlobalSettings(newSettings: any) { // Ganti 'any' dengan GlobalSettings
+  }  async function saveGlobalSettings(newSettings: any) { // Ganti 'any' dengan GlobalSettings
+    console.log('saveGlobalSettings called with:', newSettings);
+    console.log('Current globalSettings.value:', globalSettings.value);
     isLoading.value = true;
     error.value = null;
     try {
-      const settingsToSave = {
-        ...globalSettings.value, // Pertahankan _id dan _rev jika ada
-        ...newSettings,
-        _id: 'global_settings', // Pastikan _id selalu ada
-      };
-      // Ambil dokumen terbaru untuk mendapatkan _rev
+      // Ensure we have the current settings first
+      let currentSettings = {};
       try {
-        const existingDoc = await localDbs.config.get('global_settings');
-        settingsToSave._rev = existingDoc._rev;
+        currentSettings = await localDbs.config.get('global_settings');
+        console.log('Found existing global settings:', currentSettings);
       } catch (e) {
-        // Abaikan jika tidak ditemukan, berarti ini dokumen baru
-        if ((e as { name: string }).name !== 'not_found') throw e;
+        if ((e as { name: string }).name === 'not_found') {
+          console.log('No existing global settings found');
+          currentSettings = {
+            _id: 'global_settings',
+            API_IP: 'http://localhost:3333',
+            ALPR_IP: 'http://localhost:8000',
+            WS_IP: 'ws://localhost:3333',
+            WS_URL: 'ws://localhost:8001/ws',
+            USE_EXTERNAL_ALPR: false,
+            darkMode: false,
+            LOCATION: null,
+          };
+        } else {
+          throw e;
+        }
       }
-      await localDbs.config.put(settingsToSave);
-      globalSettings.value = settingsToSave; // Update state lokal
+      
+      const settingsToSave = {
+        ...currentSettings, // Start with current settings
+        ...newSettings,     // Apply new changes
+        _id: 'global_settings', // Ensure _id is always present
+      };
+      console.log('Settings to save:', settingsToSave);
+      
+      console.log('Saving settings to database...');
+      const result = await localDbs.config.put(settingsToSave);
+      console.log('Save result:', result);
+      
+      // Update local state with the saved settings
+      globalSettings.value = { ...settingsToSave, _rev: result.rev };
+      console.log('Global settings saved successfully, updated state to:', globalSettings.value);
     } catch (e) {
       console.error('Failed to save global settings:', e);
       error.value = e;
+      throw e; // Re-throw to let caller handle
+    } finally {
+      isLoading.value = false;
     }
-    isLoading.value = false;
   }
 
   async function saveGateSettings(newSettingsPartial: Partial<Omit<GateSetting, '_id' | '_rev' | 'gateId'>>) {

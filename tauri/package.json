@@ -10,7 +10,8 @@
     "dev": "quasar dev",
     "build": "quasar build",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "db:views": "pnpm tsx scripts/create-views.ts"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.17",

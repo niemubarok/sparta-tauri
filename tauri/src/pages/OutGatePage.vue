@@ -308,7 +308,7 @@ import { useRouter } from "vue-router";
 import { useQuasar } from "quasar";
 import { useTransaksiStore } from "src/stores/transaksi-store";
 import { useComponentStore } from "src/stores/component-store";
-import { useSettingsService } from "src/services/settings-service";
+import { useSettingsService } from "src/stores/settings-service";
 import { userStore } from "src/stores/user-store";
 import LoginDialog from "src/components/LoginDialog.vue";
 import ApiUrlDialog from "src/components/ApiUrlDialog.vue";
