@@ -129,12 +129,14 @@ import SettingsDialog from "src/components/SettingsDialog.vue";
 import { useTransaksiStore } from "src/stores/transaksi-store";
 import { useQuasar } from "quasar";
 import { useSettingsService } from "src/stores/settings-service"; // Diubah
-import { onBeforeRouteLeave } from "vue-router";
+// import { onBeforeRouteLeave, onBeforeRouteEnter } from "vue-router";
 import ls from "localstorage-slim";
 import { useRouter } from "vue-router";
+import { useGateStore } from "src/stores/gate-store";
 
 const $q = useQuasar();
 const router = useRouter();
+const gateStore = useGateStore();
 const isManlessMode = ls.get("manlessMode") || true;
 
 const transaksiStore = useTransaksiStore();
@@ -226,6 +228,15 @@ const handleKeyDown = (event) => {
 };
 
 onMounted(async () => {
+  // Clear any gate-related states when entering home page
+  ls.remove('gateMode');
+  
+  // Reset gate store states
+  gateStore.loop1 = false;
+  gateStore.loop2 = false;
+  gateStore.loop3 = false;
+  gateStore.detectedPlates = [];
+  
   // console.log(transaksiStore.API_URL);
   // console.log(`🚀 ~ onMounted ~ gateSettings.value?.gateType:`, gateSettings.value?.gateType) // Diubah
   // Navigasi otomatis berdasarkan gateType dari settingsStore akan dihapus dari sini
@@ -239,32 +250,42 @@ onMounted(async () => {
 
   loadGateSettings()
 
-  if (ls.get('WS_URL') === null && ls.get('API_URL') === null) {
-    const dialog = $q.dialog({
-      component: ApiUrlDialog,
-      noBackdropDismiss: true,
-    });
+  // if (ls.get('WS_URL') === null && ls.get('API_URL') === null) {
+  //   const dialog = $q.dialog({
+  //     component: ApiUrlDialog,
+  //     noBackdropDismiss: true,
+  //   });
 
-    dialog.update();
-    $q.notify({
-      type: "negative",
-      message: "Silahkan Isi URL API terlebih dahulu",
-      position: "top",
-    });
-  } else {
+  //   dialog.update();
+  //   $q.notify({
+  //     type: "negative",
+  //     message: "Silahkan Isi URL API terlebih dahulu",
+  //     position: "top",
+  //   });
+  // } else {
     // await loadAllSettings(); // Diubah
 
-    if (globalSettings.value?.isLicenseExpired === false) { // Diubah
-      window.addEventListener("keydown", handleKeyDown);
-    }
+    // if (globalSettings.value?.isLicenseExpired === false) { // Diubah
+    //   window.addEventListener("keydown", handleKeyDown);
+    // }
 
    
-  }
+  // }
 });
 
-onBeforeRouteLeave(() => {
-  window.removeEventListener("keydown", handleKeyDown);
-});
+// onBeforeRouteLeave(() => {
+//   window.removeEventListener("keydown", handleKeyDown);
+// });
+
+// Router guard to ensure proper cleanup when entering Index page
+// onBeforeRouteEnter((to, from, next) => {
+//   // Clear gate mode when entering home page
+//   if (from.path === '/entry-gate' || from.path === '/exit-gate') {
+//     ls.remove('gateMode');
+//     ls.remove('manlessMode');
+//   }
+//   next();
+// });
 
 defineComponent({
   name: "IndexPage",

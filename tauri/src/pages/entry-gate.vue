@@ -1,33 +1,53 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import ManlessEntryGate from 'src/components/ManlessEntryGate.vue'
 // import { useSettingsStore } from 'src/stores/settings-store'
 import ls from 'localstorage-slim'
 import ManualExitPage from './ManualExitPage.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 // const settingsStore = useSettingsStore()
 const isManlessMode = ref(ls.get('manlessMode') || true)
-const componentKey = ref(0)
+const componentKey = ref(Date.now()) // Use timestamp for unique key
+const isVisible = ref(true) // Control visibility
 
 // Force component re-render when mode changes
 const handleModeChange = e => {
     if (e.key === 'manlessMode') {
         isManlessMode.value = e.newValue === 'true'
-        componentKey.value++ // Force re-render
+        componentKey.value = Date.now() // Force re-render with new timestamp
     }
 }
 
+// Watch for route changes and handle component visibility
+watch(() => router.currentRoute.value.path, (newPath) => {
+  if (newPath !== '/entry-gate') {
+    // Hide component and force cleanup when leaving entry-gate route
+    isVisible.value = false
+    componentKey.value = Date.now()
+  } else {
+    // Show component when entering entry-gate route
+    isVisible.value = true
+    componentKey.value = Date.now()
+  }
+})
+
 onMounted(() => {
     window.addEventListener('storage', handleModeChange)
+    isVisible.value = true
+    componentKey.value = Date.now()
 })
 
 onUnmounted(() => {
     window.removeEventListener('storage', handleModeChange)
+    isVisible.value = false
 })
 </script>
 
 <template>
-  <div>
+  <div v-if="isVisible">
     <Suspense>
       <template v-if="isManlessMode">
         <ManlessEntryGate

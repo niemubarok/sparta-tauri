@@ -39,12 +39,14 @@
       }" />
     </div>
     <div v-else class="camera-view">
-      <img :src="imageSrc" alt="Manual image" @error="(e) => {
-        console.error('Image load error:', e);
-        message = 'Invalid image data';
-        cameraStatus = false;
-      }" />
-      <span class="text-red">{{ message }}</span>
+      <q-skeleton class="full-height">
+        <template v-slot:default>
+          <div class="absolute-center text-center text-grey-7">
+            <q-icon name="camera_off" size="xl" />
+            <div>Tidak ada kamera yang digunakan</div>
+          </div>
+        </template>
+      </q-skeleton>
     </div>
 
     <q-toggle

@@ -1,4 +1,3 @@
-
 <template>
   <div
     class="manless-entry fixed-center full-width"
@@ -25,10 +24,33 @@
               class="text-bold absolute-bottom-left z-top q-ma-lg"
               @click="onPlateCaptured"
               icon="camera"
+              v-if="!manualCaptureMode"
             />
-
-            <Camera
-              v-show="!base64String"
+            
+            <div class="absolute-bottom-left z-top q-ma-lg">
+              <q-btn
+                dense
+                push
+                :color="manualCaptureMode ? 'primary' : 'white'"
+                :text-color="manualCaptureMode ? 'white' : 'primary'"
+                :label="manualCaptureMode ? 'Mode Kamera' : 'Mode Upload'"
+                class="text-bold q-mr-sm"
+                :icon="manualCaptureMode ? 'videocam' : 'upload'"
+                @click="toggleManualCaptureMode"
+              />
+              <q-btn
+                v-if="manualCaptureMode"
+                dense
+                push
+                label="Upload Gambar"
+                color="white"
+                text-color="primary"
+                class="text-bold"
+                icon="image"
+                @click="openUploadDialog"
+              />
+            </div>            <Camera
+              v-show="!base64String && !manualCaptureMode"
               ref="plateCameraRef"
               :cameraUrl="plateCameraUrl"
               :username="plateCameraCredentials.username"
@@ -66,25 +88,23 @@
               color="white"
             >
               <q-tooltip>Capture CCTV Image (Plat)</q-tooltip>
-            </q-btn>
-
-            <Camera
+            </q-btn>            <Camera
               v-show="base64String"
               ref="plateCameraRef"
               :manual-base64="base64String"
-              :username="plateCameraCredentials.username"
-              :password="plateCameraCredentials.password"
-              :ipAddress="plateCameraCredentials.ip_address"
+              :username="gateSettings.PLATE_CAM_USERNAME"
+              :password="gateSettings.PLATE_CAM_PASSWORD"
+              :ipAddress="gateSettings.PLATE_CAM_IP"
               :deviceId="plateCameraDeviceId"
               :fileName="'plate'"
               :isInterval="isAutoCaptureActive"
               :intervalTime="3000"
               cameraLocation="plate"
               @captured="onPlateCaptured"
-              :cameraType="plateCameraType === 'usb' ? 'usb' : 'manual'"
+              :cameraType="plateCameraType"
               @error="onCameraError"
               class="camera-feed"
-              label="License Plate Camera"
+              label="Kamera Kendaraan"
               style="margin-top: -2dvh"
             />
 
@@ -112,13 +132,11 @@
             flat
             class="camera-card bg-transparent q-mb-lg"
             style="transform: scale(0.95); margin-top: -1vh"
-          >
-            <Camera
+          >            <Camera
               ref="driverCameraRef"
-              :cameraUrl="driverCameraUrl"
-              :username="driverCameraCredentials.username"
-              :password="driverCameraCredentials.password"
-              :ipAddress="driverCameraCredentials.ip_address"
+              :username="gateSettings.DRIVER_CAM_USERNAME"
+              :password="gateSettings.DRIVER_CAM_PASSWORD"
+              :ipAddress="gateSettings.DRIVER_CAM_IP"
               :deviceId="driverCameraDeviceId"
               :fileName="'driver'"
               :isInterval="false"
@@ -126,7 +144,7 @@
               :cameraType="driverCameraType"
               @error="onCameraError"
               class="camera-feed"
-              label="Driver Camera"
+              label="Kamera Pengemudi"
             />
             <q-btn
               v-if="driverCameraType === 'cctv'"
@@ -409,6 +427,51 @@
     @hide="showQRScanner = false"
     @scanned="onQRCodeScanned"
   /> -->
+
+  <!-- Upload Image Dialog -->
+  <q-dialog v-model="showUploadDialog">
+    <q-card style="width: 500px; max-width: 80vw;">
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6">Upload Gambar untuk ALPR</div>
+        <q-space />
+        <q-btn icon="close" flat round dense @click="closeUploadDialog" />
+      </q-card-section>
+
+      <q-card-section class="q-pt-none">
+        <div class="text-center">
+          <q-file
+            v-model="fileModel"
+            label="Pilih file gambar"
+            accept="image/*"
+            outlined
+            @update:model-value="handleFileSelect"
+            class="q-mb-md"
+          >
+            <template v-slot:prepend>
+              <q-icon name="image" />
+            </template>
+          </q-file>
+          
+          <div v-if="uploading" class="q-mt-md text-center">
+            <q-spinner color="primary" size="2em" />
+            <div class="text-body2 q-mt-sm">Memproses ALPR...</div>
+          </div>
+        </div>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Batal" color="grey" @click="closeUploadDialog" />
+        <q-btn 
+          flat 
+          label="Proses ALPR" 
+          color="primary" 
+          :disable="!uploadedImage || uploading"
+          :loading="uploading"
+          @click="processUploadedImage"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
@@ -421,6 +484,7 @@ import { useThemeStore } from '../stores/theme';
 import { useManlessStore } from 'src/stores/manless-store';
 import { useComponentStore } from 'src/stores/component-store'; // May not be needed if gateStore handles all hardware
 import { useGateStore } from 'src/stores/gate-store';
+import { useAlprStore } from 'src/stores/alpr-store';
 
 import Camera from './Camera.vue';
 import Clock from './Clock.vue';
@@ -437,6 +501,7 @@ const themeStore = useThemeStore();
 const manlessStore = useManlessStore();
 const componentStore = useComponentStore(); // Evaluate if still needed
 const gateStore = useGateStore();
+const alprStore = useAlprStore();
 const $q = useQuasar();
 
 const attrs = useAttrs();
@@ -467,6 +532,13 @@ const isProcessing = ref(false); // General async operation guard (e.g., API cal
 const error = ref(null); // Holds error messages for UI
 const errorDialog = ref(false); // Controls visibility of a generic error dialog
 
+// Manual capture variables
+const uploadedImage = ref(null);
+const manualCaptureMode = ref(false);
+const uploading = ref(false);
+const showUploadDialog = ref(false);
+const fileModel = ref(null);
+
 // Gate and System State
 const gateStatus = ref('CLOSED'); // 'OPEN', 'CLOSED', 'OPENING', 'CLOSING'
 const isAutoCaptureActive = ref(true); // Controls interval capture on plate camera
@@ -478,21 +550,24 @@ import { useSettingsService } from 'src/stores/settings-service'; // Tambahkan i
 const settingsService = useSettingsService();
 const gateSettings = computed(() => settingsService.gateSettings);
 
+// ALPR Mode settings
+const useExternalAlpr = computed(() => gateSettings.value?.USE_EXTERNAL_ALPR || false);
+
 const plateCameraType = computed(() => {
   if (gateSettings.value?.PLATE_CAM_DEVICE_ID) return 'usb';
-  if (gateSettings.value?.PLATE_CAM_URL) return 'cctv';
-  return 'cctv'; // Default atau bisa juga null/undefined sesuai kebutuhan
+  if (gateSettings.value?.PLATE_CAM_IP) return 'cctv';
+  return null; // Return null when no camera is configured
 });
 
 const driverCameraType = computed(() => {
   if (gateSettings.value?.DRIVER_CAM_DEVICE_ID) return 'usb';
-  if (gateSettings.value?.DRIVER_CAM_URL) return 'cctv';
-  return 'cctv'; // Default atau bisa juga null/undefined sesuai kebutuhan
+  if (gateSettings.value?.DRIVER_CAM_IP) return 'cctv';
+  return null; // Return null when no camera is configured
 });
 
 // Camera URLs dan Device IDs diambil dari gateSettings
-const plateCameraUrl = computed(() => gateSettings.value?.PLATE_CAM_URL || '');
-const driverCameraUrl = computed(() => gateSettings.value?.DRIVER_CAM_URL || '');
+const plateCameraUrl = computed(() => gateSettings.value?.PLATE_CAM_IP || '');
+const driverCameraUrl = computed(() => gateSettings.value?.DRIVER_CAM_IP || '');
 const plateCameraDeviceId = computed(() => gateSettings.value?.PLATE_CAM_DEVICE_ID || null);
 const driverCameraDeviceId = computed(() => gateSettings.value?.DRIVER_CAM_DEVICE_ID || null);
 
@@ -634,6 +709,37 @@ watch(base64String, (newValue) => {
   }
 });
 
+// Watch for ALPR mode changes and handle connection
+watch(useExternalAlpr, async (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    if (newValue) {
+      try {
+        await alprStore.connectWebSocket();
+        addActivityLog('Connected to external ALPR service');
+      } catch (error) {
+        console.error('Failed to connect to external ALPR service:', error);
+        addActivityLog('Failed to connect to external ALPR service', true);
+      }
+    } else {
+      alprStore.disconnect();
+      addActivityLog('Disconnected from external ALPR service');
+    }
+  }
+}, { immediate: false });
+
+// Watch WebSocket connection status for external ALPR
+watch(() => alprStore.isWsConnected, (newStatus) => {
+  if (useExternalAlpr.value && !newStatus) {
+    // Connection lost while in external mode
+    addActivityLog('External ALPR connection lost. Check WebSocket service.', true);
+    $q.notify({
+      type: 'warning',
+      message: 'External ALPR connection lost. Check WebSocket service.',
+      position: 'top'
+    });
+  }
+}, { immediate: true });
+
 const toggleDarkMode = () => {
   themeStore.toggleDarkMode();
 };
@@ -654,46 +760,75 @@ const addActivityLog = (message, isError = false) => {
 };
 
 const detectPlate = async () => {
-  if (!plateCameraRef.value) {
-    addActivityLog('Plate camera not ready.', true);
-    $q.notify({ type: 'negative', message: 'Plate camera not available.' });
-    return;
-  }
-  isCapturing.value = true;
-  error.value = null;
-  addActivityLog('Initiating plate detection...');
   try {
-    const imageFile = await plateCameraRef.value.getImage();
-    if (!imageFile) throw new Error('Failed to capture image from plate camera.');
+    isCapturing.value = true;
+    error.value = null;
 
-    const toBase64 = file => new Promise((resolve, reject) => {
+    // Get image from camera
+    if (!plateCameraRef.value) {
+      throw new Error('Plate camera not ready');
+    }
+    
+    const imageData = await plateCameraRef.value.getImage();
+    if (!imageData) {
+      throw new Error('Failed to capture image from camera');
+    }
+    
+    // Handle different types of image data
+    let imageBase64;
+    if (typeof imageData === 'string') {
+      // If already a base64 string
+      imageBase64 = imageData.includes('base64,') ? imageData.split('base64,')[1] : imageData;
+    } else {
+      // If it's a File or Blob
       const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = err => reject(err);
-    });
-    const imageBase64 = await toBase64(imageFile);
-    if (!imageBase64) throw new Error('Failed to convert image to base64.');
+      imageBase64 = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(imageData);
+      });
+    }
 
-    const alprResponse = await invoke('process_alpr_image', {
-      base64Image: imageBase64,
-      cameraId: plateCameraType.value === 'usb' ? ls.get('plateCameraDevice') : plateCameraUrl.value || '',
-    });
+    if (!imageBase64) {
+      throw new Error('Failed to process image data');
+    }
 
-    if (alprResponse.success && alprResponse.detected_plates && alprResponse.detected_plates.length > 0) {
+    // Get camera ID for ALPR processing
+    const cameraId = plateCameraType.value === 'usb' 
+      ? plateCameraDeviceId.value 
+      : 'cctv_plate_exit';
+
+    // Use alprStore.processImage for both internal and external ALPR
+    const alprResponse = await alprStore.processImage(imageBase64, cameraId);
+    
+    if (alprResponse && alprResponse.detectedPlate && alprResponse.detectedPlate.length > 0) {
+      const bestMatch = alprResponse.detectedPlate[0];
+      plateResult.value = bestMatch; // Set plate result
+      addActivityLog(`Plat terdeteksi: ${bestMatch.plate_number}`);
+    } else if (alprResponse && alprResponse.success && alprResponse.detected_plates && alprResponse.detected_plates.length > 0) {
+      // For backward compatibility with older ALPR response format
       const bestMatch = alprResponse.detected_plates[0];
-      plateResult.value = { ...bestMatch }; // Triggers watcher
-      addActivityLog(`Plate detected: ${bestMatch.plate_number}, Conf: ${bestMatch.confidence?.toFixed(2)}`);
+      plateResult.value = bestMatch;
+      addActivityLog(`Plat terdeteksi: ${bestMatch.plate_number}`);
     } else {
       plateResult.value = null;
-      addActivityLog('No plate detected or ALPR processing failed.', alprResponse.error ? true : false);
-      $q.notify({ type: 'warning', message: alprResponse.error || 'No plate detected.' });
+      addActivityLog('Tidak ada plat nomor yang terdeteksi', true);
+      $q.notify({
+        message: 'Tidak ada plat nomor yang terdeteksi',
+        color: 'warning',
+        position: 'top',
+      });
     }
   } catch (err) {
-    console.error('Error in detectPlate (ExitGate):', err);
-    error.value = `Plate detection error: ${err.message}`;
-    addActivityLog(error.value, true);
-    $q.notify({ type: 'negative', message: error.value });
+    console.error('Error detecting plate:', err);
+    error.value = 'Failed to process license plate';
+    addActivityLog(`Error: ${error.value}`, true);
+
+    $q.notify({
+      message: `Error: ${err.message || 'Failed to process license plate'}`,
+      color: 'negative',
+      position: 'top',
+    });
   } finally {
     isCapturing.value = false;
   }
@@ -767,6 +902,13 @@ const captureAndShowCctvImage = async (cameraType) => {
 const onPlateCaptured = async () => {
   addActivityLog('Manual capture initiated...');
   isProcessing.value = true; // Use general processing flag
+
+  // Skip plate detection if in manual upload mode
+  if (manualCaptureMode.value) {
+    openUploadDialog();
+    isProcessing.value = false;
+    return;
+  }
 
   // Capture driver image first
   try {
@@ -949,12 +1091,10 @@ const processExitTransaction = async () => {
     const response = await localDbs.transactions.put(updatedTransaction);
     addActivityLog(`Transaction ${updatedTransaction._id} updated successfully. Rev: ${response.rev}`);
     $q.notify({ type: 'positive', message: `Exit processed. Fee: Rp ${fee}. Gate will open.` });
-    
-    // Simulate gate opening by calling the existing manualOpen function
+      // Simulate gate opening by calling the existing manualOpen function
     await manualOpen(); 
-    transactionData.value = null; // Clear transaction data after successful exit
-    plateResult.value = null; // Clear plate result
-    // Potentially reset other UI elements
+    // Reset all state including manual upload mode
+    resetExitGateState();
 
   } catch (err) {
     console.error('Error updating transaction for exit:', err);
@@ -1060,12 +1200,26 @@ onMounted(async () => {
   document.body.classList.toggle('body--dark', isDark.value);
   addActivityLog('Manless Exit Gate system initializing...');
 
-  // Load settings
-  plateCameraUrl.value = ls.get('plateCameraUrl') || '';
-  driverCameraUrl.value = ls.get('driverCameraUrl') || '';
-  plateCameraType.value = ls.get('plateCameraType') || (ls.get('plateCameraDevice') ? 'usb' : 'cctv');
-  driverCameraType.value = ls.get('driverCameraType') || (ls.get('driverCameraDevice') ? 'usb' : 'cctv');
-  exitGatePort.value = ls.get('serialPortExit') || '';
+  // Reset all state values
+  resetExitGateState();
+
+  // Pastikan settingsService sudah diinisialisasi
+  if (!settingsService.activeGateId) {
+    await settingsService.initializeSettings();
+  }
+
+  // Initialize ALPR store from settings
+  await alprStore.initializeFromSettings();
+  
+  // Connect to external ALPR if enabled
+  if (useExternalAlpr.value) {
+    try {
+      await alprStore.connectWebSocket();
+    } catch (error) {
+      console.error('Failed to connect to external ALPR service:', error);
+      addActivityLog('Failed to connect to external ALPR service', true);
+    }
+  }
 
   await initializeExitSerialPort();
 
@@ -1073,6 +1227,12 @@ onMounted(async () => {
 });
 
 onUnmounted(async () => {
+  // Disconnect from external ALPR if connected
+  if (useExternalAlpr.value) {
+    alprStore.disconnect();
+    console.log('External ALPR disconnected');
+  }
+
   if (plateCameraRef.value) {
     plateCameraRef.value.stopInterval();
   }
@@ -1086,6 +1246,111 @@ onUnmounted(async () => {
   }
 });
 
+// Manual upload mode methods
+const toggleManualCaptureMode = () => {
+  manualCaptureMode.value = !manualCaptureMode.value;
+  if (!manualCaptureMode.value) {
+    // Reset when switching back to camera mode
+    uploadedImage.value = null;
+    fileModel.value = null;
+    showUploadDialog.value = false;
+  }
+};
+
+const openUploadDialog = () => {
+  showUploadDialog.value = true;
+};
+
+const closeUploadDialog = () => {
+  showUploadDialog.value = false;
+  uploadedImage.value = null;
+  plateResult.value = null;
+  fileModel.value = null;
+};
+
+const handleFileSelect = (files) => {
+  if (!files) return;
+  const file = files instanceof Array ? files[0] : files;
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    uploadedImage.value = e.target.result;
+    // Optionally auto-process the image when selected
+    // await processUploadedImage();
+  };
+  reader.readAsDataURL(file);
+};
+
+const processUploadedImage = async () => {
+  if (!uploadedImage.value) return;
+  
+  uploading.value = true;
+  try {
+    const base64Image = uploadedImage.value.split(',')[1];
+    
+    // Use alprStore.processImage for both internal and external ALPR
+    const result = await alprStore.processImage(base64Image, 'manual_upload');
+    console.log("🚀 ~ processUploadedImage ~ result:", result);
+
+    // Handle the result similar to camera detection
+    if (result && result.detectedPlate && result.detectedPlate.length > 0) {
+      const bestMatch = result.detectedPlate[0];
+      plateResult.value = bestMatch;
+      addActivityLog(`Manual upload - Plate detected: ${bestMatch.plate_number}`);
+      
+      // Close upload dialog after successful detection
+      showUploadDialog.value = false;
+      
+      // Process exit logic for the detected plate
+      await handleExitPlateLogic();
+    } else {
+      addActivityLog('No plate detected in uploaded image', true);
+      $q.notify({
+        message: 'Tidak ada plat nomor yang terdeteksi pada gambar',
+        color: 'warning',
+        position: 'top',
+      });
+    }
+  } catch (error) {
+    console.error('Error processing uploaded image:', error);
+    addActivityLog(`Error processing uploaded image: ${error.message}`, true);
+    $q.notify({
+      message: `Error: ${error.message || 'Failed to process image'}`,
+      color: 'negative',
+      position: 'top',
+    });
+  } finally {
+    uploading.value = false;
+  }
+};
+
+// Reset exit gate state
+const resetExitGateState = () => {
+  // Reset plate detection results
+  plateResult.value = null;
+  capturedPlate.value = null;
+  displayedPlateInfo.value = [];
+  
+  // Reset manual upload mode
+  manualCaptureMode.value = false;
+  showUploadDialog.value = false;
+  fileModel.value = null;
+  uploadedImage.value = null;
+  
+  // Reset transaction data
+  transactionData.value = null;
+  
+  // Reset capture states
+  isCapturing.value = false;
+  isProcessing.value = false;
+  uploading.value = false;
+  
+  // Reset errors
+  error.value = null;
+  
+  addActivityLog('Exit gate state reset');
+};
 </script>
 
 <style scoped>

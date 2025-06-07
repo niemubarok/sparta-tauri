@@ -52,9 +52,9 @@ const createIndexes = async () => {
 
 
 // Remote database URL 
-const COUCHDB_USER = process.env.COUCHDB_USER || 'admin'
-const COUCHDB_PASSWORD = process.env.COUCHDB_PASSWORD || 'admin'
-const REMOTE_URL = process.env.COUCHDB_URL ? `http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@${process.env.COUCHDB_URL}` : `http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@localhost:5984`
+const DB_USER = process.env.DB_USER || 'admin'
+const DB_PASSWORD = process.env.DB_PASSWORD || 'admin'
+const REMOTE_URL = process.env.DB_URL ? `http://${DB_USER}:${DB_PASSWORD}@${process.env.DB_URL}` : `http://${DB_USER}:${DB_PASSWORD}@localhost:5984`
 
 // Remote databases
 const remoteDbs = {

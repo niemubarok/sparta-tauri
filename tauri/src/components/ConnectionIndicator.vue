@@ -33,22 +33,20 @@
 </template>
 
 <script setup>
-import { inject, computed } from 'vue';
-import { useSettingsService } from 'src/stores/settings-service'; // Diubah
-import { useAlprStore } from 'src/stores/alpr-store'; // Import ALPR store
-import { isSyncing, lastSyncStatus, lastSyncError } from 'src/boot/pouchdb'; // Import PouchDB sync status
+import { inject, computed, onMounted } from 'vue';
+import { useSettingsService } from 'src/stores/settings-service';
+import { useAlprStore } from 'src/stores/alpr-store';
+import { isSyncing, lastSyncStatus, lastSyncError } from 'src/boot/pouchdb';
 
-const { globalSettings, gateSettings } = useSettingsService(); // Diubah
-const alprStore = useAlprStore(); // Initialize ALPR store
+const settingsService = useSettingsService();
+const alprStore = useAlprStore();
 
-// ALPR mode and connection status
-const useExternalAlpr = computed(() => globalSettings.value?.USE_EXTERNAL_ALPR || false);
+// Get gateSettings from the settings service
+const gateSettings = computed(() => settingsService.gateSettings);
+
+// ALPR mode and connection status - updated to use gateSettings
+const useExternalAlpr = computed(() => gateSettings.value?.USE_EXTERNAL_ALPR || false);
 const isExternalAlprConnected = computed(() => alprStore.isWsConnected);
-
-// CCTV connection status from settings store (commented out for now)
-// TODO: Tentukan dari mana status koneksi CCTV berasal di settingsService (globalSettings atau gateSettings)
-// Untuk sementara, asumsikan selalu terhubung jika ada URL kamera yang diatur di gateSettings
-// const isCCTVConnected = computed(() => !!(gateSettings.value?.PLATE_CAM_URL || gateSettings.value?.DRIVER_CAM_URL || gateSettings.value?.SCANNER_CAM_URL)); // Diubah
 
 // CouchDB connection status based on sync status
 const isCouchDBConnected = computed(() => {
@@ -84,6 +82,10 @@ defineProps({
     type: String,
     default: ''
   }
+})
+
+onMounted(() => {
+  console.log("Gate settings for ALPR:", gateSettings.value)
 })
 </script>
 

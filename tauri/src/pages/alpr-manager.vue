@@ -8,6 +8,7 @@ import { useAlprStore } from 'stores/alpr-store';
 
 const $q = useQuasar();
 const alprStore = useAlprStore();
+const settingsService = useSettingsService();
 
 // Reactive state
 // const connectionStatus = ref('disconnected'); // Global status removed, will be per camera
@@ -23,10 +24,12 @@ const currentCctvConfig = ref(null);
 const cameras = ref([]); // Ini akan menyimpan kamera dari ALPR service
 const cctvCamerasByGate = ref({}); // Ini akan menyimpan kamera CCTV dari settings-service
 const recentDetections = ref([]);
-const settingsService = useSettingsService();
 
-// ALPR Mode settings
-const useExternalAlpr = ref(false);
+// Get gate settings from service
+const gateSettings = computed(() => settingsService.gateSettings);
+
+// ALPR Mode settings - now from gate settings
+const useExternalAlpr = ref(gateSettings.value?.USE_EXTERNAL_ALPR || false);
 const wsStatus = ref('disconnected');
 
 // Event listeners
@@ -264,6 +267,12 @@ const formatTimestamp = (timestamp) => {
 
 // Lifecycle
 onMounted(async () => {
+  // Initialize settings service
+  await settingsService.initializeSettings();
+  
+  // Update useExternalAlpr from gate settings
+  useExternalAlpr.value = gateSettings.value?.USE_EXTERNAL_ALPR || false;
+  
   // Initialize ALPR store from settings
   await alprStore.initializeFromSettings();
   
@@ -329,10 +338,13 @@ onMounted(async () => {
       loading: false,
     }));
   });
-
-  // Watch for changes in settings that might affect CCTV cameras
-  // This might be complex if settings can change frequently without a full app reload.
-  // For simplicity, we'll rely on the initial load and potential manual refresh.
+  
+  // Watch for changes in gate settings to update ALPR mode
+  watch(() => gateSettings.value?.USE_EXTERNAL_ALPR, (newValue) => {
+    if (newValue !== undefined && newValue !== useExternalAlpr.value) {
+      toggleAlprMode(newValue);
+    }
+  });
 });
 
 onUnmounted(() => {
@@ -363,6 +375,12 @@ const handleImageUpload = (event) => {
 
 const connectToExternalAlpr = async () => {
   try {
+    // Get WebSocket URL from gate settings
+    const wsUrl = gateSettings.value?.WS_URL || 'ws://localhost:8765';
+    
+    // Update the WebSocket URL in alprStore
+    alprStore.updateWebSocketUrl(wsUrl);
+    
     await alprStore.connectWebSocket();
     
     // Wait for the connection to be established
@@ -405,7 +423,11 @@ const toggleAlprMode = async (newValue) => {
       disconnectFromExternalAlpr();
     }
 
+    // Update ALPR mode in store and save to settings
     alprStore.updateAlprMode(useExternalAlpr.value);
+    await settingsService.saveGateSettings({
+      USE_EXTERNAL_ALPR: useExternalAlpr.value
+    });
     
     Notify.create({
       type: 'positive',
@@ -468,6 +490,17 @@ watch(() => alprStore.isWsConnected, (newStatus) => {
     });
   }
 }, { immediate: true });
+
+// Watch for changes in gate settings
+watch(() => gateSettings.value, (newSettings) => {
+  if (newSettings) {
+    // Update ALPR mode from settings
+    if (newSettings.USE_EXTERNAL_ALPR !== undefined && 
+        newSettings.USE_EXTERNAL_ALPR !== useExternalAlpr.value) {
+      useExternalAlpr.value = newSettings.USE_EXTERNAL_ALPR;
+    }
+  }
+}, { deep: true });
 </script>
 
 <template>

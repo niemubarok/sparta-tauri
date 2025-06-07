@@ -43,7 +43,8 @@
           <div class="q-mb-md">
             <div class="text-subtitle1 q-mb-sm">ALPR Mode Settings</div>
             <div class="row q-col-gutter-md items-center">
-              <div class="col-md-6 col-xs-12">                <q-toggle
+              <div class="col-md-6 col-xs-12">        
+                <q-toggle
                   v-model="useExternalAlpr"
                   label="Use External ALPR Service"
                   left-label
@@ -323,7 +324,7 @@ import {
 import { useComponentStore } from "src/stores/component-store";
 
 import { useTransaksiStore } from "src/stores/transaksi-store";
-import { useSettingsService } from 'stores/settings-service'; // Ditambahkan
+import { useSettingsService } from 'stores/settings-service';
 import LoginDialog from "src/components/LoginDialog.vue";
 
 const cameras = ref([]);
@@ -333,8 +334,8 @@ const useExternalAlpr = ref(false); // Tambahkan toggle ALPR mode
 const componentStore = useComponentStore();
 // const settingsStore = useSettingsStore(); // Tidak digunakan lagi, digantikan settingsService
 const transaksiStore = useTransaksiStore();
-const settingsService = useSettingsService(); // Ditambahkan
-const { globalSettings, gateSettings, activeGateId } = toRefs(settingsService); // Only get reactive refs
+const settingsService = useSettingsService();
+const { gateSettings, activeGateId } = toRefs(settingsService);
 
 const $q = useQuasar();
 defineEmits([...useDialogPluginComponent.emits]);
@@ -394,8 +395,9 @@ const onSaveSettings = async () => {
   console.log('onSaveSettings started - saving all settings...');
   
   try {
-    // Kumpulkan semua pengaturan gerbang
-    const gateSettingsToSave = {
+    // Combine all settings into one object
+    const settingsToSave = {
+      // Gate-specific settings
       gateName: gateName.value,
       gateType: gateType.value,
       SERIAL_PORT: serialPort.value,
@@ -418,58 +420,18 @@ const onSaveSettings = async () => {
       SCANNER_CAM_USERNAME: scannerCameraUsername.value,
       SCANNER_CAM_PASSWORD: scannerCameraPassword.value,
       SCANNER_CAM_RTSP_PATH: scannerCameraRtspPath.value,
-      CAPTURE_INTERVAL: parseInt(captureInterval.value, 10) || 5000, // Ensure it's an integer
-    };
-    
-    console.log('Saving gate settings:', gateSettingsToSave);
-    await settingsService.saveGateSettings(gateSettingsToSave);
-    console.log('Gate settings saved successfully');
-    
-    // Kumpulkan semua pengaturan global termasuk WebSocket URL dan ALPR mode
-    const globalSettingsToSave = {
-      WS_URL: wsUrl.value || 'ws://localhost:8001/ws',
+      CAPTURE_INTERVAL: parseInt(captureInterval.value, 10) || 5000,
+      
+      // Former global settings now in gate settings
+      WS_URL: wsUrl.value || 'ws://localhost:8765',
       USE_EXTERNAL_ALPR: useExternalAlpr.value || false,
       darkMode: darkMode.value || false,
       LOCATION: selectedLocation.value,
-      // Pertahankan pengaturan global lainnya yang mungkin sudah ada
-      API_IP: globalSettings.value?.API_IP || 'http://localhost:3333',
-      ALPR_IP: globalSettings.value?.ALPR_IP || 'http://localhost:8000',
-      WS_IP: globalSettings.value?.WS_IP || 'ws://localhost:3333',
     };
     
-    console.log('Saving global settings:', globalSettingsToSave);
-    await settingsService.saveGlobalSettings(globalSettingsToSave);
-    console.log('Global settings saved successfully');
-      // Reload settings to ensure everything is synced
-    console.log('Reloading all settings after save...');
-    await settingsService.loadGlobalSettings();
-    await settingsService.loadGateSettings();
-    
-    // Resync local variables with the loaded settings
-    setTimeout(() => {
-      if (isSyncing) return;
-      const syncAfterSave = () => {
-        console.log('Syncing UI after successful save...');
-        
-        // Sync global settings
-        if (globalSettings.value) {
-          wsUrl.value = globalSettings.value.WS_URL || 'ws://localhost:8001/ws';
-          useExternalAlpr.value = globalSettings.value.USE_EXTERNAL_ALPR || false;
-          darkMode.value = globalSettings.value.darkMode || false;
-        }
-        
-        // Sync gate settings
-        if (gateSettings.value) {
-          gateName.value = gateSettings.value.gateName || '';
-          gateType.value = gateSettings.value.gateType || 'entry';
-          serialPort.value = gateSettings.value.SERIAL_PORT || '';
-        }
-        
-        console.log('UI synced with saved settings');
-      };
-      
-      syncAfterSave();
-    }, 100);
+    console.log('Saving consolidated settings:', settingsToSave);
+    await settingsService.saveGateSettings(settingsToSave);
+    console.log('Settings saved successfully');
     
     // Show success notification
     $q.notify({
@@ -478,10 +440,8 @@ const onSaveSettings = async () => {
       position: 'top'
     });
     
-    // Close dialog
+    // Close dialog and reload as needed
     dialogRef.value.hide();
-    
-    // Optional: Reload page to apply all settings
     setTimeout(() => {
       window.location.reload();
     }, 500);
@@ -659,155 +619,44 @@ onMounted(async () => {
     // Wait a bit to ensure reactive state is updated
   await new Promise(resolve => setTimeout(resolve, 100));
   
-  // Flag to prevent recursive updates
-  let isSyncing = false;
-  
-  // Sinkronisasi nilai lokal dengan settingsService saat komponen dimuat
-  // dan setiap kali ada perubahan di store
-  const syncSettings = () => {
-    if (isSyncing) {
-      console.log('syncSettings already running, skipping...');
-      return;
-    }
+  // Update form with current settings
+  const currentSettings = gateSettings.value;
+  if (currentSettings) {
+    gateName.value = currentSettings.gateName || '';
+    gateType.value = currentSettings.gateType || 'entry';
+    manlessMode.value = currentSettings.manlessMode || true;
+    printerName.value = currentSettings.printerName || null;
+    paperSize.value = currentSettings.paperSize || '58mm';
+    autoPrint.value = currentSettings.autoPrint || true;
+    serialPort.value = currentSettings.SERIAL_PORT || '';
+    captureInterval.value = currentSettings.CAPTURE_INTERVAL || 5000;
     
-    isSyncing = true;
-    console.log('syncSettings called');
-    console.log('Current globalSettings:', globalSettings.value);
-    console.log('Current gateSettings:', gateSettings.value);
+    // Camera settings
+    selectedPlateCam.value = currentSettings.PLATE_CAM_DEVICE_ID || null;
+    plateCameraIp.value = currentSettings.PLATE_CAM_IP || '';
+    plateCameraUsername.value = currentSettings.PLATE_CAM_USERNAME || '';
+    plateCameraPassword.value = currentSettings.PLATE_CAM_PASSWORD || '';
+    plateCameraRtspPath.value = currentSettings.PLATE_CAM_RTSP_PATH || '';
     
-    try {
-      // Global Settings
-      const currentGlobal = globalSettings.value;
-      if (currentGlobal) {
-        console.log('Syncing global settings - WS_URL:', currentGlobal.WS_URL, 'USE_EXTERNAL_ALPR:', currentGlobal.USE_EXTERNAL_ALPR);
-        darkMode.value = currentGlobal.darkMode || false;
-        wsUrl.value = currentGlobal.WS_URL || 'ws://localhost:8001/ws';
-        useExternalAlpr.value = currentGlobal.USE_EXTERNAL_ALPR || false;
-        selectedLocation.value = currentGlobal.LOCATION || null;
-        console.log('After sync - wsUrl.value:', wsUrl.value, 'useExternalAlpr.value:', useExternalAlpr.value);
-      } else {
-        console.log('No global settings found in syncSettings');
-      }
-
-    // Gate Settings
-    const currentGate = gateSettings.value;
-    if (currentGate && activeGateId.value) {
-      gateName.value = currentGate.gateName || '';
-      gateType.value = currentGate.gateType || 'entry';
-      manlessMode.value = currentGate.manlessMode === undefined ? true : currentGate.manlessMode;
-      gateName.value = currentGate.gateName || '';
-      gateType.value = currentGate.gateType || 'entry';
-      serialPort.value = currentGate.SERIAL_PORT || ''; // Inisialisasi serialPort
-      manlessMode.value = currentGate.manlessMode === undefined ? true : currentGate.manlessMode;
-      printerName.value = currentGate.printerName || null;
-      paperSize.value = currentGate.paperSize || '58mm';
-      if (typeof autoPrint === 'object' && autoPrint !== null && typeof autoPrint.value !== 'undefined') {
-        autoPrint.value = currentGate.autoPrint === undefined ? true : !!currentGate.autoPrint; // Pastikan nilai adalah boolean
-      } else {
-        console.error(`autoPrint is not a valid ref in syncSettings. Type: ${typeof autoPrint}, Value:`, autoPrint, "currentGate.autoPrint:", currentGate.autoPrint);
-        // Tidak menetapkan autoPrint.value jika autoPrint bukan ref yang valid untuk menghindari crash.
-        // Akar masalah mengapa autoPrint bukan ref perlu diinvestigasi.
-      }
-      // enableExitGateMode.value sudah dihapus, gateType yang akan menentukan mode gerbang
-
-      // q-select dengan emit-value akan menyimpan deviceId (string) atau null di v-model
-      selectedPlateCam.value = currentGate.PLATE_CAM_DEVICE_ID || null;
-      plateCameraIp.value = currentGate.PLATE_CAM_IP || '';
-      plateCameraUsername.value = currentGate.PLATE_CAM_USERNAME || '';
-      plateCameraPassword.value = currentGate.PLATE_CAM_PASSWORD || '';
-
-      selectedDriverCam.value = currentGate.DRIVER_CAM_DEVICE_ID || null;
-      driverCameraIp.value = currentGate.DRIVER_CAM_IP || '';
-      driverCameraUsername.value = currentGate.DRIVER_CAM_USERNAME || '';
-      driverCameraPassword.value = currentGate.DRIVER_CAM_PASSWORD || '';
-
-      selectedScannerCam.value = currentGate.SCANNER_CAM_DEVICE_ID || null;
-      scannerCameraIp.value = currentGate.SCANNER_CAM_IP || '';
-      scannerCameraUsername.value = currentGate.SCANNER_CAM_USERNAME || '';
-      scannerCameraPassword.value = currentGate.SCANNER_CAM_PASSWORD || '';
-      plateCameraRtspPath.value = currentGate.PLATE_CAM_RTSP_PATH || '';
-      driverCameraRtspPath.value = currentGate.DRIVER_CAM_RTSP_PATH || '';      scannerCameraRtspPath.value = currentGate.SCANNER_CAM_RTSP_PATH || '';
-      // enableExitGateMode.value sudah dihapus
-    }
-    } finally {
-      isSyncing = false;
-    }
-  };
-  // Panggil syncSettings setelah settings diinisialisasi
-  console.log('Calling initial syncSettings...');
-  syncSettings();
-  // Watcher untuk memperbarui nilai lokal jika data di settingsService berubah
-  // atau jika daftar kamera berubah (misalnya setelah izin diberikan dan getCameras dipanggil)
-  watch([globalSettings, gateSettings, cameras], () => {
-    if (!isSyncing) {
-      console.log('Settings watcher triggered, calling syncSettings...');
-      syncSettings();
-    }
-  }, { deep: true, flush: 'post' });  // Watcher untuk sinkronisasi UI dari settings store saja
-  // Tidak ada penyimpanan otomatis, semua perubahan tersimpan di onSaveSettings
-
-  watch(selectedPlateCam, (newDeviceId) => {
-    if (newDeviceId && plateCameraIp.value !== '') {
-      plateCameraIp.value = ''; 
-    }
-  });
-
-  watch(selectedDriverCam, (newDeviceId) => {
-    if (newDeviceId && driverCameraIp.value !== '') {
-      driverCameraIp.value = '';
-    }
-  });
-
-  watch(selectedScannerCam, (newDeviceId) => {
-    if (newDeviceId && scannerCameraIp.value !== '') {
-      scannerCameraIp.value = '';
-    }
-  });
-
-  // Watcher untuk URL kamera yang mengosongkan pilihan USB jika URL diisi
-  watch(plateCameraIp, (newUrl) => {
-    if (newUrl && selectedPlateCam.value !== null) {
-      selectedPlateCam.value = null;
-    }
-  });
-
-  watch(driverCameraIp, (newUrl) => {
-    if (newUrl && selectedDriverCam.value !== null) {
-      selectedDriverCam.value = null;
-    }
-  });
-
-  watch(scannerCameraIp, (newUrl) => {
-    if (newUrl && selectedScannerCam.value !== null) {
-      selectedScannerCam.value = null;
-    }
-  });
-
+    selectedDriverCam.value = currentSettings.DRIVER_CAM_DEVICE_ID || null;
+    driverCameraIp.value = currentSettings.DRIVER_CAM_IP || '';
+    driverCameraUsername.value = currentSettings.DRIVER_CAM_USERNAME || '';
+    driverCameraPassword.value = currentSettings.DRIVER_CAM_PASSWORD || '';
+    driverCameraRtspPath.value = currentSettings.DRIVER_CAM_RTSP_PATH || '';
+    
+    selectedScannerCam.value = currentSettings.SCANNER_CAM_DEVICE_ID || null;
+    scannerCameraIp.value = currentSettings.SCANNER_CAM_IP || '';
+    scannerCameraUsername.value = currentSettings.SCANNER_CAM_USERNAME || '';
+    scannerCameraPassword.value = currentSettings.SCANNER_CAM_PASSWORD || '';
+    scannerCameraRtspPath.value = currentSettings.SCANNER_CAM_RTSP_PATH || '';
+    
+    // Former global settings
+    wsUrl.value = currentSettings.WS_URL || 'ws://localhost:8765';
+    useExternalAlpr.value = currentSettings.USE_EXTERNAL_ALPR || false;
+    darkMode.value = currentSettings.darkMode || false;
+    selectedLocation.value = currentSettings.LOCATION || null;
+  }
 });
-
-const onDialogHide = () => {
-  // if (transaksiStore.lokasiPos === "-" || transaksiStore.lokasiPos === null) {
-  //   dialogRef.value.show();
-  //   $q.notify({
-  //     type: "negative",
-  //     message: "Silahkan pilih lokasi terlebih dahulu",
-  //     position: "center",
-  //   });
-  // } else {
-  //   window.removeEventListener("keydown", handleKeyDownOnSettingDialog);
-  // }
-
-  // else if (transaksiStore.API_IP === "-") {
-  //   dialogRef.value.show();
-  //   $q.notify({
-  //     type: "negative",
-  //     message: "Silahkan Isi URL API terlebih dahulu",
-  //     position: "center",
-  //   });
-  // }
-};
-
-// const isSubOpen = ref(false);
 </script>
 
 <style scoped>

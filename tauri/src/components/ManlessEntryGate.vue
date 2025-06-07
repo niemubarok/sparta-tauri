@@ -20,6 +20,7 @@ import Camera from './Camera.vue';
 import Clock from './Clock.vue';
 import SettingsDialog from './SettingsDialog.vue';
 import ConnectionIndicator from './ConnectionIndicator.vue';
+import { useRouter } from 'vue-router';
 
 // import PlatNomor from './PlatNomor.vue'
 
@@ -77,29 +78,28 @@ const parseRtspUrl = (url, settings, typePrefix) => { // typePrefix is 'PLATE' o
   return config;
 };
 
-
+const router = useRouter();
 const gateStore = useGateStore();
-const isDark = computed(() => themeStore.isDark);
+const isDark = computed(() => gateSettings.value?.darkMode || themeStore.isDark);
 
 import { useSettingsService } from 'src/stores/settings-service'; // Tambahkan import
 
 const settingsService = useSettingsService();
 const gateSettings = computed(() => settingsService.gateSettings);
-const globalSettings = computed(() => settingsService.globalSettings);
 
 // ALPR Mode settings
-const useExternalAlpr = computed(() => globalSettings.value?.USE_EXTERNAL_ALPR || false);
+const useExternalAlpr = computed(() => gateSettings.value?.USE_EXTERNAL_ALPR || false);
 
 const plateCameraType = computed(() => {
   if (gateSettings.value?.PLATE_CAM_DEVICE_ID) return 'usb';
   if (gateSettings.value?.PLATE_CAM_IP) return 'cctv';
-  return 'cctv'; // Default atau bisa juga null/undefined sesuai kebutuhan
+  return null; // Return null when no camera is configured
 });
 
 const driverCameraType = computed(() => {
   if (gateSettings.value?.DRIVER_CAM_DEVICE_ID) return 'usb';
   if (gateSettings.value?.DRIVER_CAM_IP) return 'cctv';
-  return 'cctv'; // Default atau bisa juga null/undefined sesuai kebutuhan
+  return null; // Return null when no camera is configured
 });
 
 // Camera URLs dan Device IDs diambil dari gateSettings
@@ -413,6 +413,7 @@ const onPlateCaptured = async () => {
     if (i === 4 && gateStatus.value === 'CLOSED') {
       addActivityLog(`Tidak ada member valid terdeteksi setelah ${i + 1} percobaan`, true);
 
+      // if(!manualCaptureMode.value){
       $q.dialog({
         component: NotMemberCard,
         // componentProps: { /* pass any props to NotMemberCard here */ }
@@ -431,6 +432,7 @@ const onPlateCaptured = async () => {
             'NotMemberCard dialog dismissed (closed by timeout or other means)'
           );
         });
+      // }
     }
   }
 
@@ -764,6 +766,26 @@ onBeforeUnmount(() => {
   if (plateCameraRef.value) {
     plateCameraRef.value.stopInterval();
   }
+  
+  // Clear all refs and states
+  resetEntryGateState();
+  
+  // Clear activity logs
+  activityLogs.value = [];
+  
+  // Reset processing states
+  isProcessing.value = false;
+  isCapturing.value = false;
+  manualCaptureMode.value = false;
+  uploading.value = false;
+  showUploadDialog.value = false;
+  
+  // Clear file refs
+  fileModel.value = null;
+  uploadedImage.value = null;
+  
+  // Reset gate status
+  gateStatus.value = 'CLOSED';
 });
 
 onUnmounted(() => {
@@ -771,7 +793,11 @@ onUnmounted(() => {
   if (useExternalAlpr.value) {
     alprStore.disconnect();
   }
+  
+  // Additional cleanup
+  console.log('ManlessEntryGate component unmounted');
 });
+
 
 // Clean up on component destroy
 // onUnmounted(async () => {
@@ -832,16 +858,16 @@ watch(useExternalAlpr, async (newValue, oldValue) => {
 }, { immediate: false });
 
 // Watch WebSocket connection status for external ALPR
-watch(() => alprStore.isWsConnected, (newStatus) => {
-  if (useExternalAlpr.value && !newStatus) {
-    // Connection lost while in external mode
-    $q.notify({
-      type: 'warning',
-      message: 'External ALPR connection lost. Check WebSocket service.',
-      position: 'top'
-    });
-  }
-}, { immediate: true });
+// watch(() => alprStore.isWsConnected, (newStatus) => {
+//   if (useExternalAlpr.value && !newStatus) {
+//     // Connection lost while in external mode
+//     $q.notify({
+//       type: 'warning',
+//       message: 'External ALPR connection lost. Check WebSocket service.',
+//       position: 'top'
+//     });
+//   }
+// }, { immediate: true });
 
 // Manual capture functions
 const toggleManualCaptureMode = () => {
@@ -901,37 +927,37 @@ const processUploadedImage = async () => {
       // Close upload dialog after successful detection
       showUploadDialog.value = false;
       
-      // Check membership
-      const isMember = await checkMembership(bestMatch.plate_number);
-      console.log("🚀 ~ processUploadedImage ~ isMember:", isMember);
+      // // Check membership
+      // const isMember = await checkMembership(bestMatch.plate_number);
+      // console.log("🚀 ~ processUploadedImage ~ isMember:", isMember);
 
-      if (isMember) {
-        addActivityLog(`Plate ${bestMatch.plate_number} is a valid member`);
-        gateStatus.value = 'OPEN';
+      // if (isMember) {
+      //   addActivityLog(`Plate ${bestMatch.plate_number} is a valid member`);
+      //   gateStatus.value = 'OPEN';
         
-        // Auto close gate after 5 seconds
-        setTimeout(() => {
-          gateStatus.value = 'CLOSED';
-          addActivityLog('Pintu ditutup otomatis');
-        }, 5000);
-      } else {
-        addActivityLog(`Plate ${bestMatch.plate_number} is not a member`, true);
-        // Show not member dialog
-        $q.dialog({
-          component: NotMemberCard,
-          componentProps: {
-            plateNumber: bestMatch.plate_number,
-            plateImage: uploadedImage.value,
-            onPayment: () => {
-              gateStatus.value = 'OPEN';
-              setTimeout(() => {
-                gateStatus.value = 'CLOSED';
-                addActivityLog('Pintu ditutup setelah pembayaran');
-              }, 5000);
-            }
-          }
-        });
-      }
+      //   // Auto close gate after 5 seconds
+      //   setTimeout(() => {
+      //     gateStatus.value = 'CLOSED';
+      //     addActivityLog('Pintu ditutup otomatis');
+      //   }, 5000);
+      // } else {
+      //   addActivityLog(`Plate ${bestMatch.plate_number} is not a member`, true);
+      //   // Show not member dialog
+      //   $q.dialog({
+      //     component: NotMemberCard,
+      //     componentProps: {
+      //       plateNumber: bestMatch.plate_number,
+      //       plateImage: uploadedImage.value,
+      //       onPayment: () => {
+      //         gateStatus.value = 'OPEN';
+      //         setTimeout(() => {
+      //           gateStatus.value = 'CLOSED';
+      //           addActivityLog('Pintu ditutup setelah pembayaran');
+      //         }, 5000);
+      //       }
+      //     }
+      //   });
+      // }
     } else {
       plateResult.value = null;
       addActivityLog('No license plate detected in uploaded image', true);
@@ -970,6 +996,39 @@ const clearUploadedImage = () => {
   fileModel.value = null;
 };
 
+// Navigate to home and cleanup
+const goHome = async () => {
+  try {
+    console.log('Starting navigation to home...');
+    
+    // Reset all states
+    resetEntryGateState();
+    
+    // Clear all storages
+    ls.remove('gateMode');
+    ls.remove('manlessMode');
+    
+    // Reset gate store
+    gateStore.$reset(); // If using Pinia store reset
+    
+    // Force component destruction
+    await nextTick();
+    
+    // Navigate with force
+    await router.replace('/');
+    
+    // Force page reload as last resort
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
+    
+  } catch (error) {
+    console.error('Error navigating to home:', error);
+    // Force reload on error
+    window.location.href = '/';
+  }
+};
+
 // ...existing code...
 </script>
 
@@ -996,14 +1055,12 @@ const clearUploadedImage = () => {
                 class="text-white"
                 @update:model-value="toggleDarkMode"
               />
-              <ConnectionIndicator class="indicator-item" />
-
-              <q-btn
+              <ConnectionIndicator class="indicator-item" />              <q-btn
                 flat
                 dense
                 color="primary"
                 icon="home"
-                @click="[$router.push({ path: '/' }), ls.remove('gateMode')]"
+                @click="goHome"
               />
               <!-- <ConnectionIndicator :is-connected="isALPRConnected" label="ALPR" class="indicator-item" icon="videocam"
                 iconOff="videocam_off" /> -->
@@ -1035,21 +1092,9 @@ const clearUploadedImage = () => {
               :icon="manualCaptureMode ? 'videocam' : 'upload'"
               @click="toggleManualCaptureMode"
             />
+           
             <q-btn
-              v-if="!manualCaptureMode"
-              dense
-              push
-              :loading="isCapturing"
-              :disable="isCapturing"
-              label="Ambil Gambar"
-              color="white"
-              text-color="primary"
-              class="text-bold"
-              icon="camera"
-              @click="onPlateCaptured"
-            />
-            <q-btn
-              v-else
+              v-if="manualCaptureMode"
               dense
               push
               label="Upload Gambar"
@@ -1139,13 +1184,12 @@ const clearUploadedImage = () => {
 
       <!-- Right side - Driver Camera -->
       <div class="col-12 col-md-6">
-        <q-card flat class="camera-card bg-transparent">
-            <Camera
+        <q-card flat class="camera-card bg-transparent">            <Camera
               ref="driverCameraRef"
               :cameraUrl="driverCameraUrl"
-              :username="driverCameraCredentials.username"
-              :password="driverCameraCredentials.password"
-              :ipAddress="driverCameraCredentials.ip_address"
+              :username="gateSettings.DRIVER_CAM_USERNAME"
+              :password="gateSettings.DRIVER_CAM_PASSWORD"
+              :ipAddress="gateSettings.DRIVER_CAM_IP"
               :fileName="'driver'"
               :isInterval="false"
               cameraLocation="driver"
