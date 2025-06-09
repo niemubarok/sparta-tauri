@@ -1,0 +1,7 @@
+[2025-06-09T14:23:50.087633600+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T14:25:03.815887400+00:00] [INFO] [PROCESS_START] Starting image processing for camera: manual_upload
+
+[2025-06-09T14:25:03.818718500+00:00] [PROCESS_ERROR] Processing error for camera 'manual_upload': Fast ALPR engine not available
+---
+

@@ -9,5 +9,5 @@ fn main() {
     // Intended to replace with (adding start_rtsp_live_stream, stop_rtsp_live_stream):
     //         .invoke_handler(tauri::generate_handler![capture_cctv_image, start_rtsp_live_stream, stop_rtsp_live_stream])
     // This automated modification could not be applied as the `tauri::Builder` pattern was not directly visible.
-    tauri_quasar_lib::run()
+    sparta_lib::run()
 }
