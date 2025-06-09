@@ -22,6 +22,10 @@ src-tauri/scripts/ffmpeg/**/*
 src-tauri/scripts/vcpkg/**/*
 *.exe
 
+# Python embed resources
+resources/python-embed/**/*
+src-tauri/resources/python-embed/**/*
+
 # Build directories
 dist/
 node_modules/

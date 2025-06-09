@@ -32,7 +32,7 @@ const props = defineProps({
       required: true,
     },
     badge: {
-      type: String,
+      type: [String, Number],
       default: "ALPR",
     },
 });

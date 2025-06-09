@@ -7,27 +7,48 @@
       <div class="col-6 q-gutter-md q-mt-sm">
         <!-- Camera Section -->
         <div class="column">
-          <!-- Left side - License Plate Camera -->
-          <q-card
+          <!-- Left side - License Plate Camera -->          <q-card
             flat
             class="camera-card bg-transparent"
             style="transform: scale(0.95); margin-top: -2vh"
           >
-            <q-btn
-              dense
-              push
-              :loading="isCapturing"
-              :disable="isCapturing"
-              label="Manual Capture"
-              color="white"
-              text-color="primary"
-              class="text-bold absolute-bottom-left z-top q-ma-lg"
-              @click="onPlateCaptured"
-              icon="camera"
-              v-if="!manualCaptureMode"
-            />
-            
             <div class="absolute-bottom-left z-top q-ma-lg">
+              <q-btn
+                dense
+                push
+                :loading="isCapturing"
+                :disable="isCapturing"
+                label="Manual Capture"
+                color="white"
+                text-color="primary"
+                class="text-bold q-mr-sm"
+                @click="onPlateCaptured"
+                icon="camera"
+                v-if="!manualCaptureMode"
+              />
+              
+              <q-btn
+                dense
+                push
+                :color="manualCaptureMode ? 'primary' : 'white'"
+                :text-color="manualCaptureMode ? 'white' : 'primary'"
+                :label="manualCaptureMode ? 'Mode Kamera' : 'Mode Upload'"
+                class="text-bold q-mr-sm"
+                :icon="manualCaptureMode ? 'videocam' : 'upload'"
+                @click="toggleManualCaptureMode"
+              />
+             
+              <q-btn
+                v-if="manualCaptureMode"
+                dense
+                push
+                label="Upload Gambar"
+                color="white"
+                text-color="primary"
+                class="text-bold"
+                icon="image"
+                @click="openUploadDialog"
+              />
               <q-btn
                 dense
                 push
@@ -49,7 +70,13 @@
                 icon="image"
                 @click="openUploadDialog"
               />
-            </div>            <Camera
+            </div>            <div v-if="manualCaptureMode" class="camera-placeholder flex flex-center column q-pa-lg text-center" style="height: 350px; background: rgba(0,0,0,0.1); border-radius: 10px;">
+              <q-icon name="upload_file" size="48px" color="primary" />
+              <div class="text-h6 q-mt-md">Mode Upload Gambar</div>
+              <div class="text-grey-7 q-mt-sm">Klik pada tombol "Upload Gambar" untuk memilih file</div>
+            </div>
+            
+            <Camera
               v-show="!base64String && !manualCaptureMode"
               ref="plateCameraRef"
               :cameraUrl="plateCameraUrl"
@@ -89,7 +116,7 @@
             >
               <q-tooltip>Capture CCTV Image (Plat)</q-tooltip>
             </q-btn>            <Camera
-              v-show="base64String"
+              v-show="base64String && !manualCaptureMode"
               ref="plateCameraRef"
               :manual-base64="base64String"
               :username="gateSettings.PLATE_CAM_USERNAME"
@@ -108,7 +135,7 @@
               style="margin-top: -2dvh"
             />
 
-            <div v-if="plateResult?.plate_number && capturedPlate">
+            <div v-if="plateResult?.plate_number && (capturedPlate || (manualCaptureMode && plateResult))">
               <q-card
                 class="plate-detection-overlay bg-dark q-pa-xs"
                 :class="{ 'bg-white ': isDark }"
@@ -763,6 +790,12 @@ const detectPlate = async () => {
   try {
     isCapturing.value = true;
     error.value = null;
+
+    // Skip if in manual capture mode as it will use processUploadedImage instead
+    if (manualCaptureMode.value) {
+      isCapturing.value = false;
+      return;
+    }
 
     // Get image from camera
     if (!plateCameraRef.value) {

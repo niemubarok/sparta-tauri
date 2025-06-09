@@ -13,6 +13,14 @@
         class="q-px-md q-pt-sm q-pb-md glass relative"
         style="width: 90vw; height: fit-content"
       >
+        <!-- Loading overlay -->
+        <div v-if="isLoading" class="absolute-full flex flex-center bg-white q-pa-md" style="z-index: 1000; background-color: rgba(255, 255, 255, 0.8);">
+          <div class="text-center">
+            <q-spinner-hourglass size="50px" color="primary" />
+            <div class="q-mt-md text-h6">Loading Settings...</div>
+          </div>
+        </div>
+
         <div>
           <q-avatar
             size="40px"
@@ -39,7 +47,8 @@
 
         <!-- General Settings Section -->
         <div class="text-h6 q-mb-md">General Settings</div>
-        <div class="q-pa-md">          <!-- ALPR Mode Settings -->
+        <div class="q-pa-md">          
+          <!-- ALPR Mode Settings -->
           <div class="q-mb-md">
             <div class="text-subtitle1 q-mb-sm">ALPR Mode Settings</div>
             <div class="row q-col-gutter-md items-center">
@@ -48,6 +57,7 @@
                   v-model="useExternalAlpr"
                   label="Use External ALPR Service"
                   left-label
+                  :disable="isLoading"
                 />
                 <div class="text-caption text-grey-6 q-mt-xs">
                   {{ useExternalAlpr ? 'Using external WebSocket ALPR service' : 'Using internal Tauri ALPR service' }}
@@ -60,10 +70,12 @@
           <div class="q-mb-md" v-show="useExternalAlpr">
             <div class="text-subtitle1 q-mb-sm">ALPR WebSocket Settings</div>
             <div class="row q-col-gutter-md">
-              <div class="col">                <q-input
+              <div class="col">                
+                <q-input
                   v-model="wsUrl"
                   label="WebSocket URL"
                   placeholder="ws://localhost:8001/ws"
+                  :disable="isLoading"
                 />
               </div>
             </div>
@@ -77,6 +89,7 @@
                 <q-input
                   v-model="gateName"
                   label="Gate Name"
+                  :disable="isLoading"
                 />
               </div>
               <div class="col-md-6 col-xs-12">
@@ -84,6 +97,7 @@
                   v-model="gateType"
                   :options="['entry', 'exit']"
                   label="Gate Type"
+                  :disable="isLoading"
                 />
               </div>
               <div class="col-md-12 col-xs-12">
@@ -91,6 +105,7 @@
                   v-model="serialPort"
                   label="Serial Port (misal: COM3 atau /dev/ttyUSB0)"
                   :rules="[val => !!val || 'Serial port tidak boleh kosong']"
+                  :disable="isLoading"
                 />
               </div>
             </div>
@@ -104,6 +119,7 @@
                 <q-input
                   v-model="printerName"
                   label="Printer Name (leave blank if none)"
+                  :disable="isLoading"
                 />
               </div>
               <div class="col-md-4 col-xs-12">
@@ -111,6 +127,7 @@
                   v-model="paperSize"
                   :options="['58mm', '80mm']"
                   label="Paper Size"
+                  :disable="isLoading"
                 />
               </div>
               <div class="col-md-4 col-xs-12">
@@ -118,6 +135,7 @@
                   v-model="autoPrint"
                   label="Auto Print Ticket"
                   color="primary"
+                  :disable="isLoading"
                 />
               </div>
             </div>
@@ -139,6 +157,7 @@
                       type="number"
                       label="Interval (e.g., 5000 for 5 seconds)"
                       filled
+                      :disable="isLoading"
                     />
                   </div>
                 </div>
@@ -149,7 +168,6 @@
                 <div class="text-caption q-mb-sm">License Plate Camera</div>
                 <div class="row q-col-gutter-md">
                   <div class="col">
-                    <!-- :disable="plateCameraUrl" -->
                     <q-select
                       v-model="selectedPlateCam"
                       :options="cameras"
@@ -160,6 +178,7 @@
                       emit-value
                       map-options
                       @update:model-value="updatePlateCamera"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
@@ -167,14 +186,15 @@
                       v-model="plateCameraIp" 
                       label="CCTV IP Address"
                       @update:model-value="setPlateCameraIP"
+                      :disable="isLoading"
                       />
                     </div>
-                    <!-- :disable="selectedPlateCam" -->
                   <div class="col">
                     <q-input
                       v-model="plateCameraUsername"
                       label="CCTV Username"
                       @update:model-value="updatePlateCameraUsername"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
@@ -183,12 +203,14 @@
                       label="CCTV Password"
                       type="password"
                       @update:model-value="updatePlateCameraPassword"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
                     <q-input
                       v-model="plateCameraRtspPath"
                       label="CCTV RTSP Path"
+                      :disable="isLoading"
                     />
                   </div>
                 </div>
@@ -209,6 +231,7 @@
                       emit-value
                       map-options
                       @update:model-value="updateDriverCamera"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
@@ -216,6 +239,7 @@
                       v-model="driverCameraIp"
                       label="CCTV IP Address"
                       @update:model-value="setDriverCameraIP"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
@@ -223,6 +247,7 @@
                       v-model="driverCameraUsername"
                       label="CCTV Username"
                       @update:model-value="updateDriverCameraUsername"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
@@ -231,12 +256,14 @@
                       label="CCTV Password"
                       type="password"
                       @update:model-value="updateDriverCameraPassword"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
                     <q-input
                       v-model="driverCameraRtspPath"
                       label="CCTV RTSP Path"
+                      :disable="isLoading"
                     />
                   </div>
                 </div>
@@ -257,6 +284,7 @@
                       emit-value
                       map-options
                       @update:model-value="updateScannerCamera"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
@@ -264,6 +292,7 @@
                       v-model="scannerCameraIp"
                       label="CCTV URL"
                       @update:model-value="updateScannerCameraUrl"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
@@ -271,6 +300,7 @@
                       v-model="scannerCameraUsername"
                       label="CCTV Username"
                       @update:model-value="updateScannerCameraUsername"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
@@ -279,6 +309,7 @@
                       label="CCTV Password"
                       type="password"
                       @update:model-value="updateScannerCameraPassword"
+                      :disable="isLoading"
                     />
                   </div>
                   <div class="col">
@@ -286,6 +317,7 @@
                       v-model="scannerCameraRtspPath"
                       label="CCTV RTSP Path"
                       placeholder="/Streaming/Channels/101"
+                      :disable="isLoading"
                     />
                   </div>
                 </div>
@@ -303,8 +335,16 @@
             style="padding: 2rem 1rem"
             class="q-mt-lg q-pa-md text-h6 rounded-corner"
           >
-            <q-btn @click="onSaveSettings" push icon="keyboard_return" color="black" class="q-ma-md"
-          /></q-chip>
+            <q-btn 
+              @click="onSaveSettings" 
+              push 
+              icon="keyboard_return" 
+              color="black" 
+              class="q-ma-md"
+              :disable="isLoading"
+              :loading="isSaving"
+            />
+          </q-chip>
         </q-card-actions>
       </q-card>
     </div>
@@ -341,6 +381,9 @@ const $q = useQuasar();
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { dialogRef } = useDialogPluginComponent();
+
+const isLoading = ref(false)
+const isSaving = ref(false)
 
 // Pengaturan gerbang sekarang diambil dari gateSettings dan globalSettings
 const gateName = ref('');
@@ -393,6 +436,8 @@ const scannerCameraType = computed(() => {
 
 const onSaveSettings = async () => {
   console.log('onSaveSettings started - saving all settings...');
+  
+  isSaving.value = true;
   
   try {
     // Combine all settings into one object
@@ -453,6 +498,8 @@ const onSaveSettings = async () => {
       message: 'Failed to save settings. Please try again.',
       position: 'top'
     });
+  } finally {
+    isSaving.value = false;
   }
 };
 
@@ -607,54 +654,66 @@ const updateLocation = (val) => {
 onMounted(async () => {
   console.log('SettingsDialog onMounted started');
   
-  // Panggil getCameras jika manlessMode aktif saat komponen dimuat
-  // Pastikan getCameras juga sudah diupdate untuk tidak bergantung pada settingsStore lama
-  
-  await getCameras(); 
-  
-  // Initialize settings first
-  console.log('Initializing settings...');
-  await settingsService.initializeSettings();
-  console.log('Settings initialized');
+  try {
+    isLoading.value = true;
+    
+    // Panggil getCameras jika manlessMode aktif saat komponen dimuat
+    await getCameras(); 
+    
+    // Initialize settings first
+    console.log('Initializing settings...');
+    await settingsService.initializeSettings();
+    console.log('Settings initialized');
+    
     // Wait a bit to ensure reactive state is updated
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
-  // Update form with current settings
-  const currentSettings = gateSettings.value;
-  if (currentSettings) {
-    gateName.value = currentSettings.gateName || '';
-    gateType.value = currentSettings.gateType || 'entry';
-    manlessMode.value = currentSettings.manlessMode || true;
-    printerName.value = currentSettings.printerName || null;
-    paperSize.value = currentSettings.paperSize || '58mm';
-    autoPrint.value = currentSettings.autoPrint || true;
-    serialPort.value = currentSettings.SERIAL_PORT || '';
-    captureInterval.value = currentSettings.CAPTURE_INTERVAL || 5000;
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Camera settings
-    selectedPlateCam.value = currentSettings.PLATE_CAM_DEVICE_ID || null;
-    plateCameraIp.value = currentSettings.PLATE_CAM_IP || '';
-    plateCameraUsername.value = currentSettings.PLATE_CAM_USERNAME || '';
-    plateCameraPassword.value = currentSettings.PLATE_CAM_PASSWORD || '';
-    plateCameraRtspPath.value = currentSettings.PLATE_CAM_RTSP_PATH || '';
-    
-    selectedDriverCam.value = currentSettings.DRIVER_CAM_DEVICE_ID || null;
-    driverCameraIp.value = currentSettings.DRIVER_CAM_IP || '';
-    driverCameraUsername.value = currentSettings.DRIVER_CAM_USERNAME || '';
-    driverCameraPassword.value = currentSettings.DRIVER_CAM_PASSWORD || '';
-    driverCameraRtspPath.value = currentSettings.DRIVER_CAM_RTSP_PATH || '';
-    
-    selectedScannerCam.value = currentSettings.SCANNER_CAM_DEVICE_ID || null;
-    scannerCameraIp.value = currentSettings.SCANNER_CAM_IP || '';
-    scannerCameraUsername.value = currentSettings.SCANNER_CAM_USERNAME || '';
-    scannerCameraPassword.value = currentSettings.SCANNER_CAM_PASSWORD || '';
-    scannerCameraRtspPath.value = currentSettings.SCANNER_CAM_RTSP_PATH || '';
-    
-    // Former global settings
-    wsUrl.value = currentSettings.WS_URL || 'ws://localhost:8765';
-    useExternalAlpr.value = currentSettings.USE_EXTERNAL_ALPR || false;
-    darkMode.value = currentSettings.darkMode || false;
-    selectedLocation.value = currentSettings.LOCATION || null;
+    // Update form with current settings
+    const currentSettings = gateSettings.value;
+    if (currentSettings) {
+      gateName.value = currentSettings.gateName || '';
+      gateType.value = currentSettings.gateType || 'entry';
+      manlessMode.value = currentSettings.manlessMode || true;
+      printerName.value = currentSettings.printerName || null;
+      paperSize.value = currentSettings.paperSize || '58mm';
+      autoPrint.value = currentSettings.autoPrint || true;
+      serialPort.value = currentSettings.SERIAL_PORT || '';
+      captureInterval.value = currentSettings.CAPTURE_INTERVAL || 5000;
+      
+      // Camera settings
+      selectedPlateCam.value = currentSettings.PLATE_CAM_DEVICE_ID || null;
+      plateCameraIp.value = currentSettings.PLATE_CAM_IP || '';
+      plateCameraUsername.value = currentSettings.PLATE_CAM_USERNAME || '';
+      plateCameraPassword.value = currentSettings.PLATE_CAM_PASSWORD || '';
+      plateCameraRtspPath.value = currentSettings.PLATE_CAM_RTSP_PATH || '';
+      
+      selectedDriverCam.value = currentSettings.DRIVER_CAM_DEVICE_ID || null;
+      driverCameraIp.value = currentSettings.DRIVER_CAM_IP || '';
+      driverCameraUsername.value = currentSettings.DRIVER_CAM_USERNAME || '';
+      driverCameraPassword.value = currentSettings.DRIVER_CAM_PASSWORD || '';
+      driverCameraRtspPath.value = currentSettings.DRIVER_CAM_RTSP_PATH || '';
+      
+      selectedScannerCam.value = currentSettings.SCANNER_CAM_DEVICE_ID || null;
+      scannerCameraIp.value = currentSettings.SCANNER_CAM_IP || '';
+      scannerCameraUsername.value = currentSettings.SCANNER_CAM_USERNAME || '';
+      scannerCameraPassword.value = currentSettings.SCANNER_CAM_PASSWORD || '';
+      scannerCameraRtspPath.value = currentSettings.SCANNER_CAM_RTSP_PATH || '';
+      
+      // Former global settings
+      wsUrl.value = currentSettings.WS_URL || 'ws://localhost:8765';
+      useExternalAlpr.value = currentSettings.USE_EXTERNAL_ALPR || false;
+      darkMode.value = currentSettings.darkMode || false;
+      selectedLocation.value = currentSettings.LOCATION || null;
+    }
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to load settings. Please try again.',
+      position: 'top'
+    });
+  } finally {
+    isLoading.value = false;
   }
 });
 </script>

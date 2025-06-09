@@ -1,0 +1,16 @@
+[2025-06-09T09:54:47.985754500+00:00] [INFO] [PYTHON_INIT] Python directory exists at: C:\Users\WDAGUtilityAccount\Desktop\release\resources\python-embed
+
+[2025-06-09T09:54:47.985950600+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: C:\Users\WDAGUtilityAccount\Desktop\release\resources\python-embed
+
+[2025-06-09T09:54:47.986085500+00:00] [INFO] [PYTHON_INIT] Python DLL found: C:\Users\WDAGUtilityAccount\Desktop\release\resources\python-embed\python310.dll
+
+[2025-06-09T09:54:47.986343900+00:00] [INFO] [PYTHON_INIT] fast_alpr package found: C:\Users\WDAGUtilityAccount\Desktop\release\resources\python-embed\Lib\site-packages\fast_alpr
+
+[2025-06-09T09:55:12.149632100+00:00] [INFO] [PYTHON_INIT] Python directory exists at: C:\Users\WDAGUtilityAccount\Desktop\release\resources\python-embed
+
+[2025-06-09T09:55:12.150312200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: C:\Users\WDAGUtilityAccount\Desktop\release\resources\python-embed
+
+[2025-06-09T09:55:12.150506100+00:00] [INFO] [PYTHON_INIT] Python DLL found: C:\Users\WDAGUtilityAccount\Desktop\release\resources\python-embed\python310.dll
+
+[2025-06-09T09:55:12.150624800+00:00] [INFO] [PYTHON_INIT] fast_alpr package found: C:\Users\WDAGUtilityAccount\Desktop\release\resources\python-embed\Lib\site-packages\fast_alpr
+

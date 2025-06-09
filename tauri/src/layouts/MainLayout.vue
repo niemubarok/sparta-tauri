@@ -39,24 +39,24 @@ const essentialLinks = [
     //   icon: "fact_check",
     //   link: "/laporan/transaksi/per-hari",
     // },
-    {
-        title: 'Petugas',
-        caption: '',
-        icon: 'person',
-        link: '/petugas',
-    },
-    {
-        title: 'ALPR Manager',
-        caption: 'Kelola CCTV & ALPR',
-        icon: 'videocam',
-        link: '/alpr-manager',
-    },
-    {
-        title: 'Pos Keluar',
-        caption: '',
-        icon: 'output',
-        link: '/',
-    },
+    // {
+    //     title: 'Petugas',
+    //     caption: '',
+    //     icon: 'person',
+    //     link: '/petugas',
+    // },
+    // {
+    //     title: 'ALPR Manager',
+    //     caption: 'Kelola CCTV & ALPR',
+    //     icon: 'videocam',
+    //     link: '/alpr-manager',
+    // },
+    // {
+    //     title: 'Pos Keluar',
+    //     caption: '',
+    //     icon: 'output',
+    //     link: '/',
+    // },
 
     // {
     //   title: "Master Wahana",
@@ -110,6 +110,10 @@ onMounted(() => {
         <q-toolbar-title> SPARTA </q-toolbar-title>
       </q-toolbar>
     </q-header>
+
+    <div class="fixed-center text-h1 text-weight-bold text-grey-6" style="z-index: 9999; opacity: 0.5; transform: rotate(-45deg); pointer-events: none;">
+      DEMO Versi BETA
+    </div>
 
     <q-drawer
       v-if="$route.meta.isSidebar"

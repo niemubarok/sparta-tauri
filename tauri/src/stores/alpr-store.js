@@ -268,10 +268,11 @@ export const useAlprStore = defineStore('alprStore', {
             try {
                 this.isProcessing = true;
                 this.alprResults = null;
-                console.log(`Processing image using ${this.useExternalAlpr ? 'external' : 'internal'} ALPR service`);
+                console.log(`Processing image using ${this.settingsService?.gateSettings.USE_EXTERNAL_ALPR ? 'external' : 'internal'} ALPR service`);
+                console.log("🚀 ~ processImage ~ this.settingsService.USE_EXTERNAL_ALPR:", this.settingsService?.gateSettings.USE_EXTERNAL_ALPR )
 
                 let result;
-                if (this.useExternalAlpr) {
+                if (this.settingsService?.gateSettings?.USE_EXTERNAL_ALPR) {
                     if (!this.wsConnection || this.wsConnection.readyState !== WebSocket.OPEN) {
                         throw new Error('WebSocket not connected');
                     }

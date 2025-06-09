@@ -32,6 +32,7 @@ const themeStore = useThemeStore();
 const componentStore = useComponentStore();
 const alprStore = useAlprStore()
 
+const showCctvImageDialog = ref(false)
 
 // const manlessStore = useManlessStore()
 

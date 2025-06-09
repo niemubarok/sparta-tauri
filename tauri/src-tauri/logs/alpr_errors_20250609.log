@@ -1,0 +1,486 @@
+[2025-06-09T03:46:01.188725100+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T03:46:01.192466+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized successfully
+
+[2025-06-09T06:47:49.163536+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources/python-embed
+
+[2025-06-09T06:55:35.842943900+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:55:35.845889100+00:00] [INFO] [PYTHON_SETUP] Copying E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed\python310.zip to E:\DEVS\spartakuler\tauri\src-tauri\target\debug\python310.zip
+
+[2025-06-09T06:55:36.000666600+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:55:36.002210600+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:55:44.911763200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:55:44.959685500+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:55:44.961921700+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:55:48.845723600+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:55:48.881635800+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:55:48.883346300+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:55:52.744165700+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:55:52.788666800+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:55:52.790039300+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:55:56.826420200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:55:56.894268100+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:55:56.896430200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:00.907511200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:00.967393300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:00.969091800+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:04.811838500+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:04.898641300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:04.901820200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:09.295970400+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:09.341895900+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:09.343470200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:13.641050900+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:13.681030200+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:13.682686400+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:18.811780800+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:18.856671100+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:18.858614600+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:22.725969900+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:22.770714400+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:22.772853700+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:26.708320500+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:26.745323400+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:26.746952800+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:30.576598100+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:30.619593300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:30.621520700+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:34.849771600+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:34.885764300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:34.887220900+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:39.018749+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:39.057682200+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:39.060671100+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:40.155540600+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:56:43.900819200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:43.940680900+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:43.942289800+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:48.542420700+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:48.604731500+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:48.608784100+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:52.525475+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:52.566059400+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:52.567937+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:56:53.641982700+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:56:53.644610200+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:56:53.647434400+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:56:57.373791500+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:56:57.423546300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:56:57.427385200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:01.451643300+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:01.492921600+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:01.494733600+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:06.250533900+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:06.291850300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:06.293963200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:10.840679500+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:10.881889600+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:10.883684800+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:15.008913800+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:15.057027300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:15.059727600+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:16.229459900+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:57:16.232335400+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:57:16.234442300+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:57:20.779816200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:20.830216700+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:20.833816200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:25.028821800+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:25.072693+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:25.075629200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:29.500478600+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:29.538831800+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:29.540939200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:33.538122200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:33.574277500+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:33.576119200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:34.732388+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:57:34.735985200+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:57:34.739614500+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:57:38.294194100+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:38.336463100+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:38.338618600+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:39.309399500+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:57:39.311441200+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:57:39.313496500+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:57:43.144198700+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:43.188715400+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:43.191110700+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:44.278643800+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:57:44.280934600+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:57:44.283106700+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:57:47.869094900+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:47.909162300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:47.911515400+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:48.928763+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:57:48.931087300+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:57:48.933464400+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:57:52.499221500+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:52.544756300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:52.547603800+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:57:58.867108500+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:57:58.913491500+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:57:58.916094100+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:02.759381700+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:02.803123600+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:02.805418500+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:06.840457200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:06.877469500+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:06.880964600+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:08.039609300+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:58:08.041865+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:58:08.043971900+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:58:11.637526400+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:11.678391600+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:11.680686600+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:12.755251600+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:58:12.756591200+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:58:12.757673400+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:58:16.321655600+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:16.359164900+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:16.360422700+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:20.360626+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:20.403599100+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:20.404736500+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:24.174824300+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:24.213883600+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:24.214951400+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:25.296506900+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:58:25.298275700+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:58:25.299239200+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:58:28.914540400+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:28.951450400+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:28.952503400+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:32.627715300+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:32.667350400+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:32.668392+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:36.558480200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:36.602670700+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:36.604387+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:40.175662600+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:40.213325700+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:40.214432400+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:41.237188100+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:58:41.238513200+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:58:41.239870400+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:58:44.871415800+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:44.906092200+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:44.907132700+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:48.877557400+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:48.936025200+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:48.938359+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:53.249989200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:53.307329700+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:53.312383400+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:58:57.156341600+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:58:57.197542700+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:58:57.198816200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:01.226634+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:01.314073800+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:01.315378100+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:05.170479300+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:05.212656700+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:05.213773500+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:09.968306300+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:10.022582200+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:10.024474200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:13.735364900+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:13.774016800+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:13.775114+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:17.531221+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:17.569934700+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:17.570882600+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:18.649409600+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:59:18.650654200+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:59:18.652298+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:59:22.682389200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:22.732528100+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:22.734010700+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:32.114162800+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:32.153785300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:32.154858700+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:36.157079100+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:36.213584500+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:36.215287600+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:39.788332500+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:39.827166600+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:39.828194800+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:40.952351100+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:59:40.953675400+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:59:40.954790800+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:59:44.635829100+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:44.677665600+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:44.678712100+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:48.292106800+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:48.332228300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:48.333295500+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T06:59:49.308485800+00:00] [INFO] [INIT] Fast ALPR engine initialized successfully
+
+[2025-06-09T06:59:49.309677700+00:00] [INFO] [ENGINE_INIT] Fast ALPR Engine initialized successfully
+
+[2025-06-09T06:59:49.311162100+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T06:59:55.602860100+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T06:59:55.681927800+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T06:59:55.684715+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T07:00:00.417508800+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T07:00:00.503422600+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T07:00:00.505991400+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T07:00:04.984708800+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T07:00:05.029734500+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T07:00:05.030865+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T07:00:09.509987400+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T07:00:09.555225800+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T07:00:09.557565500+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T07:00:13.909462600+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T07:00:13.974275500+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T07:00:13.976319700+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T07:00:18.494304300+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T07:00:18.541533300+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T07:00:18.542923200+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T07:00:19.280300300+00:00] [INFO] [ENGINE_INIT] ALPR Engine initialized
+
+[2025-06-09T07:08:58.986206600+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T07:08:59.075673600+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T07:08:59.077220500+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T07:09:05.836740800+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T07:09:05.892091800+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T07:09:05.893764900+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+
+[2025-06-09T07:09:11.758000200+00:00] [INFO] [PYTHON_ENV] Set PYTHONHOME to: E:\DEVS\spartakuler\tauri\src-tauri\resources\python-embed
+
+[2025-06-09T07:09:11.814287400+00:00] [INFO] [PYTHON_PATH] Python executable: E:\DEVS\spartakuler\tauri\src-tauri\target\debug\sparta.exe
+
+[2025-06-09T07:09:11.816040100+00:00] [INFO] [PYTHON_PATHS] sys.path: ["E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug\\python310.zip", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\DLLs", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\target\\debug", "E:\\DEVS\\spartakuler\\tauri\\src-tauri\\resources\\python-embed\\lib\\site-packages", "resources/python-embed", "resources/python-embed/Lib", "resources/python-embed/Lib/site-packages"]
+

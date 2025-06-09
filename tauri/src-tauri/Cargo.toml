@@ -1,14 +1,14 @@
 [package]
-name = "tauri-quasar"
-version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+name = "sparta"
+version = "1.0.0"
+description = "Manless ALPR System"
+authors = ["tabarokta"]
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "tauri_quasar_lib"
+name = "sparta_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]
@@ -18,11 +18,12 @@ tauri-build = { version = "2.1.0", features = [] }
 tokio = { version = "1.37", features = ["full"] }
 tauri = { version = "2.4.0", features = [] }
 tauri-plugin-shell = "2.2.0"
+winapi = { version = "0.3", features = ["libloaderapi"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 image = "0.24"
 base64 = "0.21"
-pyo3 = { version = "0.19", features = ["extension-module", "auto-initialize"] }
+pyo3 = { version = "0.19", features = ["auto-initialize"], default-features = false }
 chrono = "0.4"
 regex = "1.7"
 log = "0.4"

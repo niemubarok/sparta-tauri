@@ -32,7 +32,7 @@
       </template> -->
     <Logo />
     <div class="q-gutter-md">
-      <q-btn
+      <!-- <q-btn
         push
         style="width: 300px; height: 100px"
         color="primary"
@@ -47,7 +47,7 @@
           text-color="primary"
           label="shift + g"
         />
-      </q-btn>
+      </q-btn> -->
       <q-btn
         push
         style="width: 300px; height: 100px"
@@ -56,13 +56,13 @@
         label="Post Masuk"
         @click="onClickEntryGate()"
       >
-        <q-btn
+        <!-- <q-btn
           push
           class="q-ma-md"
           color="white"
           text-color="primary"
           label="shift + i"
-        />
+        /> -->
       </q-btn>
       <q-btn
         push
@@ -72,17 +72,17 @@
         label="Membership"
         @click="$router.push({ path: '/membership-management' })"
       >
-        <q-btn
+        <!-- <q-btn
           push
           class="q-ma-md"
           color="white"
           text-color="primary"
           label="shift + m" 
-        />
+        /> -->
       </q-btn>
     
       <!-- icon="directions_car" -->
-      <q-btn
+      <!-- <q-btn
         push
         style="width: 300px; height: 100px"
         color="primary"
@@ -97,7 +97,7 @@
           text-color="primary"
           label="shift + O"
         />
-      </q-btn>
+      </q-btn> -->
       <q-btn
         push
         style="width: 300px; height: 100px"
@@ -106,13 +106,13 @@
         label="Settings"
         @click="onClickSettings()"
       >
-        <q-btn
+        <!-- <q-btn
           push
           class="q-ma-md"
           color="white"
           text-color="primary"
           label="shift + S"
-        />
+        /> -->
       </q-btn>
       <!-- @click="$router.push('/outgate')" -->
     </div>

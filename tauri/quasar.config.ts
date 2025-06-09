@@ -311,7 +311,7 @@ export default configure((/* ctx */) => {
 
                 // https://www.electron.build/configuration/configuration
 
-                appId: 'tauri-quasar',
+                appId: 'sparta',
             },
         },
 
