@@ -75,6 +75,15 @@ routes.forEach(route => {
         route.name = 'petugas'
     }
 
+    if (route.path === '/kendaraan') {
+        route.meta = {
+            isSidebar: true,
+            isHeader: true,
+            requiresAuth: true,
+        }
+        route.name = 'kendaraan'
+    }
+
     if (route.path === '/entry-gate') {
         route.meta = {
             isSidebar: false,
@@ -108,6 +117,24 @@ routes.forEach(route => {
         }
         route.name = 'alprManager'
     }
+
+    if (route.path === '/kendaraan') {
+        route.meta = {
+            isSidebar: true,
+            isHeader: true,
+            requiresAuth: true,
+        }
+        route.name = 'kendaraan'
+    }
+
+    // if (route.path === '/tarif') {
+    //     route.meta = {
+    //         isSidebar: true,
+    //         isHeader: true,
+    //         requiresAuth: true,
+    //     }
+    //     route.name = 'tarif'
+    // }
 })
 
 routes.push({

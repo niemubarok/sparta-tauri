@@ -38,8 +38,8 @@ if %ERRORLEVEL%==0 (
         )
     )
     REM Inisialisasi model alpr
-    echo Inisialisasi fast-alpr agar model otomatis terdownload...
-    python -c "import fast_alpr; alpr = fast_alpr.ALPR(detector_model='yolo-v9-t-384-license-plate-end2end', ocr_model='global-plates-mobile-vit-v2-model'); import numpy as np; from PIL import Image; dummy = np.zeros((1,1,3), dtype=np.uint8); Image.fromarray(dummy).save('alpr_dummy.jpg'); alpr.predict('alpr_dummy.jpg'); print('fast-alpr model download/init done')" || (echo GAGAL inisialisasi fast-alpr & pause)
+    echo Inisialisasi model alpr 
+    python -c "import fast_alpr; alpr = fast_alpr.ALPR(detector_model='yolo-v9-t-384-license-plate-end2end', ocr_model='global-plates-mobile-vit-v2-model'); import numpy as np; import cv2; dummy = np.zeros((1,1,3), dtype=np.uint8); cv2.imwrite('alpr_dummy.jpg', dummy); alpr.predict('alpr_dummy.jpg'); print('fast-alpr model download/init done')" || (echo GAGAL inisialisasi fast-alpr & pause)
     del alpr_dummy.jpg 2>nul
 ) else (
     echo Python not found in PATH. Please restart your terminal atau add Python ke PATH.
@@ -48,6 +48,7 @@ if %ERRORLEVEL%==0 (
 REM Jalankan script ini SETELAH install_dependencies.cmd dan setelah restart terminal
 REM Pastikan python, pip, dan fast-alpr sudah terinstall dan ada di PATH
 
-echo Inisialisasi fast-alpr agar model otomatis terdownload...
-python -c "import fast_alpr; alpr = fast_alpr.ALPR(detector_model='yolo-v9-t-384-license-plate-end2end', ocr_model='global-plates-mobile-vit-v2-model'); import numpy as np; from PIL import Image; dummy = np.zeros((1,1,3), dtype=np.uint8); Image.fromarray(dummy).save('alpr_dummy.jpg'); alpr.predict('alpr_dummy.jpg'); print('fast-alpr model download/init done')" || (echo GAGAL inisialisasi fast-alpr & pause)
+echo Inisialisasi model alpr
+python -c "import fast_alpr; alpr = fast_alpr.ALPR(detector_model='yolo-v9-t-384-license-plate-end2end', ocr_model='global-plates-mobile-vit-v2-model'); import numpy as np; import cv2; dummy = np.zeros((1,1,3), dtype=np.uint8); cv2.imwrite('alpr_dummy.jpg', dummy); alpr.predict('alpr_dummy.jpg'); print('fast-alpr model download/init done')" || (echo GAGAL inisialisasi fast-alpr & pause)
 del alpr_dummy.jpg 2>nul
+echo abaikan pesan error jika ada, karena ini hanya inisialisasi model alpr

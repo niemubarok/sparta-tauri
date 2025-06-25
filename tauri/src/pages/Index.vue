@@ -32,7 +32,7 @@
       </template> -->
     <Logo />
     <div class="q-gutter-md">
-      <q-btn
+      <!-- <q-btn
         push
         style="width: 300px; height: 100px"
         color="primary"
@@ -40,14 +40,14 @@
         label="DASHBOARD"
         @click="$router.push({ name: 'dashboard' })"
       >
-        <q-btn
+        <!-- <q-btn
           push
           class="q-ma-md"
           color="white"
           text-color="primary"
-          label="shift + g"
-        />
-      </q-btn>
+          
+        </q-btn> 
+        /> -->
       <q-btn
         push
         style="width: 300px; height: 100px"
@@ -56,13 +56,29 @@
         label="Post Masuk"
         @click="onClickEntryGate()"
       >
-        <q-btn
+        <!-- <q-btn
           push
           class="q-ma-md"
           color="white"
           text-color="primary"
-          label="shift + i"
-        />
+          
+        /> -->
+      </q-btn>
+      <q-btn
+        push
+        style="width: 300px; height: 100px"
+        color="primary"
+        icon="directions_car"
+        label="Post Masuk Manual"
+        @click="onClickManualEntryGate()"
+      >
+        <!-- <q-btn
+          push
+          class="q-ma-md"
+          color="white"
+          text-color="primary"
+          
+        /> -->
       </q-btn>
       <q-btn
         push
@@ -72,17 +88,17 @@
         label="Membership"
         @click="$router.push({ path: '/membership-management' })"
       >
-        <q-btn
+        <!-- <q-btn
           push
           class="q-ma-md"
           color="white"
           text-color="primary"
-          label="shift + m" 
-        />
+          
+        /> -->
       </q-btn>
     
       <!-- icon="directions_car" -->
-      <q-btn
+      <!-- <q-btn
         push
         style="width: 300px; height: 100px"
         color="primary"
@@ -90,14 +106,14 @@
         label="Post Keluar"
         @click="onClickExitGate()"
       >
-        <q-btn
+        <!-- <q-btn
           push
           class="q-ma-md"
           color="white"
           text-color="primary"
-          label="shift + O"
-        />
-      </q-btn>
+          
+        </q-btn> 
+        /> -->
       <q-btn
         push
         style="width: 300px; height: 100px"
@@ -106,13 +122,13 @@
         label="Settings"
         @click="onClickSettings()"
       >
-        <q-btn
+        <!-- <q-btn
           push
           class="q-ma-md"
           color="white"
           text-color="primary"
-          label="shift + S"
-        />
+          
+        /> -->
       </q-btn>
       <!-- @click="$router.push('/outgate')" -->
     </div>
@@ -171,6 +187,19 @@ const onClickEntryGate = () => {
   console.log("🚀 ~ onClickEntryGate ~ gateSettings.value?.gateType:", gateSettings.gateType)
   if (gateSettings.gateType.toLowerCase() === 'entry') { // Diubah
     router.push({ path: "/entry-gate" });
+  } else {
+    $q.notify({
+      type: "warning",
+      message: "Mode gerbang saat ini bukan 'Entry'. Silakan ubah di pengaturan.",
+      position: "top",
+    });
+  }
+};
+
+const onClickManualEntryGate = () => {
+  console.log("🚀 ~ onClickManualEntryGate ~ gateSettings.value?.gateType:", gateSettings.gateType)
+  if (gateSettings.gateType.toLowerCase() === 'entry') { // Diubah
+    router.push({ path: "/manual-gate" });
   } else {
     $q.notify({
       type: "warning",

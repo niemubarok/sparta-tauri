@@ -3,13 +3,17 @@ import { ref, readonly, computed } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { localDbs } from 'src/boot/pouchdb'; // Asumsi path ini benar
 
+type OperationMode = 'manless' | 'manual';
+type ManualPaymentMode = 'postpaid' | 'prepaid';
+
 interface GateSetting {
   _id: string;
   _rev?: string;
   gateId: string;
   gateName: string;
   gateType: 'entry' | 'exit';
-  manlessMode: boolean;
+  operationMode: OperationMode;
+  manualPaymentMode: ManualPaymentMode;
   printerName: string | null;
   paperSize: '58mm' | '80mm';
   autoPrint: boolean;
@@ -41,25 +45,26 @@ const defaultGateSettings: Omit<GateSetting, '_id' | '_rev'> = {
   gateId: '',
   gateName: '',
   gateType: 'entry',
-  manlessMode: true,
+  operationMode: 'manless',
+  manualPaymentMode: 'postpaid',
   printerName: null,
   paperSize: '58mm',
   autoPrint: true,
-  PLATE_CAM_DEVICE_ID: null,
+  PLATE_CAM_DEVICE_ID: '0', // Default USB camera device ID
   PLATE_CAM_IP: '',
-  PLATE_CAM_USERNAME: '',
-  PLATE_CAM_PASSWORD: '',
-  PLATE_CAM_RTSP_PATH: '',
-  DRIVER_CAM_DEVICE_ID: null,
+  PLATE_CAM_USERNAME: 'admin',
+  PLATE_CAM_PASSWORD: 'password',
+  PLATE_CAM_RTSP_PATH: 'Streaming/Channels/101',
+  DRIVER_CAM_DEVICE_ID: '1', // Default USB camera device ID for second camera
   DRIVER_CAM_IP: '',
-  DRIVER_CAM_USERNAME: '',
-  DRIVER_CAM_PASSWORD: '',
-  DRIVER_CAM_RTSP_PATH: '',
+  DRIVER_CAM_USERNAME: 'admin',
+  DRIVER_CAM_PASSWORD: 'password',
+  DRIVER_CAM_RTSP_PATH: 'Streaming/Channels/101',
   SCANNER_CAM_DEVICE_ID: null,
   SCANNER_CAM_IP: '',
-  SCANNER_CAM_USERNAME: '',
-  SCANNER_CAM_PASSWORD: '',
-  SCANNER_CAM_RTSP_PATH: '',
+  SCANNER_CAM_USERNAME: 'admin',
+  SCANNER_CAM_PASSWORD: 'password',
+  SCANNER_CAM_RTSP_PATH: 'Streaming/Channels/101',
   SERIAL_PORT: null,
   CAPTURE_INTERVAL: 5000,
   // Former global settings with defaults
@@ -99,39 +104,66 @@ export const useSettingsService = defineStore('settings-service', () => {
     },
   }));
   
+  // Computed properties for gate operation modes
+  const isManlessMode = computed(() => gateSettings.value.operationMode === 'manless');
+  const isManualMode = computed(() => gateSettings.value.operationMode === 'manual');
+  const isPrepaidMode = computed(() => 
+    gateSettings.value.operationMode === 'manual' && 
+    gateSettings.value.manualPaymentMode === 'prepaid'
+  );
+  const isPostpaidMode = computed(() => 
+    gateSettings.value.operationMode === 'manual' && 
+    gateSettings.value.manualPaymentMode === 'postpaid'
+  );
+  
   async function loadActiveGateId() {
     isLoading.value = true;
     error.value = null;
     console.log('Loading active gate ID...');
     
+    // Try localStorage first as it's more reliable
     try {
-      // Coba load dari Tauri command dulu
-      console.log('Trying to load active gate ID from Tauri...');
-      const id = await invoke('get_active_gate_id');
-      console.log("🚀 ~ cctvConfig ~ id:", id)
-      activeGateId.value = typeof id === 'string' ? id : 'gate_entry_1'; // Default to '1' if id is not a string
-      console.log('Active gate ID loaded successfully from Tauri:', activeGateId.value);
-    } catch (e) {
-      console.warn('Failed to load active gate ID from Tauri, trying localStorage fallback:', e);
-      
-      try {
-        // Fallback ke localStorage
-        const storedId = localStorage.getItem('activeGateId');
-        if (storedId) {
-          activeGateId.value = storedId;
-          console.log('Active gate ID loaded from localStorage:', activeGateId.value);
-        } else {
-          // Set default jika tidak ada di localStorage juga
-          activeGateId.value = 'gate_entry_1';
-          localStorage.setItem('activeGateId', 'gate_entry_1');
-          console.log('Using default active gate ID:', activeGateId.value);
-        }
-      } catch (localStorageError) {
-        console.error('Failed to access localStorage:', localStorageError);
-        // Fallback terakhir
-        activeGateId.value = 'gate_entry_1';
-        console.log('Using final fallback active gate ID:', activeGateId.value);
+      console.log('Trying to load active gate ID from localStorage first...');
+      const storedId = localStorage.getItem('activeGateId');
+      if (storedId) {
+        activeGateId.value = storedId;
+        console.log('Active gate ID loaded from localStorage:', activeGateId.value);
+        isLoading.value = false;
+        return; // Exit early if we have a value from localStorage
       }
+    } catch (localStorageError) {
+      console.warn('Failed to access localStorage:', localStorageError);
+    }
+    
+    // If no localStorage value, try Tauri command
+    try {
+      console.log('No localStorage value found, trying Tauri command...');
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Tauri command timeout after 3 seconds')), 3000);
+      });
+      
+      const invokePromise = invoke('get_active_gate_id');
+      
+      const id = await Promise.race([invokePromise, timeoutPromise]);
+      console.log("🚀 ~ loadActiveGateId ~ id from Tauri:", id)
+      
+      if (typeof id === 'string' && id) {
+        activeGateId.value = id;
+        // Save to localStorage for future use
+        localStorage.setItem('activeGateId', id);
+        console.log('Active gate ID loaded successfully from Tauri and saved to localStorage:', activeGateId.value);
+      } else {
+        throw new Error('Invalid gate ID received from Tauri');
+      }
+    } catch (e) {
+      console.warn('Failed to load active gate ID from Tauri:', e);
+      
+      // Final fallback
+      activeGateId.value = 'gate_entry_1';
+      localStorage.setItem('activeGateId', 'gate_entry_1');
+      console.log('Using default active gate ID:', activeGateId.value);
       
       error.value = null; // Clear error since we have fallback
     } finally {
@@ -140,32 +172,47 @@ export const useSettingsService = defineStore('settings-service', () => {
   }
 
   async function loadGateSettings(gateId: string) {
-    if (!gateId) return;
+    if (!gateId) {
+      console.warn('Cannot load gate settings: gateId is empty');
+      return;
+    }
+    
+    console.log(`Loading gate settings for ID: ${gateId}`);
+    
     try {
       const doc = await localDbs.config.get(`gate_${gateId}`) as GateSetting;
       console.log("🚀 ~ loadGateSettings ~ doc:", doc)
-      gateSettings.value = { ...defaultGateSettings, ...doc, _id: doc._id, _rev: doc._rev, gateId: gateId };
-      console.log(`Settings loaded for gate ${gateId}:`, gateSettings.value);
-      
+      gateSettings.value = { ...defaultGateSettings, ...doc, _id: doc._id, gateId: doc.gateId };
+      console.log(`Gate settings loaded successfully for ${gateId}:`, gateSettings.value);
     } catch (e) {
       if ((e as { name: string }).name === 'not_found') {
-        console.log(`Settings for gate ${gateId} not found, using and saving defaults.`);
+        console.log(`No settings found for gate ${gateId}, creating default settings...`);
         const newDefaultGateDoc: GateSetting = {
           ...defaultGateSettings,
           _id: `gate_${gateId}`,
           gateId: gateId,
           gateName: `Gerbang ${gateId}`,
         };
+        
         try {
           const response = await localDbs.config.put(newDefaultGateDoc);
           gateSettings.value = { ...newDefaultGateDoc, _rev: response.rev };
+          console.log(`Default settings created and saved for gate ${gateId}:`, gateSettings.value);
         } catch (putError) {
           console.error(`Failed to save default settings for gate ${gateId}:`, putError);
           gateSettings.value = newDefaultGateDoc;
+          console.log(`Using default settings in memory for gate ${gateId}:`, gateSettings.value);
         }
       } else {
         console.error(`Failed to load settings for gate ${gateId}:`, e);
-        gateSettings.value = { ...defaultGateSettings, _id: `gate_${gateId}`, gateId: gateId };
+        // Set default settings even if there's an error
+        gateSettings.value = { 
+          ...defaultGateSettings, 
+          _id: `gate_${gateId}`, 
+          gateId: gateId,
+          gateName: `Gerbang ${gateId}`
+        };
+        console.log(`Using fallback default settings for gate ${gateId}:`, gateSettings.value);
       }
     }
   }
@@ -176,22 +223,46 @@ export const useSettingsService = defineStore('settings-service', () => {
     error.value = null;
     
     try {
+      console.log('Step 1: Loading active gate ID...');
       await loadActiveGateId();
-      console.log('Active gate ID loaded:', activeGateId.value);
+      console.log('Step 1 completed. Active gate ID loaded:', activeGateId.value);
       
       if (activeGateId.value) {
+        console.log('Step 2: Loading gate settings for ID:', activeGateId.value);
         await loadGateSettings(activeGateId.value);
-        console.log('Gate settings loaded:', gateSettings.value);
+        console.log('Step 2 completed. Gate settings loaded:', gateSettings.value);
       } else {
         console.warn('No active gate ID found, skipping gate settings load');
       }
       
-      console.log('Settings initialization complete');
+      console.log('Settings initialization complete successfully');
     } catch (e) {
       console.error('Error during settings initialization:', e);
       error.value = e;
+      
+      // Even if there's an error, try to set some defaults so app doesn't break
+      if (!activeGateId.value) {
+        activeGateId.value = 'gate_entry_1';
+        console.log('Set fallback active gate ID:', activeGateId.value);
+      }
+      
+      if (!gateSettings.value.gateId) {
+        gateSettings.value = { 
+          ...defaultGateSettings, 
+          _id: `gate_${activeGateId.value}`, 
+          gateId: activeGateId.value,
+          gateName: `Gerbang ${activeGateId.value}`
+        };
+        console.log('Set fallback gate settings:', gateSettings.value);
+      }
     } finally {
       isLoading.value = false;
+      console.log('Settings initialization finished. Final state:', {
+        activeGateId: activeGateId.value,
+        gateSettings: gateSettings.value,
+        isLoading: isLoading.value,
+        error: error.value
+      });
     }
   }
 
@@ -316,11 +387,18 @@ export const useSettingsService = defineStore('settings-service', () => {
     isLoading: readonly(isLoading),
     error: readonly(error),
     cctvConfig: readonly(cctvConfig),
+    // Computed properties for operation modes
+    isManlessMode: readonly(isManlessMode),
+    isManualMode: readonly(isManualMode),
+    isPrepaidMode: readonly(isPrepaidMode),
+    isPostpaidMode: readonly(isPostpaidMode),
+    // Functions
     loadActiveGateId,
     loadGateSettings,
     initializeSettings,
     saveGateSettings,
     getAllGateSettings,
+    captureCctvImage,
   };
 });
 

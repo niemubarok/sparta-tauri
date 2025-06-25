@@ -375,12 +375,7 @@
             />
             <q-select
               v-model="newPetugas.level_code"
-              :options="[
-                { value: '0001', label: 'Administrator' },
-                { value: '0002', label: 'Leader' },
-                { value: '0003', label: 'Supervisor' },
-                { value: '0005', label: 'Cashier' },
-              ]"
+              :options="levelOptions"
               emit-value
               map-options
               label="Level Pegawai"
@@ -412,16 +407,18 @@
 </template>
 
 <script setup>
-// import { userStore } from "src/stores/user-store";
+import { usePetugasStore } from "src/stores/petugas-store";
 import { useComponentStore } from "src/stores/component-store";
-import { useTransaksiStore } from "src/stores/transaksi-store";
 import { onMounted, ref, computed } from "vue";
-import { date, useQuasar } from "quasar";
+import { useQuasar } from "quasar";
 import AddButton from "src/components/AddButton.vue";
-import { userStore } from "src/stores/user-store";
 
 const $q = useQuasar();
-const isLoading = ref(true);
+const petugasStore = usePetugasStore();
+const componentStore = useComponentStore();
+
+const isLoading = computed(() => petugasStore.isLoading);
+
 const columns = [
   { name: "NIP", prop: "nip", align: "left" },
   { name: "Nama Petugas", prop: "nama", align: "left" },
@@ -436,10 +433,10 @@ const columns = [
 const newPetugas = ref({
   id_petugas: "",
   nama: "",
-  no_hp: 0,
+  no_hp: "",
   username: "",
   password: "",
-  status: "",
+  status: 1,
   level_code: "",
 });
 
@@ -447,10 +444,10 @@ const onReset = () => {
   newPetugas.value = {
     id_petugas: "",
     nama: "",
-    no_hp: 0,
+    no_hp: "",
     username: "",
     password: "",
-    status: "",
+    status: 1,
     level_code: "",
   };
 };
@@ -461,65 +458,93 @@ const onSubmit = async () => {
       newPetugas.value.nama &&
       newPetugas.value.password &&
       newPetugas.value.username &&
-      newPetugas.value.status &&
       newPetugas.value.level_code
     ) {
-      console.log(newPetugas.value);
-      await userStore().addMasterPetugasToDB(newPetugas.value);
-      onReset();
-      useComponentStore().nextMorph();
+      console.log('Adding new petugas:', newPetugas.value);
+      const success = await petugasStore.addMasterPetugasToDB(newPetugas.value);
+      if (success) {
+        onReset();
+        componentStore.nextMorph();
+      }
     } else {
       $q.notify({
         color: "negative",
         position: "top",
-        message: "Semua field harus diisi ",
+        message: "Semua field harus diisi",
         icon: "report_problem",
       });
     }
-  } catch (error) {}
-};
-
-const update = async (id, column, value) => {
-  console.log(id, column, value);
-  const editMasterPetugas = await userStore().editMasterPetugasOnDB(
-    id,
-    column,
-    value
-  );
-  if (editMasterPetugas) {
+  } catch (error) {
+    console.error('Error submitting petugas:', error);
     $q.notify({
-      message: "Berhasil di ubah",
-      type: "positive",
+      color: "negative",
       position: "top",
+      message: "Terjadi kesalahan saat menyimpan data",
+      icon: "report_problem",
     });
   }
 };
 
-const onDelete = async (id) => {
-  console.log(id);
-  const deleted = await userStore().deleteMasterPetugasFromDB(id);
-  if (deleted) {
+const update = async (id, column, value) => {
+  console.log('Updating petugas:', id, column, value);
+  const success = await petugasStore.editMasterPetugasOnDB(id, column, value);
+  if (success) {
     $q.notify({
-      message: "Berhasil di hapus",
+      message: "Berhasil diubah",
       type: "positive",
       position: "top",
     });
   } else {
     $q.notify({
-      message: "Gagal hapus data",
+      message: "Gagal mengubah data",
       type: "negative",
       position: "top",
     });
   }
 };
 
+const onDelete = async (id) => {
+  console.log('Deleting petugas:', id);
+  
+  // Confirm deletion
+  $q.dialog({
+    title: 'Konfirmasi',
+    message: 'Apakah Anda yakin ingin menghapus petugas ini?',
+    cancel: true,
+    persistent: true
+  }).onOk(async () => {
+    const success = await petugasStore.deleteMasterPetugasFromDB(id);
+    if (success) {
+      $q.notify({
+        message: "Berhasil dihapus",
+        type: "positive",
+        position: "top",
+      });
+    } else {
+      $q.notify({
+        message: "Gagal menghapus data",
+        type: "negative",
+        position: "top",
+      });
+    }
+  });
+};
+
 const daftarPetugas = computed(() => {
-  return userStore().daftarPetugas.sort((a, b) => a.nama.localeCompare(b.nama));
+  return (petugasStore.daftarPetugas || []).sort((a, b) => a.nama.localeCompare(b.nama));
+});
+
+const levelOptions = computed(() => {
+  return (petugasStore.defaultLevels || []).map(level => ({
+    value: level.level_code,
+    label: level.level_name
+  }));
 });
 
 onMounted(async () => {
-  await userStore().getAllPetugas();
-  isLoading.value = false;
+  console.log('Loading petugas data...');
+  await petugasStore.getAllPetugas();
+  console.log('Petugas data loaded:', (petugasStore.daftarPetugas || []).length);
 });
 </script>
 

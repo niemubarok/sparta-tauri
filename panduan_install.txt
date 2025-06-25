@@ -1,0 +1,33 @@
+PANDUAN INSTALASI SPARTA
+
+1. INSTALASI DEPENDENCIES
+- Buka Command Prompt sebagai Administrator
+- Navigasi ke folder tempat file berada:
+    cd path/to/install_dependencies.cmd
+- Jalankan install_dependencies.cmd(Proses ini membutuhkan koneksi internet):
+    install_dependencies.cmd
+- Tunggu hingga proses instalasi selesai
+- RESTART Command Prompt setelah instalasi selesai
+
+2. INISIALISASI ALPR
+- Buka Command Prompt baru (tidak perlu Administrator)
+- Navigasi ke folder yang sama:
+    cd path/to/init_alpr.cmd
+- Jalankan init_alpr.cmd:
+    init_alpr.cmd
+- Tunggu hingga proses download model dan inisialisasi selesai
+    (Proses ini membutuhkan koneksi internet)
+
+3. Jalankan sparta.exe
+
+CATATAN PENTING:
+- Pastikan komputer terhubung ke internet selama proses instalasi
+- Jika terjadi error, pastikan:
+    * Command Prompt dijalankan sebagai Administrator untuk instalasi dependencies
+    * Python 3.10 sudah terinstall dan ada di PATH
+    * Koneksi internet stabil selama proses download model
+
+PERSYARATAN SISTEM:
+- Windows 64-bit
+- Koneksi internet
+- Ruang disk minimal 2GB untuk instalasi dan model

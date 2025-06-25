@@ -8,7 +8,7 @@
     persistent
     :key="componentStore.settingsKey"
   >
-    <div class="row justify-center items-center">
+    <div class="row justify-center items-center ">
       <q-card
         class="q-px-md q-pt-sm q-pb-md glass relative"
         style="width: 90vw; height: fit-content"
@@ -38,7 +38,6 @@
         </q-item>
 
         <!-- General Settings Section -->
-        <div class="text-h6 q-mb-md">General Settings</div>
         <div class="q-pa-md">          <!-- ALPR Mode Settings -->
           <div class="q-mb-md">
             <div class="text-subtitle1 q-mb-sm">ALPR Mode Settings</div>
@@ -71,19 +70,19 @@
 
           <!-- Gate Specific Settings -->
           <div class="q-mb-md">
-            <div class="text-subtitle1 q-mb-sm">Gate Configuration</div>
+            <div class="text-subtitle1 q-mb-sm">Pengaturan Gerbang</div>
             <div class="row q-col-gutter-md">
               <div class="col-md-6 col-xs-12">
                 <q-input
                   v-model="gateName"
-                  label="Gate Name"
+                  label="Nama Gerbang"
                 />
               </div>
               <div class="col-md-6 col-xs-12">
                 <q-select
                   v-model="gateType"
                   :options="['entry', 'exit']"
-                  label="Gate Type"
+                  label="Tipe Gerbang"
                 />
               </div>
               <div class="col-md-12 col-xs-12">
@@ -92,6 +91,37 @@
                   label="Serial Port (misal: COM3 atau /dev/ttyUSB0)"
                   :rules="[val => !!val || 'Serial port tidak boleh kosong']"
                 />
+              </div>
+            </div>
+          </div>
+
+          <!-- Operation Mode Settings -->
+          <div class="q-mb-md">
+            <div class="text-subtitle1 q-mb-sm">Mode Operasi</div>
+            <div class="row q-col-gutter-md">
+              <div class="col-md-6 col-xs-12">
+                <q-select
+                  v-model="operationMode"
+                  :options="operationModeOptions"
+                  label="Mode Operasi"
+                  emit-value
+                  map-options
+                />
+                <div class="text-caption text-grey-6 q-mt-xs">
+                  {{ operationMode === 'manless' ? 'Mode tanpa petugas - otomatis dengan ALPR' : 'Mode dengan petugas - input manual' }}
+                </div>
+              </div>
+              <div class="col-md-6 col-xs-12" v-show="operationMode === 'manual'">
+                <q-select
+                  v-model="manualPaymentMode"
+                  :options="manualPaymentModeOptions"
+                  label="Mode Pembayaran Manual"
+                  emit-value
+                  map-options
+                />
+                <div class="text-caption text-grey-6 q-mt-xs">
+                  {{ manualPaymentMode === 'prepaid' ? 'Bayar depan - tarif prepaid' : 'Bayar belakang - tarif progresif' }}
+                </div>
               </div>
             </div>
           </div>
@@ -141,6 +171,18 @@
                       filled
                     />
                   </div>
+                  <div class="col-md-6 col-xs-12">
+                    <q-btn 
+                      color="primary" 
+                      label="Refresh Cameras" 
+                      icon="refresh"
+                      @click="getCameras"
+                      size="sm"
+                    />
+                    <div class="text-caption q-mt-xs">
+                      {{ availableCameras.length }} camera(s) detected
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -152,7 +194,7 @@
                     <!-- :disable="plateCameraUrl" -->
                     <q-select
                       v-model="selectedPlateCam"
-                      :options="cameras"
+                      :options="availableCameras"
                       label="USB Camera"
                       option-value="deviceId"
                       option-label="label"
@@ -161,6 +203,9 @@
                       map-options
                       @update:model-value="updatePlateCamera"
                     />
+                    <div class="text-caption text-grey-6 q-mt-xs" v-if="availableCameras.length === 0">
+                      No USB cameras detected. Click "Refresh Cameras" to try again.
+                    </div>
                   </div>
                   <div class="col">
                     <q-input
@@ -201,7 +246,7 @@
                   <div class="col">
                     <q-select
                       v-model="selectedDriverCam"
-                      :options="cameras"
+                      :options="availableCameras"
                       label="USB Camera"
                       option-value="deviceId"
                       option-label="label"
@@ -210,6 +255,9 @@
                       map-options
                       @update:model-value="updateDriverCamera"
                     />
+                    <div class="text-caption text-grey-6 q-mt-xs" v-if="availableCameras.length === 0">
+                      No USB cameras detected. Click "Refresh Cameras" to try again.
+                    </div>
                   </div>
                   <div class="col">
                     <q-input
@@ -249,7 +297,7 @@
                   <div class="col">
                     <q-select
                       v-model="selectedScannerCam"
-                      :options="cameras"
+                      :options="availableCameras"
                       label="USB Camera"
                       option-value="deviceId"
                       option-label="label"
@@ -258,6 +306,9 @@
                       map-options
                       @update:model-value="updateScannerCamera"
                     />
+                    <div class="text-caption text-grey-6 q-mt-xs" v-if="availableCameras.length === 0">
+                      No USB cameras detected. Click "Refresh Cameras" to try again.
+                    </div>
                   </div>
                   <div class="col">
                     <q-input
@@ -327,7 +378,10 @@ import { useTransaksiStore } from "src/stores/transaksi-store";
 import { useSettingsService } from 'stores/settings-service';
 import LoginDialog from "src/components/LoginDialog.vue";
 
+// Initialize cameras ref
 const cameras = ref([]);
+console.log('Cameras ref initialized:', cameras.value);
+
 const wsUrl = ref(""); // Ganti dari backendUrl ke wsUrl
 const useExternalAlpr = ref(false); // Tambahkan toggle ALPR mode
 
@@ -351,25 +405,40 @@ const paperSize = ref('58mm');
 const autoPrint = ref(true);
 const darkMode = ref(false);
 
+// Operation mode settings
+const operationMode = ref('manless');
+const manualPaymentMode = ref('postpaid');
+
+// Operation mode options
+const operationModeOptions = [
+  { label: 'Mode Tanpa Petugas (Manless)', value: 'manless' },
+  { label: 'Mode Manual (Dengan Petugas)', value: 'manual' }
+];
+
+const manualPaymentModeOptions = [
+  { label: 'Bayar Belakang (Postpaid)', value: 'postpaid' },
+  { label: 'Bayar Depan (Prepaid)', value: 'prepaid' }
+];
+
 // Pengaturan kamera sekarang diambil dari gateSettings
-const selectedPlateCam = ref(gateSettings.value.PLATE_CAM_DEVICE_ID || null);
-const plateCameraIp = ref(gateSettings.value.PLATE_CAM_IP || '');
-const plateCameraUsername = ref(gateSettings.value.PLATE_CAM_USERNAME || '');
-const plateCameraPassword = ref(gateSettings.value.PLATE_CAM_PASSWORD || '');
+const selectedPlateCam = ref(null);
+const plateCameraIp = ref('');
+const plateCameraUsername = ref('');
+const plateCameraPassword = ref('');
 
-const selectedDriverCam = ref(gateSettings.value.DRIVER_CAM_DEVICE_ID || null);
-const driverCameraIp = ref(gateSettings.value.DRIVER_CAM_IP || '');
-const driverCameraUsername = ref(gateSettings.value.DRIVER_CAM_USERNAME || '');
-const driverCameraPassword = ref(gateSettings.value.DRIVER_CAM_PASSWORD || '');
+const selectedDriverCam = ref(null);
+const driverCameraIp = ref('');
+const driverCameraUsername = ref('');
+const driverCameraPassword = ref('');
 
-const selectedScannerCam = ref(gateSettings.value.SCANNER_CAM_DEVICE_ID || null);
-const scannerCameraIp = ref(gateSettings.value.SCANNER_CAM_IP || '');
-const scannerCameraUsername = ref(gateSettings.value.SCANNER_CAM_USERNAME || '');
-const scannerCameraPassword = ref(gateSettings.value.SCANNER_CAM_PASSWORD || '');
-const plateCameraRtspPath = ref(gateSettings.value.PLATE_CAM_RTSP_PATH || '');
-const driverCameraRtspPath = ref(gateSettings.value.DRIVER_CAM_RTSP_PATH || '');
-const scannerCameraRtspPath = ref(gateSettings.value.SCANNER_CAM_RTSP_PATH || '');
-const captureInterval = ref(gateSettings.value.CAPTURE_INTERVAL || 5000); // Default to 5 seconds
+const selectedScannerCam = ref(null);
+const scannerCameraIp = ref('');
+const scannerCameraUsername = ref('');
+const scannerCameraPassword = ref('');
+const plateCameraRtspPath = ref('');
+const driverCameraRtspPath = ref('');
+const scannerCameraRtspPath = ref('');
+const captureInterval = ref(5000); // Default to 5 seconds
 
 // Add computed properties to determine camera types
 const serialPort = ref(''); // Ditambahkan untuk input serial port
@@ -389,7 +458,60 @@ const scannerCameraType = computed(() => {
   return null
 })
 
+// Additional refs that need to be declared before the watcher
+const selectedLocation = ref(null)
+const parkingLocations = ref([])
+
+// Computed property for camera availability
+const availableCameras = computed(() => {
+  console.log('Computing available cameras, current count:', cameras.value.length);
+  return cameras.value || [];
+});
+
 // Watchers individual telah dihapus, penyimpanan dilakukan di onSaveSettings
+
+// Watchers to sync form values with gateSettings changes
+watch(gateSettings, (newSettings) => {
+  if (newSettings) {
+    gateName.value = newSettings.gateName || '';
+    gateType.value = newSettings.gateType || 'entry';
+    operationMode.value = newSettings.operationMode || 'manless';
+    manualPaymentMode.value = newSettings.manualPaymentMode || 'postpaid';
+    printerName.value = newSettings.printerName || null;
+    paperSize.value = newSettings.paperSize || '58mm';
+    autoPrint.value = newSettings.autoPrint || true;
+    serialPort.value = newSettings.SERIAL_PORT || '';
+    captureInterval.value = newSettings.CAPTURE_INTERVAL || 5000;
+    wsUrl.value = newSettings.WS_URL || '';
+    useExternalAlpr.value = newSettings.USE_EXTERNAL_ALPR || false;
+    darkMode.value = newSettings.darkMode || false;
+    
+    // Camera settings
+    selectedPlateCam.value = newSettings.PLATE_CAM_DEVICE_ID || null;
+    plateCameraIp.value = newSettings.PLATE_CAM_IP || '';
+    plateCameraUsername.value = newSettings.PLATE_CAM_USERNAME || '';
+    plateCameraPassword.value = newSettings.PLATE_CAM_PASSWORD || '';
+    plateCameraRtspPath.value = newSettings.PLATE_CAM_RTSP_PATH || '';
+    
+    selectedDriverCam.value = newSettings.DRIVER_CAM_DEVICE_ID || null;
+    driverCameraIp.value = newSettings.DRIVER_CAM_IP || '';
+    driverCameraUsername.value = newSettings.DRIVER_CAM_USERNAME || '';
+    driverCameraPassword.value = newSettings.DRIVER_CAM_PASSWORD || '';
+    driverCameraRtspPath.value = newSettings.DRIVER_CAM_RTSP_PATH || '';
+    
+    selectedScannerCam.value = newSettings.SCANNER_CAM_DEVICE_ID || null;
+    scannerCameraIp.value = newSettings.SCANNER_CAM_IP || '';
+    scannerCameraUsername.value = newSettings.SCANNER_CAM_USERNAME || '';
+    scannerCameraPassword.value = newSettings.SCANNER_CAM_PASSWORD || '';
+    scannerCameraRtspPath.value = newSettings.SCANNER_CAM_RTSP_PATH || '';
+    
+    // Former global settings
+    wsUrl.value = newSettings.WS_URL || 'ws://localhost:8765';
+    useExternalAlpr.value = newSettings.USE_EXTERNAL_ALPR || false;
+    darkMode.value = newSettings.darkMode || false;
+    selectedLocation.value = newSettings.LOCATION || null;
+  }
+}, { immediate: true, deep: true });
 
 const onSaveSettings = async () => {
   console.log('onSaveSettings started - saving all settings...');
@@ -400,8 +522,9 @@ const onSaveSettings = async () => {
       // Gate-specific settings
       gateName: gateName.value,
       gateType: gateType.value,
+      operationMode: operationMode.value,
+      manualPaymentMode: manualPaymentMode.value,
       SERIAL_PORT: serialPort.value,
-      manlessMode: manlessMode.value,
       printerName: printerName.value,
       paperSize: paperSize.value,
       autoPrint: autoPrint.value,
@@ -440,11 +563,19 @@ const onSaveSettings = async () => {
       position: 'top'
     });
     
-    // Close dialog and reload as needed
+    // Close dialog first
     dialogRef.value.hide();
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    
+    // Wait a bit for settings to be saved and reactive system to update
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Refresh settings to ensure they're loaded correctly
+    await settingsService.initializeSettings();
+    
+    // Only reload if absolutely necessary (can be removed if reactive updates work well)
+    // setTimeout(() => {
+    //   window.location.reload();
+    // }, 1000);
     
   } catch (error) {
     console.error('Failed to save settings:', error);
@@ -457,53 +588,90 @@ const onSaveSettings = async () => {
 };
 
 const onSerialPortDialogHide = () => {
-  window.addEventListener("keydown", handleKeyDownOnSettingDialog);
+  // window.addEventListener("keydown", handleKeyDownOnSettingDialog);
 };
 
 const onCameraInDialogHide = () => {
   // window.location.reload();
-  window.addEventListener("keydown", handleKeyDownOnSettingDialog);
+  // window.addEventListener("keydown", handleKeyDownOnSettingDialog);
 };
 const onCameraOutDialogHide = () => {
   // window.location.reload();
-  window.addEventListener("keydown", handleKeyDownOnSettingDialog);
+  // window.addEventListener("keydown", handleKeyDownOnSettingDialog);
 };
 
 
 const getCameras = async () => {
   try {
-    console.log('Requesting camera permissions by calling getUserMedia...');
-    // Meminta akses ke kamera (video saja sudah cukup untuk memicu prompt izin)
-    // dan untuk mendapatkan label perangkat yang lebih deskriptif.
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    // Hentikan stream setelah izin didapatkan dan label perangkat tersedia, karena kita hanya butuh daftar perangkat.
-    stream.getTracks().forEach(track => track.stop());
+    console.log('Starting camera enumeration...');
+    
+    // First, try to enumerate devices without requesting permission
+    let devices = await navigator.mediaDevices.enumerateDevices();
+    console.log('Initial device enumeration (before permission):', devices);
+    
+    // Check if we have detailed labels (permission already granted)
+    const hasDetailedLabels = devices.some(device => 
+      device.kind === 'videoinput' && device.label && device.label !== ''
+    );
+    
+    if (!hasDetailedLabels) {
+      console.log('No detailed labels found, requesting camera permissions...');
+      try {
+        // Request permission to get detailed device labels
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // Stop the stream immediately after getting permission
+        stream.getTracks().forEach(track => track.stop());
+        console.log('Camera permission granted, re-enumerating devices...');
+        
+        // Re-enumerate devices after permission is granted
+        devices = await navigator.mediaDevices.enumerateDevices();
+      } catch (permissionError) {
+        console.warn('Camera permission denied, using basic device info:', permissionError);
+        // Continue with basic device info even if permission is denied
+      }
+    }
 
-    console.log('Enumerating devices after permission grant...');
-    const devices = await navigator.mediaDevices.enumerateDevices();
+    console.log('Final device enumeration:', devices);
+    
+    // Filter and map video input devices
     const videoCameras = devices
       .filter(device => device.kind === 'videoinput')
-      .map(device => ({
+      .map((device, index) => ({
         deviceId: device.deviceId,
-        label: device.label || `Camera ${cameras.value.length + 1}`,
+        label: device.label || `Camera ${index + 1}`,
         value: device.deviceId // Add value for q-select compatibility
       }));
     
     cameras.value = videoCameras;
-    console.log('Available cameras:', cameras.value);
+    console.log('Available cameras set to:', cameras.value);
     
-    // Pemulihan pilihan kamera sekarang menggunakan gateSettings
-    // Nilai-nilai ini sudah diinisialisasi dan akan diperbarui oleh watcher
-    // selectedPlateCam.value = gateSettings.value.PLATE_CAM_DEVICE_ID || null;
-    // selectedDriverCam.value = gateSettings.value.DRIVER_CAM_DEVICE_ID || null;
-    // selectedScannerCam.value = gateSettings.value.SCANNER_CAM_DEVICE_ID || null;
+    // Show notification about camera detection
+    if (videoCameras.length > 0) {
+      $q.notify({
+        type: 'positive',
+        message: `Found ${videoCameras.length} camera(s)`,
+        position: 'top',
+        timeout: 2000
+      });
+    } else {
+      $q.notify({
+        type: 'warning',
+        message: 'No cameras detected. Please check if cameras are connected.',
+        position: 'top',
+        timeout: 3000
+      });
+    }
+    
   } catch (error) {
     console.error('Error getting cameras:', error);
     $q.notify({
       type: 'negative',
-      message: 'Could not access camera. Please check permissions.',
+      message: 'Could not access camera devices. Please check browser permissions.',
       position: 'top'
     });
+    
+    // Set empty array as fallback
+    cameras.value = [];
   }
 };
 
@@ -578,8 +746,6 @@ const updateScannerCameraPassword = (password) => {
 
 // backendUrl, alprUrl, dan wsUrl sekarang diambil dari globalSettings dan tidak lagi disimpan secara lokal di sini.
 // Inisialisasi sudah dilakukan di atas dengan `globalSettings.value?.API_IP` dll.
-const selectedLocation = ref(null)
-const parkingLocations = ref([])
 
 const updateBackendUrl = (val) => {
   // Tidak perlu menyimpan di sini, akan disimpan di onSaveSettings
@@ -607,54 +773,32 @@ const updateLocation = (val) => {
 onMounted(async () => {
   console.log('SettingsDialog onMounted started');
   
-  // Panggil getCameras jika manlessMode aktif saat komponen dimuat
-  // Pastikan getCameras juga sudah diupdate untuk tidak bergantung pada settingsStore lama
-  
-  await getCameras(); 
-  
-  // Initialize settings first
-  console.log('Initializing settings...');
-  await settingsService.initializeSettings();
-  console.log('Settings initialized');
+  try {
+    // Initialize settings first
+    console.log('Initializing settings...');
+    await settingsService.initializeSettings();
+    console.log('Settings initialized successfully');
+    
     // Wait a bit to ensure reactive state is updated
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
-  // Update form with current settings
-  const currentSettings = gateSettings.value;
-  if (currentSettings) {
-    gateName.value = currentSettings.gateName || '';
-    gateType.value = currentSettings.gateType || 'entry';
-    manlessMode.value = currentSettings.manlessMode || true;
-    printerName.value = currentSettings.printerName || null;
-    paperSize.value = currentSettings.paperSize || '58mm';
-    autoPrint.value = currentSettings.autoPrint || true;
-    serialPort.value = currentSettings.SERIAL_PORT || '';
-    captureInterval.value = currentSettings.CAPTURE_INTERVAL || 5000;
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Camera settings
-    selectedPlateCam.value = currentSettings.PLATE_CAM_DEVICE_ID || null;
-    plateCameraIp.value = currentSettings.PLATE_CAM_IP || '';
-    plateCameraUsername.value = currentSettings.PLATE_CAM_USERNAME || '';
-    plateCameraPassword.value = currentSettings.PLATE_CAM_PASSWORD || '';
-    plateCameraRtspPath.value = currentSettings.PLATE_CAM_RTSP_PATH || '';
+    // Get cameras after settings are initialized
+    console.log('Starting camera enumeration...');
+    await getCameras(); 
+    console.log('Camera enumeration completed, camera count:', cameras.value.length);
     
-    selectedDriverCam.value = currentSettings.DRIVER_CAM_DEVICE_ID || null;
-    driverCameraIp.value = currentSettings.DRIVER_CAM_IP || '';
-    driverCameraUsername.value = currentSettings.DRIVER_CAM_USERNAME || '';
-    driverCameraPassword.value = currentSettings.DRIVER_CAM_PASSWORD || '';
-    driverCameraRtspPath.value = currentSettings.DRIVER_CAM_RTSP_PATH || '';
+    // The form values will be automatically updated by the watcher
+    // when gateSettings changes, so we don't need to manually set them here
+    console.log('Current settings after initialization:', gateSettings.value);
+    console.log('Current camera list:', cameras.value);
     
-    selectedScannerCam.value = currentSettings.SCANNER_CAM_DEVICE_ID || null;
-    scannerCameraIp.value = currentSettings.SCANNER_CAM_IP || '';
-    scannerCameraUsername.value = currentSettings.SCANNER_CAM_USERNAME || '';
-    scannerCameraPassword.value = currentSettings.SCANNER_CAM_PASSWORD || '';
-    scannerCameraRtspPath.value = currentSettings.SCANNER_CAM_RTSP_PATH || '';
-    
-    // Former global settings
-    wsUrl.value = currentSettings.WS_URL || 'ws://localhost:8765';
-    useExternalAlpr.value = currentSettings.USE_EXTERNAL_ALPR || false;
-    darkMode.value = currentSettings.darkMode || false;
-    selectedLocation.value = currentSettings.LOCATION || null;
+  } catch (error) {
+    console.error('Error initializing settings dialog:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to load settings. Please try again.',
+      position: 'top'
+    });
   }
 });
 </script>

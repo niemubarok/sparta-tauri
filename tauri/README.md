@@ -1,62 +1,42 @@
-#  tauri-quasar
+# Inisialisasi Project Tauri + Quasar
 
-Tauri  + Quasar CLI (Vite) starter template.
+## Langkah-langkah Inisialisasi
 
-## Resources
+1. **Clone repository ini**
+   ```bash
+   git clone <repo-url>
+   cd tauri
+   ```
 
-- [x] Vue 3
-- [x] Quasar CLI
-- [x] Vite
-- [x] File system based routing
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
 
-  - [x] vite-plugin-pages
+3. **Jalankan aplikasi dalam mode development**
+   ```bash
+   pnpm tauri:dev
+   ```
 
-  - [x] vite-plugin-vue-layouts
-- [x]  pinia
-- [x] unocss
-  - [x]  preset-attributify
-  - [x]  preset-icons
-  - [x]  preset-uno
+4. **Linting (opsional)**
+   ```bash
+   pnpm lint
+   ```
 
-## Quick start
+5. **Build aplikasi**
+   - Ubah bundle identifier di `tauri.conf.json > tauri > bundle > identifier` jika diperlukan.
+   ```bash
+   pnpm tauri:build
+   ```
 
-Note: Need to **Rust edition 2024 Release** or later.
+## Prasyarat
 
-### Install the dependencies
+- Node.js & pnpm
+- Rust edition 2024 atau lebih baru
 
-```bash
-pnpm install
-```
+## Dokumentasi
 
-### Start the app in development mode
-
-```bash
-pnpm tauri:dev
-```
-
-### Lint the files
-
-```bash
-pnpm lint
-```
-
-### Build the app
-
-Change the bundle identifier in `tauri.conf.json > tauri > bundle > identifier`, then
-
-```bash
-pnpm tauri:build
-```
-## Preview
-
-![preview.png](preview.png)
-
-## Customize the configuration
-
-https://vitejs.dev/
-
-https://vuejs.org/
-
-https://quasar.dev/
-
-https://tauri.app/
+- [Vite](https://vitejs.dev/)
+- [Vue 3](https://vuejs.org/)
+- [Quasar](https://quasar.dev/)
+- [Tauri](https://tauri.app/)

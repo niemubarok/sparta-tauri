@@ -1077,7 +1077,7 @@ const goHome = async () => {
         >
           <!-- <q-card-section> -->
           <div class="row items-center justify-between">
-            <div class="text-h5">ALPR Manless Gate</div>
+            <div class="text-h5">Pintu Masuk</div>
             <div class="row items-center q-gutter-md">
               <Clock />
               <q-toggle
@@ -1087,7 +1087,8 @@ const goHome = async () => {
                 class="text-white"
                 @update:model-value="toggleDarkMode"
               />
-              <ConnectionIndicator class="indicator-item" />              <q-btn
+              <ConnectionIndicator class="indicator-item" />
+              <q-btn
                 flat
                 dense
                 color="primary"

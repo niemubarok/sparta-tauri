@@ -78,22 +78,122 @@ async fn play_audio(filePath: String) -> Result<(), String> {
 
 #[tauri::command]
 async fn get_active_gate_id(app_handle: tauri::AppHandle) -> Result<String, String> {
+    use std::fs;
+    
+    // Try to get from resources first
     let resource_path: PathBuf = app_handle
         .path()
         .resolve("resources/gate.json", tauri::path::BaseDirectory::Resource)
         .map_err(|e| e.to_string())?;
 
-    if !resource_path.exists() {
-        return Err("gate.json not found in resources".to_string());
+    // If resources path exists, try to read it
+    if resource_path.exists() {
+        match std::fs::read_to_string(&resource_path) {
+            Ok(file_content) => {
+                match serde_json::from_str::<GateConfig>(&file_content) {
+                    Ok(config) => return Ok(config.gateId),
+                    Err(e) => {
+                        eprintln!("Failed to parse gate.json from resources: {}", e);
+                    }
+                }
+            },
+            Err(e) => {
+                eprintln!("Failed to read gate.json from resources: {}", e);
+            }
+        }
     }
 
-    let file_content = std::fs::read_to_string(resource_path)
-        .map_err(|e| format!("Failed to read gate.json: {}", e))?;
+    // Fallback: try app data directory
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?;
+        
+    fs::create_dir_all(&app_data_dir)
+        .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+        
+    let app_data_path = app_data_dir.join("gate.json");
+    
+    if app_data_path.exists() {
+        match std::fs::read_to_string(&app_data_path) {
+            Ok(file_content) => {
+                match serde_json::from_str::<GateConfig>(&file_content) {
+                    Ok(config) => return Ok(config.gateId),
+                    Err(e) => {
+                        eprintln!("Failed to parse gate.json from app data: {}", e);
+                    }
+                }
+            },
+            Err(e) => {
+                eprintln!("Failed to read gate.json from app data: {}", e);
+            }
+        }
+    }
+    
+    // If file doesn't exist or is invalid, create a default one
+    let default_gate_id = "gate_entry_1";
+    let default_config = GateConfig {
+        gateId: default_gate_id.to_string(),
+    };
+    
+    let config_json = serde_json::to_string_pretty(&default_config)
+        .map_err(|e| format!("Failed to serialize default config: {}", e))?;
+    
+    // Try to write to app data directory
+    match std::fs::write(&app_data_path, &config_json) {
+        Ok(_) => {
+            println!("Created default gate.json at: {}", app_data_path.display());
+        },
+        Err(e) => {
+            eprintln!("Failed to write default gate.json to app data: {}", e);
+        }
+    }
+    
+    // Also try to write to resources if possible (for development)
+    if let Ok(resources_dir) = app_handle.path().resolve("resources", tauri::path::BaseDirectory::Resource) {
+        if let Ok(_) = fs::create_dir_all(&resources_dir) {
+            let _ = std::fs::write(&resource_path, &config_json);
+        }
+    }
+    
+    Ok(default_gate_id.to_string())
+}
 
-    let config: GateConfig = serde_json::from_str(&file_content)
-        .map_err(|e| format!("Failed to parse gate.json: {}", e))?;
-
-    Ok(config.gateId)
+#[tauri::command]
+async fn set_active_gate_id(app_handle: tauri::AppHandle, gate_id: String) -> Result<(), String> {
+    use std::fs;
+    
+    let config = GateConfig {
+        gateId: gate_id.clone(),
+    };
+    
+    let config_json = serde_json::to_string_pretty(&config)
+        .map_err(|e| format!("Failed to serialize config: {}", e))?;
+    
+    // Try to save to app data directory first
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?;
+        
+    fs::create_dir_all(&app_data_dir)
+        .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+        
+    let app_data_path = app_data_dir.join("gate.json");
+    
+    std::fs::write(&app_data_path, &config_json)
+        .map_err(|e| format!("Failed to write gate.json to app data: {}", e))?;
+    
+    // Also try to save to resources if possible
+    if let Ok(resource_path) = app_handle.path().resolve("resources/gate.json", tauri::path::BaseDirectory::Resource) {
+        if let Ok(resources_dir) = app_handle.path().resolve("resources", tauri::path::BaseDirectory::Resource) {
+            let _ = fs::create_dir_all(&resources_dir);
+            let _ = std::fs::write(&resource_path, &config_json);
+        }
+    }
+    
+    println!("Gate ID set to: {}", gate_id);
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -121,6 +221,7 @@ pub fn run() {
             command::camera_handler::stop_rtsp_live_stream,
             command::alpr_handler::process_alpr_image,
             get_active_gate_id,
+            set_active_gate_id,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -34,26 +34,22 @@
     <div>
       <q-chip
         class="bg-yellow-7 text-h6 text-weight-bolder absolute-top-left q-pa-md"
-        label="Pilih Jenis Kendaraan Default"
+        label="Pilih Jenis Kendaraan Default (Tekan shortcut keyboard)"
       />
     </div>
 
-    <div v-for="(pos, index) in jenisKendaraanOptions">
-      <!-- :class="
-              defaultShortcut === jenisKendaraan.shortcut && 'bg-yellow text-dark'
-            " -->
-      <!-- {{ index }} -->
+    <div v-for="(jenis, index) in jenisKendaraanOptions" :key="jenis.id || index">
       <q-item class="q-ma-md bg-grey-4" style="border-radius: 5px">
         <q-item-section top avatar>
-          <!-- <q-avatar color="primary" text-color="white" icon="bluetooth" /> -->
           <q-btn
             push
             class="bg-dark text-white text-weight-bolder q-px-md"
-            :label="index + 1"
+            :label="jenis.shortcut || (index + 1)"
           />
         </q-item-section>
         <q-item-section>
-          <q-item-label class="text-h6">{{ pos.label || "-" }}</q-item-label>
+          <q-item-label class="text-h6">{{ jenis.label || "-" }}</q-item-label>
+          <q-item-label caption>{{ jenis.value || "-" }}</q-item-label>
         </q-item-section>
       </q-item>
     </div>
@@ -65,7 +61,7 @@
 import { useDialogPluginComponent } from "quasar";
 import { onMounted, ref } from "vue";
 import ls from "localstorage-slim";
-import { useTransaksiStore } from "/src/stores/transaksi-store";
+import { useKendaraanStore } from "/src/stores/kendaraan-store";
 import { useComponentStore } from "/src/stores/component-store";
 
 const defaultJenisKendaraanRef = ref(false);
@@ -79,32 +75,52 @@ defineEmits([
 const { dialogRef } = useDialogPluginComponent();
 const onDialogHide = () => {
   window.removeEventListener("keydown", handleKeydownOndefaultJenisKendaraan);
-  transaksiStore.defaultJenisKendaraan = defaultJenisKendaraan.value;
+  kendaraanStore.setDefaultJenisKendaraan(defaultJenisKendaraan.value);
 };
 
-const transaksiStore = useTransaksiStore();
+const kendaraanStore = useKendaraanStore();
 const componentStore = useComponentStore();
-const jenisKendaraanOptions = ref(["-"]);
+const jenisKendaraanOptions = ref([]);
 const defaultJenisKendaraan = ref("");
+
 onMounted(async () => {
-  // jenisKendaraanOptions.value = await transaksiStore.getLokasiPos();
-  jenisKendaraanOptions.value = await transaksiStore.getJenisKendaraan();
+  await kendaraanStore.loadJenisKendaraanFromLocal();
+  jenisKendaraanOptions.value = kendaraanStore.jenisKendaraanList.map(jk => ({
+    value: jk.id, // menggunakan id sebagai value
+    label: jk.jenis,
+    id: jk.id,
+    shortcut: jk.shortcut || jk.id // fallback ke id jika shortcut tidak ada
+  }));
 });
 
 const handleKeydownOndefaultJenisKendaraan = (event) => {
-  const key = event.key;
+  const key = event.key.toUpperCase();
 
-  if (jenisKendaraanOptions.value[key - 1] !== undefined) {
-    transaksiStore.defaultJenisKendaraan = jenisKendaraanOptions.value[key - 1];
-    ls.set("defaultJenisKendaraan", jenisKendaraanOptions.value[key - 1]);
+  // Cari berdasarkan shortcut
+  const matchingOption = jenisKendaraanOptions.value.find(
+    (option) => option?.shortcut?.toUpperCase() === key
+  );
+
+  if (matchingOption) {
+    kendaraanStore.setDefaultJenisKendaraan(matchingOption);
+    ls.set("defaultJenisKendaraan", matchingOption);
     componentStore.selectDefaultJenisKendaraanDialogModel = false;
   }
 
-  if (key === "Escape") {
-    // dialogRef.value.hide();
+  // Fallback: jika tidak ada shortcut yang cocok, coba dengan angka (index + 1)
+  if (!matchingOption && !isNaN(Number(key))) {
+    const index = Number(key) - 1;
+    if (jenisKendaraanOptions.value[index] !== undefined) {
+      const selectedKendaraan = jenisKendaraanOptions.value[index];
+      kendaraanStore.setDefaultJenisKendaraan(selectedKendaraan);
+      ls.set("defaultJenisKendaraan", selectedKendaraan);
+      componentStore.selectDefaultJenisKendaraanDialogModel = false;
+    }
+  }
+
+  if (key === "ESCAPE") {
     componentStore.selectDefaultJenisKendaraanDialogModel = false;
   }
-  //   dialogRef.value.hide();
 };
 
 onMounted(async () => {

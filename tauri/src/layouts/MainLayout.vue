@@ -11,7 +11,37 @@ const essentialLinks = [
         title: 'Dashboard',
         caption: '',
         icon: 'dashboard',
-        to: '/daftar-transaksi',
+        link: '/daftar-transaksi',
+    },
+    {
+        title: 'Petugas',
+        caption: 'Kelola data petugas',
+        icon: 'person',
+        link: '/petugas',
+    },
+    {
+        title: 'Kendaraan',
+        caption: 'Kelola jenis kendaraan & blacklist',
+        icon: 'directions_car',
+        link: '/kendaraan',
+    },
+    {
+        title: 'Tarif',
+        caption: 'Kelola tarif parkir',
+        icon: 'attach_money',
+        link: '/tarif',
+    },
+    {
+        title: 'Admin',
+        caption: 'Seed data & system settings',
+        icon: 'admin_panel_settings',
+        link: '/admin',
+    },
+    {
+        title: 'ALPR Manager',
+        caption: 'Kelola CCTV & ALPR',
+        icon: 'videocam',
+        link: '/alpr-manager',
     },
 
     // {
@@ -39,24 +69,12 @@ const essentialLinks = [
     //   icon: "fact_check",
     //   link: "/laporan/transaksi/per-hari",
     // },
-    {
-        title: 'Petugas',
-        caption: '',
-        icon: 'person',
-        link: '/petugas',
-    },
-    {
-        title: 'ALPR Manager',
-        caption: 'Kelola CCTV & ALPR',
-        icon: 'videocam',
-        link: '/alpr-manager',
-    },
-    {
-        title: 'Pos Keluar',
-        caption: '',
-        icon: 'output',
-        link: '/',
-    },
+    // {
+    //     title: 'Pos Keluar',
+    //     caption: '',
+    //     icon: 'output',
+    //     link: '/',
+    // },
 
     // {
     //   title: "Master Wahana",
@@ -96,6 +114,27 @@ onMounted(() => {
     view="lHh Lpr lFf"
     class="bg-grey-4"
   >
+    <!-- DEMO VERSI BETA Overlay (text only, no background) -->
+    <!-- <div
+      style="
+        position: fixed;
+        mix-blend-mode: multiply;
+        bottom: 20vh;
+        right: 32px;
+        z-index: 9999;
+        pointer-events: none;
+        font-size: 6.5rem;
+        font-weight: bold;
+        color: #e53935;
+        opacity: 0.2;
+        font-style: italic;
+        letter-spacing: 2px;
+        transform: rotate(-5deg);
+        user-select: none;
+      "
+    >
+      DEMO VERSI BETA
+    </div> -->
     <q-header v-if="$route.meta.isHeader">
       <q-toolbar>
         <q-btn
@@ -132,7 +171,7 @@ onMounted(() => {
     </q-drawer>
 
     <q-page-container>
-      <router-view class="full-width" />
+      <router-view class="full-width bg-gray-2" />
       <KeyboardOverlay class="z-top" />
     </q-page-container>
   </q-layout>

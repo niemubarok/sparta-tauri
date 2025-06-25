@@ -1,20 +1,22 @@
 @echo off
 setlocal enabledelayedexpansion
 REM Batch script to install Python 3.10, VC_redist_X64, and MicrosoftEdgeWebView2RuntimeInstallerX64 on Windows
-REM Run as Administrator
+echo Pastikan di Run sebagai Administrator
 
 set PYTHON_URL=https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe
 set VCREDIST_URL=https://aka.ms/vs/17/release/vc_redist.x64.exe
-set WEBVIEW2_URL=https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e/MicrosoftEdgeWebView2RuntimeInstallerX64.exe
+set WEBVIEW2_URL=https://go.microsoft.com/fwlink/p/?LinkId=2124703
 set GET_PIP_URL=https://bootstrap.pypa.io/get-pip.py
 
-echo Installing dependencies...
+REM Use OS temp folder for downloads
+set "TEMP_DIR=%TEMP%"
+
+echo Downloading dependencies...
 REM Check if Python 3.10 is installed
 where python >nul 2>nul
 if %ERRORLEVEL%==0 (
     python --version 2>nul | findstr /C:"3.10" >nul
     if %ERRORLEVEL%==0 (
-        @REM echo Python 3.10 already installed. Skipping Python install.
         set PYTHON_INSTALLED=1
     ) else (
         set PYTHON_INSTALLED=0
@@ -24,13 +26,11 @@ if %ERRORLEVEL%==0 (
 )
 
 if %PYTHON_INSTALLED%==0 (
-    if not exist python-3.10.11-amd64.exe (
-        @REM echo Downloading Python 3.10...
-        powershell -Command "Invoke-WebRequest -Uri %PYTHON_URL% -OutFile 'python-3.10.11-amd64.exe'"
+    if not exist "%TEMP_DIR%\python-3.10.11-amd64.exe" (
+        powershell -Command "Invoke-WebRequest -Uri %PYTHON_URL% -OutFile '%TEMP_DIR%\python-3.10.11-amd64.exe'"
     )
-    start /wait python-3.10.11-amd64.exe /quiet InstallAllUsers=1 PrependPath=1
-) else (
-    @REM echo Skipping Python installation.
+    echo Installing...
+    start /wait "" "%TEMP_DIR%\python-3.10.11-amd64.exe" /quiet InstallAllUsers=1 PrependPath=1
 )
 
 REM Check if VC_redist_X64 is installed
@@ -38,12 +38,12 @@ reg query "HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" >nul 2>nul
 if %ERRORLEVEL%==0 (
     echo VC_redist_X64 already installed. Skipping VC_redist install.
 ) else (
-    if not exist vc_redist.x64.exe (
+    if not exist "%TEMP_DIR%\vc_redist.x64.exe" (
         echo Downloading VC_redist_X64...
-        powershell -Command "Invoke-WebRequest -Uri %VCREDIST_URL% -OutFile 'vc_redist.x64.exe'"
+        powershell -Command "Invoke-WebRequest -Uri %VCREDIST_URL% -OutFile '%TEMP_DIR%\vc_redist.x64.exe'"
     )
     echo Installing VC_redist_X64...
-    start /wait vc_redist.x64.exe /install /quiet /norestart
+    start /wait "" "%TEMP_DIR%\vc_redist.x64.exe" /install /quiet /norestart
 )
 
 REM Check WebView2 Evergreen Runtime via registry key and pv value
@@ -64,14 +64,15 @@ for /f "skip=2 tokens=3" %%A in ('reg query "HKLM\SOFTWARE\Microsoft\EdgeUpdate\
 )
 
 if %WEBVIEW2_INSTALLED%==1 (
-    @REM echo MicrosoftEdgeWebView2Runtime already installed. Skipping WebView2 install.
+    REM echo MicrosoftEdgeWebView2Runtime already installed. Skipping WebView2 install.
 ) else (
-    if not exist MicrosoftEdgeWebView2RuntimeInstallerX64.exe (
-        @REM echo Downloading MicrosoftEdgeWebView2RuntimeInstallerX64...
-        powershell -Command "Invoke-WebRequest -Uri %WEBVIEW2_URL% -OutFile 'MicrosoftEdgeWebView2RuntimeInstallerX64.exe'"
+    echo Downloading...
+    if not exist "%TEMP_DIR%\MicrosoftEdgeWebView2RuntimeInstallerX64.exe" (
+        powershell -Command "Invoke-WebRequest -Uri %WEBVIEW2_URL% -OutFile '%TEMP_DIR%\MicrosoftEdgeWebView2RuntimeInstallerX64.exe'"
     )
-    @REM echo Installing MicrosoftEdgeWebView2RuntimeInstallerX64...
-    start /wait MicrosoftEdgeWebView2RuntimeInstallerX64.exe /silent /install
+
+    echo installing....
+    start /wait "" "%TEMP_DIR%\MicrosoftEdgeWebView2RuntimeInstallerX64.exe" /silent /install
 )
 
 echo All dependencies installed.

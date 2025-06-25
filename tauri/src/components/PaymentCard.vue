@@ -122,7 +122,7 @@
                   "
                 >
                   {{
-                    transaksiStore.biayaParkir
+                    (transaksiStore.biayaParkir || 0)
                       .toLocaleString("id-ID", {
                         style: "currency",
                         currency: "IDR",
@@ -228,14 +228,15 @@ const { gateSettings, globalSettings } = useSettingsService(); // Diubah
 // TODO: Periksa apakah fetchCameraImage ada di settingsService atau perlu diimplementasikan ulang.
 // const buttonBatal = ref(false);
 const cameraOut = ls.get("cameraOut") || null;
-const cameraOutFileName = `${ls.get("lokasiPos").value}_out_snapshot` || null;
+const lokasiPos = ls.get("lokasiPos") || { value: '01', label: 'Default' };
+const cameraOutFileName = `${lokasiPos.value}_out_snapshot` || null;
 const cameraOutRef = ref(null);
 // const bayarParkir = () => {
 //   // logika bayar parkir
 // };
 
 const waktuMasuk = ref(
-  new Date(transaksiStore.waktuMasuk)
+  new Date(transaksiStore.currentTransaction?.waktu_masuk || new Date())
     .toLocaleTimeString("id-ID", {
       hour: "2-digit",
       minute: "2-digit",
@@ -245,7 +246,7 @@ const waktuMasuk = ref(
 );
 
 const tanggalMasuk = ref(
-  new Date(transaksiStore.waktuMasuk).toLocaleString("id-ID", {
+  new Date(transaksiStore.currentTransaction?.waktu_masuk || new Date()).toLocaleString("id-ID", {
     // weekday: "long",
     day: "2-digit",
     month: "2-digit",

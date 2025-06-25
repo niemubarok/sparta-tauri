@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import ManlessEntryGate from 'src/components/ManlessEntryGate.vue'
 
-import OutGatePage from 'src/pages/OutGatePage.vue'
+import OutGatePage from 'src/pages/manual-gate.vue'
 import ls from 'localstorage-slim'
 
 

@@ -33,8 +33,12 @@
       <!-- style="margin-left: -15px" -->
       <div>
         <q-chip
-          class="bg-yellow-7 text-h6 text-weight-bolder absolute-top-left q-pa-md"
-          label="Pilih Jenis Kendaraan"
+          :color="props.isPrepaidMode ? 'green' : 'blue'"
+          text-color="white"
+          class="text-h6 text-weight-bolder absolute-top-left q-pa-md"
+          :label="props.isPrepaidMode 
+            ? 'Pilih Jenis Kendaraan - Mode Bayar Depan (Tekan shortcut untuk langsung bayar)' 
+            : 'Pilih Jenis Kendaraan (Tekan shortcut atau Enter untuk default)'"
         />
       </div>
       <div class="flex justify-center">
@@ -77,22 +81,33 @@ import { useDialogPluginComponent, useQuasar } from "quasar";
 // import SuccessCheckMark from "./SuccessCheckMark.vue";
 import { onMounted, onBeforeUnmount, onBeforeMount, ref } from "vue";
 import { useTransaksiStore } from "src/stores/transaksi-store";
+import { useTarifStore } from "src/stores/tarif-store";
 import MemberCard from "./MemberCard.vue";
 import PlatNomor from "./PlatNomor.vue";
 import { useComponentStore } from "src/stores/component-store";
-import TicketDialog from "src/components/TicketDialog.vue";
+import TicketPrintDialog from "src/components/TicketPrintDialog.vue";
+import PaymentDialog from "src/components/PaymentDialog.vue";
 import ls from "localstorage-slim";
 // import { useClassesStore } from "src/stores/classes-store";
 
 // ls.config.encrypt = false;
 const transaksiStore = useTransaksiStore();
 const componentStore = useComponentStore();
+const tarifStore = useTarifStore();
 const $q = useQuasar();
 
 const props = defineProps({
   title: String,
   icon: String,
   type: String,
+  isPrepaidMode: {
+    type: Boolean,
+    default: false
+  },
+  customerData: {
+    type: Object,
+    default: null
+  }
 });
 
 defineEmits([
@@ -101,7 +116,7 @@ defineEmits([
   ...useDialogPluginComponent.emits,
 ]);
 
-const { dialogRef } = useDialogPluginComponent();
+const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const onDialogHide = () => {
   componentStore.hideInputPlatNomor = false;
   window.removeEventListener("keydown", handleKeydownOnJenisKendaraan);
@@ -115,58 +130,131 @@ const defaultShortcut = ref("A");
 const matchingDefaultOption = ref(null);
 
 const onClickTicket = (type) => {
-  // transaksiStore.setCheckIn(true);
-  const dialog = $q.dialog({
-    component: TicketDialog,
-    // noBackdropDismiss: true,
-    // persistent: true,
-    componentProps: {
-      title: type,
-    },
-  });
-
-  dialog.update();
-  // componentStore.hideInputPlatNomor = true;
+  if (props.isPrepaidMode) {
+    // Prepaid mode - langsung cetak tiket dengan tarif prepaid
+    const vehicleId = transaksiStore.selectedJenisKendaraan.id;
+    
+    // Get prepaid tariff from tarif store
+    const prepaidTariff = tarifStore.activeTarifPrepaid.find(t => t.id_mobil === vehicleId);
+    const tarifAmount = prepaidTariff?.tarif_prepaid || transaksiStore.selectedJenisKendaraan.tarif || 0;
+    
+    // Buat transaction data untuk prepaid
+    const prepaidTransaction = {
+      id: 'PREPAID-' + Date.now(),
+      no_pol: transaksiStore.platNomor,
+      plat_nomor: transaksiStore.platNomor,
+      id_kendaraan: vehicleId, // Keep this for transaction compatibility
+      id_mobil: vehicleId, // Add this for tarif store compatibility
+      jenis_kendaraan: transaksiStore.selectedJenisKendaraan.label,
+      is_prepaid: true,
+      is_paid: true,
+      bayar_masuk: tarifAmount,
+      tarif: tarifAmount,
+      waktu_masuk: new Date().toISOString(),
+      status: 0 // entry
+    };
+    
+    // Open ticket print dialog directly
+    $q.dialog({
+      component: TicketPrintDialog,
+      componentProps: {
+        transaction: prepaidTransaction
+      }
+    }).onOk((result) => {
+      // result should contain the emitted data from 'printed' event
+      console.log('Ticket printed successfully:', result);
+      // Close this dialog and signal parent
+      dialogRef.value.hide();
+      onDialogOK({ 
+        success: true, 
+        isPrepaid: true, 
+        transaction: result || prepaidTransaction,
+        ticketPrinted: true 
+      });
+    }).onCancel(() => {
+      // Emitted from 'cancelled' event
+      console.log('Ticket printing cancelled');
+      $q.notify({
+        type: 'info',
+        message: 'Cetak tiket dibatalkan',
+        position: 'top'
+      });
+    });
+  } else {
+    // Postpaid mode - traditional flow
+    transaksiStore.isCheckedIn = true;
+    componentStore.hideInputPlatNomor = true;
+    dialogRef.value.hide();
+    onDialogOK({ success: true, isPrepaid: false });
+  }
 };
 
 const handleKeydownOnJenisKendaraan = (event) => {
-  const key = event.key;
+  const key = event.key.toUpperCase();
+  
+  // Cari berdasarkan shortcut
   const matchingOption = jenisKendaraanOptions.value.find(
-    (option) => option?.shortcut === key.toUpperCase()
+    (option) => option?.shortcut?.toUpperCase() === key
   );
 
-  if (key === "Escape") {
+  if (key === "ESCAPE") {
     dialogRef.value.hide();
   }
 
-  if (key === "Enter") {
-    // const matchingDefaultOption = jenisKendaraanOptions.value.find(
-    //   (option) => option.shortcut === defaultJenisKendaraan.value.shortcut
-    // );
-
-    // console.log("matchingDefaultOption", matchingDefaultOption);
-    // console.log("matchingOption", matchingOption);
-    jenisKendaraanModel.value = matchingDefaultOption.value.id;
-    transaksiStore.selectedJenisKendaraan = matchingDefaultOption.value;
-    // console.log(transaksiStore.selectedJenisKendaraan);
-    onClickTicket(matchingDefaultOption.value.label);
-    dialogRef.value.hide();
+  if (key === "ENTER") {
+    // Gunakan default option
+    if (matchingDefaultOption.value) {
+      jenisKendaraanModel.value = matchingDefaultOption.value.id;
+      transaksiStore.selectedJenisKendaraan = matchingDefaultOption.value;
+      onClickTicket(matchingDefaultOption.value.label);
+      // Only auto-hide in postpaid mode, prepaid mode handles dialog closing in onClickTicket
+      if (!props.isPrepaidMode) {
+        dialogRef.value.hide();
+      }
+    }
   } else if (matchingOption) {
-    // console.log("matchingOption", matchingOption);
+    // Gunakan option yang sesuai dengan shortcut
+    console.log("matchingOption", matchingOption);
     jenisKendaraanModel.value = matchingOption.id;
     transaksiStore.selectedJenisKendaraan = matchingOption;
     onClickTicket(matchingOption.label);
-    dialogRef.value.hide();
+    // Only auto-hide in postpaid mode, prepaid mode handles dialog closing in onClickTicket
+    if (!props.isPrepaidMode) {
+      dialogRef.value.hide();
+    }
   }
 };
 
 onMounted(async () => {
+  // Load vehicle types and tariff data
   transaksiStore.jenisKendaraan = await transaksiStore.getJenisKendaraan();
   jenisKendaraanOptions.value = transaksiStore.jenisKendaraan;
-  matchingDefaultOption.value = jenisKendaraanOptions.value.find(
-    (option) => option.shortcut === defaultJenisKendaraan.value.shortcut
-  );
-  defaultShortcut.value = matchingDefaultOption.value.shortcut;
+  
+  // Load prepaid tariffs if in prepaid mode
+  if (props.isPrepaidMode) {
+    try {
+      await tarifStore.loadTarifPrepaidFromLocal();
+    } catch (error) {
+      console.error('Error loading prepaid tariffs:', error);
+    }
+  }
+  
+  // Cek default jenis kendaraan dari local storage
+  const savedDefault = ls.get("defaultJenisKendaraan");
+  if (savedDefault && savedDefault.shortcut) {
+    matchingDefaultOption.value = jenisKendaraanOptions.value.find(
+      (option) => option.shortcut === savedDefault.shortcut
+    );
+    if (matchingDefaultOption.value) {
+      defaultShortcut.value = matchingDefaultOption.value.shortcut;
+    }
+  }
+  
+  // Jika tidak ada default yang tersimpan, gunakan yang pertama
+  if (!matchingDefaultOption.value && jenisKendaraanOptions.value.length > 0) {
+    matchingDefaultOption.value = jenisKendaraanOptions.value[0];
+    defaultShortcut.value = matchingDefaultOption.value.shortcut;
+  }
 
   // console.log(transaksiStore.jenisKendaraan);
 

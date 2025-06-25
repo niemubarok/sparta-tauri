@@ -1,0 +1,10 @@
+{
+    "search.exclude": {
+  "**/node_modules": true,
+  "**/dist": true,
+  "**/src-tauri/.cargo": true,
+  "**/src-tauri/resources": true,
+  "**/src-tauri/target": true,
+  "**/src-tauri/scripts": true
+}
+}
