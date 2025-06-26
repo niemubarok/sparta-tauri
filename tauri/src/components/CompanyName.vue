@@ -3,7 +3,7 @@
     <!-- v-if="$q.screen.gt.sm" -->
     <q-chip
       flat
-      class="text-h4 text-weight-bolder bg-transparent text-dark"
+      class="text-h4 text-weight-bolder bg-transparent text-grey-3"
       :label="companyName"
     />
   </div>

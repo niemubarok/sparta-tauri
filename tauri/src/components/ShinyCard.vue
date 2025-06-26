@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-primary card">
+  <div class="card">
     <div class="card__info justify-center">
       <q-badge
         v-if="props.shortkey"
@@ -194,7 +194,7 @@ onMounted(async () => {
     transform: rotateY(10deg);
   }
 } */
-@keyframes texture {
+/* @keyframes texture {
   from,
   to {
     transform: translate3d(0, 0, 0);
@@ -202,5 +202,5 @@ onMounted(async () => {
   40% {
     transform: translate3d(-40%, 0, 0);
   }
-}
+} */
 </style>

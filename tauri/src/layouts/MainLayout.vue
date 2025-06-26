@@ -9,8 +9,14 @@ const componentStore = useComponentStore()
 const essentialLinks = [
     {
         title: 'Dashboard',
-        caption: '',
+        caption: 'Lihat semua transaksi',
         icon: 'dashboard',
+        link: '/',
+    },
+    {
+        title: 'Data Transaksi',
+        caption: 'Kelola transaksi parkir',
+        icon: 'receipt_long',
         link: '/daftar-transaksi',
     },
     {
@@ -112,7 +118,7 @@ onMounted(() => {
 <template>
   <q-layout
     view="lHh Lpr lFf"
-    class="bg-grey-4"
+    class="bg-grey-8"
   >
     <!-- DEMO VERSI BETA Overlay (text only, no background) -->
     <!-- <div
@@ -171,7 +177,7 @@ onMounted(() => {
     </q-drawer>
 
     <q-page-container>
-      <router-view class="full-width bg-gray-2" />
+      <router-view class="full-width bg-gray-8" />
       <KeyboardOverlay class="z-top" />
     </q-page-container>
   </q-layout>

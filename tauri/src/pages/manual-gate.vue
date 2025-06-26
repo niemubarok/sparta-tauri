@@ -22,15 +22,15 @@
   <div
     :key="componentStore.outGateKey"
     v-else
-    class="relative fixed-top full-height full-width"
-    :class="darkMode ? 'bg-primary' : 'bg-grey-5'"
+    class="relative fixed-top full-height full-width overflow-hidden"
+    :class="darkMode ? 'bg-grey-8' : 'bg-grey-8'"
   >
     <div
       v-if="!transaksiStore.isCheckedIn"
       class="flex row justify-between items-center q-pl-lg no-wrap q-pt-md"
       style="height: 150px"
     >
-      <q-card class="row items-center bg-grey-2">
+      <q-card flat class="row items-center transparent">
         <!-- <q-img
           v-if="$q.screen.gt.sm"
           src="~assets/logo.png"
@@ -48,20 +48,20 @@
       <div class="content-end q-pr-md">
         <div class="flex row no-wrap justify-end">
           <ShinyCard
-            class="bg-indigo-10"
+            class="bg-grey-7"
             title="Kendaraan Masuk"
             :jumlah="transaksiStore.vehicleInToday"
           />
           <!-- shortkey="F3" -->
           <ShinyCard
             :key="componentStore.vehicleOutKey"
-            class="bg-teal-10 q-mx-md"
+            class="bg-grey-8 q-mx-md"
             title="Kendaraan Keluar"
             shortkey="F4"
             :jumlah="transaksiStore.totalVehicleOut"
           />
           <ShinyCard
-            class="bg-deep-orange-10"
+            class="bg-grey-9"
             title="Kendaraan Parkir"
             :jumlah="transaksiStore.totalVehicleInside"
           />
@@ -70,21 +70,34 @@
       </div>
     </div>
     <div
-      class="window-width text-dark text-weight-bolder flex row q-pr-lg q-col-gutter-sm z-top"
+      class="window-width text-dark text-weight-bolder flex row q-pr-lg q-col-gutter-sm z-top overflow-hidden q-mb-md"
       :class="
         transaksiStore.isCheckedIn
           ? 'justify-start q-mt-md q-ml-md '
           : 'justify-end'
       "
     >
-      <q-chip class="bg-transparent" icon="account_circle" :label="pegawai" />
+      
+          <q-chip
+          v-show="!componentStore.hideInputPlatNomor && !transaksiStore.isCheckedIn" 
+            color="transparent"
+            text-color="grey-3"
+            :icon="settingsService.isPrepaidMode ? 'payment' : 'schedule'"
+          >
+            Mode: {{ settingsService.isPrepaidMode ? 'Bayar Depan (Prepaid)' : 'Bayar Belakang (Postpaid)' }}
+          </q-chip>
+      
+        
+      <q-chip text-color="grey-3" class="bg-transparent" icon="account_circle" :label="pegawai" />
 
       <q-chip
         class="bg-transparent"
         icon="work_history"
+        text-color="grey-3"
         :label="ls.get('shift')"
       />
       <q-chip
+      text-color="grey-3"
         class="bg-transparent"
         icon="place"
         :label="
@@ -105,15 +118,15 @@
     <!-- </div> -->
 
     <!-- KAMERA -->
-    <div class="row justify-center items-center">
-      <div>
+    <div class="row justify-center items-center overflow-hidden">
+      <div class="col-12">
         <div
           v-if="!transaksiStore.isCheckedIn"
           ref="cardVideo"
-          class="flex row justify-between content-center items-center q-px-sm relative bg-transparent"
-          style="width: 100vw; max-height: 62vh"
+          class="flex row justify-between content-center items-center q-px-sm relative bg-transparent overflow-hidden q-gutter-md no-wrap"
+          style="width: 100%; max-height: 62vh"
         >
-          <div class="col-6 relative">
+          <div class="col-6 relative overflow-hidden q-mr-md">
             <q-chip
               class="absolute bg-transparent"
               icon="camera"
@@ -138,10 +151,11 @@
               @error="onCameraError"
               class="camera-feed"
               label="Kamera Kendaraan"
+              style="max-width: 100%; max-height: 52vh;"
             />
             <!-- height: '62vh', -->
           </div>
-          <div class="col-6 relative">
+          <div class="col-6 relative overflow-hidden q-ml-md">
             <q-chip
               class="absolute bg-transparent"
               icon="camera"
@@ -175,9 +189,7 @@
               :fileName="'driver'"
               label="Kamera Driver"
               @error="onCameraError"
-              :style="{
-                width: '49vw',
-              }"
+              style="max-width: 100%; max-height: 52vh;"
             />
             <!-- :style="$q.screen.lt.md ? 'width: 49vw' : 'height: 52vh'" -->
           </div>
@@ -186,40 +198,19 @@
     </div>
 
     <div
-      class="flex row justify-center fixed full-width no-wrap"
-      style="bottom: 20px"
+      class="flex row justify-center fixed full-width no-wrap overflow-hidden bg-grey-8"
+      style="bottom: 20px; max-width: 100vw;"
     >
-      <div class="col-8">
-        <!-- Mode indicator -->
-        <div 
-          v-show="!componentStore.hideInputPlatNomor && !transaksiStore.isCheckedIn"
-          class="text-center q-mb-sm"
-        >
-          <q-chip 
-            :color="settingsService.isPrepaidMode ? 'green' : 'blue'"
-            text-color="white"
-            :icon="settingsService.isPrepaidMode ? 'payment' : 'schedule'"
-          >
-            Mode: {{ settingsService.isPrepaidMode ? 'Bayar Depan (Prepaid)' : 'Bayar Belakang (Postpaid)' }}
-          </q-chip>
-        </div>
-        
+      <div class="col-8 overflow-hidden">
         <q-input
           v-show="
             !componentStore.hideInputPlatNomor && !transaksiStore.isCheckedIn
           "
-          class="input-box rounded-corner relative text-uppercase q-pa-md q-mb-xl"
-          :class="darkMode ? 'bg-grey-3 text-dark' : 'bg-secondary  text-white'"
-          :input-class="
-            darkMode
-              ? 'input-box  text-dark text-weight-bolder'
-              : 'input-box text-white text-weight-bolder'
-          "
-          input-style="height:10vh;border:0"
-          :label-color="
-            darkMode ? 'secondary text-h4 q-pb-xl' : 'yellow text-h4 q-pb-xl'
-          "
-          :color="darkMode ? 'bg-yellow' : 'bg-secondary '"
+          input-class="input-box  text-black text-weight-bolder"
+          class="input-box rounded-corner relative text-uppercase q-pa-md q-mb-xl bg-grey-1 text-dark"
+          input-style="height:90px;border:0"
+          label-color="black text-body1 q-pb-sm"
+          color="bg-grey-2"
           item-aligned
           borderless
           v-model="transaksiStore.platNomor"
@@ -240,8 +231,7 @@
             <q-btn
               push
               label="F1"
-              class="text-weight-bold q-mt-md"
-              :class="darkMode ? 'bg-dark text-white' : 'bg-grey-3 text-dark'"
+              class="text-weight-bold q-mt-md bg-dark text-white"
             />
           </template>
 
@@ -249,8 +239,7 @@
             <q-btn
               push
               :size="'xl'"
-              class="q-mt-md q-mr-md"
-              :class="darkMode ? 'bg-dark text-white' : 'bg-grey-3 text-dark'"
+              class="q-mt-md q-mr-md bg-dark text-white"
               icon="keyboard_return"
               @click="onPressEnterPlatNomor()"
             />
@@ -258,7 +247,8 @@
         </q-input>
       </div>
       <div
-        class="full-width fixed-bottom-right bg-dark q-pa-sm row justify-between"
+        class="full-width fixed-bottom-right bg-dark q-pa-sm row justify-between overflow-hidden"
+        style="max-width: 100vw;"
       >
         <!-- v-if="componentStore.currentPage == 'outgate'"-->
         <div>
@@ -330,6 +320,9 @@
               class="q-ml-xs"
             />
           </q-btn>
+
+          <!-- Dark Mode Toggle Button -->
+         
         </div>
 
         <!-- <q-toggle
@@ -339,7 +332,7 @@
       /> -->
       </div>
     </div>
-    <PaymentCard v-if="transaksiStore.isCheckedIn" @payment-completed="onPaymentCompleted"/>
+    <!-- <PaymentCard v-if="transaksiStore.isCheckedIn" @payment-completed="onPaymentCompleted"/> -->
   </div>
 </template>
 
@@ -350,6 +343,7 @@ import { useQuasar } from "quasar";
 import { useTransaksiStore } from "src/stores/transaksi-store";
 import { useComponentStore } from "src/stores/component-store";
 import { useSettingsService } from "src/stores/settings-service";
+import { usePetugasStore } from "src/stores/petugas-store";
 import { userStore } from "src/stores/user-store";
 import LoginDialog from "src/components/LoginDialog.vue";
 import ApiUrlDialog from "src/components/ApiUrlDialog.vue";
@@ -358,7 +352,7 @@ import ls from "localstorage-slim";
 
 //Components
 import Clock from "../components/Clock.vue";
-import PaymentCard from "src/components/PaymentCard.vue";
+// import PaymentCard from "src/components/PaymentCard.vue";
 import Quotes from "src/components/Quotes.vue";
 import ShinyCard from "src/components/ShinyCard.vue";
 import Camera from "src/components/Camera.vue";
@@ -381,6 +375,7 @@ import JenisKendaraanDialog from "src/components/JenisKendaraanDialog.vue";
 const transaksiStore = useTransaksiStore();
 const componentStore = useComponentStore();
 const settingsService = useSettingsService();
+const petugasStore = usePetugasStore();
 const gateSettings = computed(() => settingsService.gateSettings);
 const $q = useQuasar();
 
@@ -425,9 +420,13 @@ const parseRtspUrl = (url, settings, typePrefix) => { // typePrefix is 'PLATE' o
   return config;
 };
 
-const darkMode = ref(ls.get("darkMode")) || ref(false);
+const darkMode = ref(ls.get("darkMode") ?? false);
 const darkModeToggle = () => {
+  darkMode.value = !darkMode.value;
   ls.set("darkMode", darkMode.value);
+  
+  // Apply dark mode to Quasar
+  $q.dark.set(darkMode.value);
 };
 
 const cardVideo = ref(null);
@@ -844,10 +843,28 @@ const updateStatistics = async () => {
 };
 
 const logout = async () => {
-  await userStore().logout();
-  ls.remove("pegawai");
-  ls.remove("shift");
-  ls.remove("timeLogin");
+  try {
+    // Use petugas store logout
+    petugasStore.logout();
+    
+    // Also try to logout from user store if needed
+    await userStore().logout();
+    
+    // Clear all login related data
+    ls.remove("pegawai");
+    ls.remove("shift");
+    ls.remove("timeLogin");
+    ls.remove("isAdmin");
+    ls.remove("tanggal");
+    
+    // Redirect to login
+    window.location.reload();
+  } catch (error) {
+    console.error('Error during logout:', error);
+    // Force logout anyway
+    ls.clear();
+    window.location.reload();
+  }
 };
 
 const isAdmin = ls.get("isAdmin") || false;
@@ -882,7 +899,6 @@ const handleKeyDown = (event) => {
       window.location.replace("/");
     } else if (event.shiftKey === true && event.key === "D") {
       event.preventDefault();
-      darkMode.value = !darkMode.value;
       darkModeToggle();
     } else if (event.key === "F8") {
       event.preventDefault();
@@ -984,6 +1000,18 @@ onMounted(async () => {
     await settingsService.initializeSettings();
   }
 
+  // Initialize petugas store
+  try {
+    await petugasStore.loadFromLocal();
+    if (petugasStore.daftarPetugas.length === 0) {
+      console.log('Initializing petugas data...');
+      await petugasStore.seedPetugasData();
+    }
+    console.log('Petugas store initialized');
+  } catch (error) {
+    console.error('Error initializing petugas store:', error);
+  }
+
   // Debug: Check if gateSettings are loaded correctly
   console.log('Manual Gate - gateSettings:', gateSettings.value);
   console.log('Manual Gate - plateCameraType:', plateCameraType.value);
@@ -995,8 +1023,21 @@ onMounted(async () => {
   console.log('Manual Gate - plateCameraDeviceId:', plateCameraDeviceId.value);
   console.log('Manual Gate - driverCameraDeviceId:', driverCameraDeviceId.value);
 
+  // Initialize dark mode
+  const savedDarkMode = ls.get("darkMode");
+  if (savedDarkMode !== null) {
+    darkMode.value = savedDarkMode;
+    $q.dark.set(darkMode.value);
+  }
+
   componentStore.currentPage = "outgate";
   
+  // Watch for dark mode changes
+  watch(darkMode, (newValue) => {
+    $q.dark.set(newValue);
+    ls.set("darkMode", newValue);
+  }, { immediate: true });
+
   // Watch for selectedJenisKendaraan changes to auto-process entry
   watch(
     () => transaksiStore.selectedJenisKendaraan,
@@ -1020,24 +1061,24 @@ onMounted(async () => {
   }
 
   // Check required configurations
-  if (transaksiStore.lokasiPos.value === "-" || !transaksiStore.lokasiPos.value) {
-    $q.notify({
-      type: "warning",
-      message: "Lokasi pos belum dikonfigurasi, silahkan buka settings",
-      position: "top",
-    });
-    // Don't return, allow continued operation
-  }
+  // if (transaksiStore.lokasiPos.value === "-" || !transaksiStore.lokasiPos.value) {
+  //   $q.notify({
+  //     type: "warning",
+  //     message: "Lokasi pos belum dikonfigurasi, silahkan buka settings",
+  //     position: "top",
+  //   });
+  //   // Don't return, allow continued operation
+  // }
 
-  if (!transaksiStore.API_URL || transaksiStore.API_URL === "-") {
-    console.warn('API URL not configured, working in offline mode');
-    $q.notify({
-      type: "info",
-      message: "Mode offline - API tidak terkonfigurasi",
-      position: "top",
-      timeout: 2000
-    });
-  }
+  // if (!transaksiStore.API_URL || transaksiStore.API_URL === "-") {
+  //   console.warn('API URL not configured, working in offline mode');
+  //   $q.notify({
+  //     type: "info",
+  //     message: "Mode offline - API tidak terkonfigurasi",
+  //     position: "top",
+  //     timeout: 2000
+  //   });
+  // }
 
   // Check authentication
   if (!pegawai || !ls.get("shift")) {
@@ -1105,16 +1146,133 @@ onUnmounted(() => {
   border-radius: 10px;
 }
 
+/* Prevent horizontal and vertical scrolling */
+html, body {
+  overflow: hidden !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+}
+
+.q-layout {
+  overflow: hidden !important;
+}
+
+/* Ensure all containers don't exceed viewport */
+* {
+  box-sizing: border-box;
+}
+
+.full-width {
+  max-width: 100vw !important;
+}
+
+.full-height {
+  max-height: 100vh !important;
+}
+
+/* Camera containers should not overflow */
+.camera-feed {
+  object-fit: contain !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Prevent any element from causing horizontal scroll */
+.window-width {
+  max-width: 100vw !important;
+  overflow: hidden !important;
+}
+
 /* } */
 </style>
 
 <style scoped>
 :deep(.input-box .q-field__control),
 :deep(.input-box .q-field__append .q-field__marginal) {
-  height: 10vh;
-  width: 70vw;
+  height: 100px;
+  max-width: 70vw;
   padding-top: 10px;
-  font-size: 80px;
+  font-size: 5em;
   font-family: "Courier New", Courier, monospace;
+  overflow: hidden;
+}
+
+/* Ensure input container doesn't overflow */
+.input-box {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Camera spacing */
+.camera-container {
+  gap: 2rem !important;
+}
+
+/* Add some space between cameras */
+.q-gutter-md > .col-6:first-child {
+  padding-right: 1rem;
+}
+
+.q-gutter-md > .col-6:last-child {
+  padding-left: 1rem;
+}
+
+/* Dark mode styles */
+.dark-mode {
+  background-color: var(--q-dark) !important;
+  color: var(--q-dark-page) !important;
+}
+
+.light-mode {
+  background-color: var(--q-primary) !important;
+  color: var(--q-primary-page) !important;
+}
+
+/* Dark mode specific overrides */
+body.body--dark {
+  background-color: #1d1d1d !important;
+}
+
+body.body--dark .bg-primary {
+  background-color: #1976d2 !important;
+}
+
+body.body--dark .bg-grey-5 {
+  background-color: #424242 !important;
+}
+
+body.body--dark .text-dark {
+  color: #ffffff !important;
+}
+
+body.body--dark .bg-dark {
+  background-color: #121212 !important;
+}
+
+body.body--dark .bg-grey-2 {
+  background-color: #303030 !important;
+}
+
+body.body--dark .bg-grey-3 {
+  background-color: #424242 !important;
+}
+
+body.body--dark .bg-secondary {
+  background-color: #424242 !important;
+}
+
+/* Light mode overrides */
+body.body--light .bg-primary {
+  background-color: #1976d2 !important;
+}
+
+body.body--light .bg-grey-5 {
+  background-color: #f5f5f5 !important;
+}
+
+body.body--light .text-dark {
+  color: #000000 !important;
 }
 </style>

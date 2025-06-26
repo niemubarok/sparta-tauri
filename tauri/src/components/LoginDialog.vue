@@ -32,6 +32,8 @@
             type="submit"
             color="primary"
             class="q-pa-xl"
+            @click="onSubmit"
+            :loading="isLoading"
           />
         </q-card-actions>
       </q-card-section>
@@ -47,6 +49,7 @@ import { useComponentStore } from "src/stores/component-store";
 import SettingsDialog from "src/components/SettingsDialog.vue";
 import ls from "localstorage-slim";
 import { useTransaksiStore } from "src/stores/transaksi-store";
+import { usePetugasStore } from "src/stores/petugas-store";
 import axios from "axios";
 import { useRouter } from "vue-router";
 import ApiUrlDialog from "./ApiUrlDialog.vue";
@@ -55,6 +58,7 @@ import { userStore } from "src/stores/user-store";
 const { dialogRef, onDialogHide } = useDialogPluginComponent();
 const componentStore = useComponentStore();
 const transaksiStore = useTransaksiStore();
+const petugasStore = usePetugasStore();
 
 const router = useRouter();
 const $q = useQuasar();
@@ -68,43 +72,146 @@ const username = ref("");
 const password = ref("");
 const shift = ref("S1");
 const passwordInput = ref(null);
+const isLoading = ref(false);
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const onSubmit = async () => {
-  const user = await userStore().login(username.value, password.value);
-  console.log(user);
-  if (user) {
-    if (props.type == "login") {
-      // determineShift();
-      ls.set("pegawai", user);
-      window.location.reload();
-    } else if (props.type === "check" && props.component === "SettingsDialog") {
-      if (transaksiStore.isAdmin) {
-        const SettingDialog = $q.dialog({
-          component: SettingsDialog,
-          persistent: true,
-          noEscDismiss: true,
-        });
+  if (!username.value || !password.value) {
+    $q.notify({
+      type: "negative",
+      message: "Username dan password harus diisi",
+      position: "top",
+      timeout: 1000,
+    });
+    return;
+  }
 
-        SettingDialog.update();
-        dialogRef.value.hide();
+  isLoading.value = true;
+  
+  try {
+    // Ensure petugas data is loaded
+    await petugasStore.loadFromLocal();
+    
+    // If no petugas data exists, seed it
+    if (petugasStore.daftarPetugas.length === 0) {
+      console.log('No petugas data found, seeding...');
+      await petugasStore.seedPetugasData();
+    }
+    
+    // Try to authenticate using petugas store (offline first)
+    const petugas = await petugasStore.authenticatePetugas(username.value, password.value);
+    
+    if (petugas) {
+      // Determine shift based on current time
+      const currentHour = new Date().getHours();
+      let currentShift = 'S1'; // Default shift
+      
+      if (currentHour >= 6 && currentHour < 14) {
+        currentShift = 'S1'; // Pagi: 06:00 - 14:00
+      } else if (currentHour >= 14 && currentHour < 22) {
+        currentShift = 'S2'; // Siang: 14:00 - 22:00
       } else {
+        currentShift = 'S3'; // Malam: 22:00 - 06:00
+      }
+
+      // Set admin status based on level
+      const adminLevels = ["ADM", "SPV", "0001", "0002", "0003"];
+      const isAdmin = adminLevels.includes(petugas.level_code);
+      
+      // Save to localStorage
+      ls.set("pegawai", petugas);
+      ls.set("shift", currentShift);
+      ls.set("timeLogin", new Date().toISOString());
+      ls.set("tanggal", new Date().toISOString().split('T')[0]);
+      ls.set("isAdmin", isAdmin);
+      
+      // Set transaksi store admin status
+      transaksiStore.isAdmin = isAdmin;
+      
+      if (props.type == "login") {
+        $q.notify({
+          type: "positive",
+          message: `Selamat datang, ${petugas.nama}!`,
+          position: "top",
+          timeout: 2000,
+        });
+        
+        // Hide dialog and reload page
+        dialogRef.value.hide();
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+        
+      } else if (props.type === "check" && props.component === "SettingsDialog") {
+        if (isAdmin) {
+          const SettingDialog = $q.dialog({
+            component: SettingsDialog,
+            persistent: true,
+            noEscDismiss: true,
+          });
+
+          SettingDialog.update();
+          dialogRef.value.hide();
+        } else {
+          $q.notify({
+            type: "negative",
+            message: "Anda tidak memiliki akses",
+            position: "top",
+            timeout: 1000,
+          });
+        }
+      }
+    } else {
+      // If local authentication fails, try online (fallback)
+      try {
+        const user = await userStore().login(username.value, password.value);
+        if (user) {
+          if (props.type == "login") {
+            ls.set("pegawai", user);
+            window.location.reload();
+          } else if (props.type === "check" && props.component === "SettingsDialog") {
+            if (transaksiStore.isAdmin) {
+              const SettingDialog = $q.dialog({
+                component: SettingsDialog,
+                persistent: true,
+                noEscDismiss: true,
+              });
+
+              SettingDialog.update();
+              dialogRef.value.hide();
+            } else {
+              $q.notify({
+                type: "negative",
+                message: "Anda tidak memiliki akses",
+                position: "top",
+                timeout: 1000,
+              });
+            }
+          }
+        } else {
+          throw new Error('Online authentication failed');
+        }
+      } catch (onlineError) {
+        console.log('Online authentication failed:', onlineError);
         $q.notify({
           type: "negative",
-          message: "Anda tidak memilik akses",
+          message: "Username atau password salah",
           position: "top",
           timeout: 1000,
         });
       }
     }
-  } else {
+  } catch (error) {
+    console.error('Authentication error:', error);
     $q.notify({
       type: "negative",
-      message: "Cek kembali username dan password anda",
+      message: "Terjadi kesalahan saat login",
       position: "top",
       timeout: 1000,
     });
+  } finally {
+    isLoading.value = false;
   }
 };
 
