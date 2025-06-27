@@ -156,34 +156,36 @@ const transaksiStore = useTransaksiStore();
 const componentStore = useComponentStore();
 const totalUangMasuk = ref(0);
 
-const kendaraanKeluar = ref();
+const kendaraanKeluar = ref([]);
 
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { dialogRef } = useDialogPluginComponent();
 
 onMounted(async () => {
-  // const { countPerVehicle, totalUangMasuk } =
-  //   await transaksiStore.getCountVehicleOutToday();
-  // console.log((await transaksiStore.getCountVehicleOutToday()));
   try {
-    kendaraanKeluar.value = await transaksiStore.getCountVehicleOutToday();
-    totalUangMasuk.value = kendaraanKeluar.value
-      .reduce((total, item) => total + parseInt(item.uang_masuk), 0)
-      .toLocaleString("id-ID", {
-        style: "currency",
-        currency: "IDR",
-      })
-      .split(",")[0];
-  } catch (error) {}
-
-  // kendaraanKeluar.value = vehicleOutToday;
-  // totalUangMasuk.value = parseInt(totalUangMasuk).toLocaleString("id-ID", {
-  //   style: "currency",
-  //   currency: "IDR",
-  // });
-
-  // console.log(kendaraanKeluar.value);
+    kendaraanKeluar.value = await transaksiStore.getVehicleOutDetailsToday();
+    
+    // Add safety check for kendaraanKeluar
+    if (kendaraanKeluar.value && Array.isArray(kendaraanKeluar.value) && kendaraanKeluar.value.length > 0) {
+      totalUangMasuk.value = kendaraanKeluar.value
+        .reduce((total, item) => total + parseInt(item.uang_masuk || 0), 0)
+        .toLocaleString("id-ID", {
+          style: "currency",
+          currency: "IDR",
+        })
+        .split(",")[0];
+    } else {
+      // If no data or not an array, set default values
+      kendaraanKeluar.value = [];
+      totalUangMasuk.value = "Rp 0";
+    }
+  } catch (error) {
+    console.error('Error loading vehicle out data:', error);
+    // Set default values on error
+    kendaraanKeluar.value = [];
+    totalUangMasuk.value = "Rp 0";
+  }
 
   const handleKeyDown = (event) => {
     // console.log(event.key);

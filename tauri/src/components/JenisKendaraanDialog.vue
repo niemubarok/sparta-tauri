@@ -12,9 +12,9 @@
     <div>
     <q-card
       style="width: 50vw; height: fit-content"
-      class="q-px-md q-pt-xl q-pb-md glass rounded-corner relative fixed-center"
+      class="q-px-md q-pt-md q-pb-md glass rounded-corner relative fixed-center"
     >
-      <div>
+      <!-- <div>
         <q-avatar
           size="40px"
           class="cursor-pointer z-top absolute-top-right q-ma-sm"
@@ -23,7 +23,7 @@
           icon="close"
           @click="dialogRef.hide()"
         />
-      </div>
+      </div> -->
       <!-- <q-icon name="close"  /> -->
       <!-- <q-item> -->
       <!-- <q-item-section avatar>
@@ -35,16 +35,16 @@
         <q-chip
           :color="props.isPrepaidMode ? 'green' : 'blue'"
           text-color="white"
-          class="text-h6 text-weight-bolder absolute-top-left q-pa-md"
+          class="text-body1 text-weight-bolder absolute-top-center q-pa-md"
           :label="props.isPrepaidMode 
-            ? 'Pilih Jenis Kendaraan - Mode Bayar Depan (Tekan shortcut untuk langsung bayar)' 
-            : 'Pilih Jenis Kendaraan (Tekan shortcut atau Enter untuk default)'"
+            ? 'Pilih Jenis Kendaraan (Tekan shortcut atau Enter untuk default)' 
+            : 'Pilih Jenis Kendaraan'"
         />
       </div>
-      <div class="flex justify-center">
+      <!-- <div class="flex justify-center"> -->
         <!-- <member-card v-if="transaksiStore.isMember" /> -->
-        <plat-nomor class="q-ma-lg" />
-      </div>
+        <!-- <plat-nomor class="q-ma-lg" />
+      </div> -->
 
       <div
         v-for="jenisKendaraan in jenisKendaraanOptions"

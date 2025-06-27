@@ -1,0 +1,60 @@
+{
+  "name": "exit-gate-system",
+  "version": "1.0.0",
+  "description": "Exit Gate System for Parking Management",
+  "productName": "Exit Gate System",
+  "author": "Parking System Developer",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint src/** --fix",
+    "dev": "quasar dev",
+    "build": "quasar build",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.16.17",
+    "@tauri-apps/api": ">=2.4.1",
+    "@tauri-apps/plugin-shell": ">=2.2.1",
+    "@types/pouchdb": "^6.4.2",
+    "pinia": "^3.0.2",
+    "pouchdb": "^9.0.0",
+    "pouchdb-adapter-http": "^9.0.0",
+    "pouchdb-find": "^9.0.0",
+    "quasar": "^2.18.1",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": ">=2.2.0",
+    "@taiyuuki/eslint-config": "^1.4.18",
+    "@tauri-apps/cli": ">=2.4.1",
+    "@types/node": "^22.14.1",
+    "@unocss/preset-attributify": "^66.0.0",
+    "@unocss/preset-icons": "^66.0.0",
+    "@unocss/preset-uno": "^66.0.0",
+    "@unocss/preset-wind3": "66.1.0-beta.6",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.24.0",
+    "internal-ip": "^8.0.0",
+    "typescript": "~5.8.3",
+    "unocss": "^66.0.0",
+    "unplugin-auto-import": "^19.1.2",
+    "unplugin-vue-components": "^28.5.0",
+    "vite-plugin-pages": "^0.33.0",
+    "vite-plugin-vue-layouts": "^0.11.0"
+  },
+  "engines": {
+    "node": "^24 || ^22 || ^20 || ^18",
+    "npm": ">= 6.13.4",
+    "yarn": ">= 1.21.1"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "eslint": "9"
+      }
+    }
+  }
+}

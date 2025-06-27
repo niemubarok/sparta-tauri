@@ -25,13 +25,12 @@
       </q-item-section>
     </q-item>
   </q-banner>
-  <q-page v-else class="column flex flex-center">
-    <!-- <template v-slot:action>
-        <q-btn flat color="{3:white}" label="{4:Dismiss}" />
-        <q-btn flat color="{5:white}" label="{6:Update Credit Card}" />
-      </template> -->
-    <Logo />
-    <div class="q-gutter-md">
+  <q-page v-else class="column full-height flex flex-center">
+    <div style="height:40vh" class="q-mb-xl">
+
+      <Logo />
+    </div>
+    <div class="q-gutter-md row justify-center q-mt-lg">
       <!-- <q-btn
         push
         style="width: 300px; height: 100px"

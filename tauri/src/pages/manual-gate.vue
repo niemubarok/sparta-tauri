@@ -22,8 +22,7 @@
   <div
     :key="componentStore.outGateKey"
     v-else
-    class="relative fixed-top full-height full-width overflow-hidden"
-    :class="darkMode ? 'bg-grey-8' : 'bg-grey-8'"
+    class="relative fixed-top window-height full-width overflow-hidden bg-grey-8"
   >
     <div
       v-if="!transaksiStore.isCheckedIn"
@@ -123,10 +122,10 @@
         <div
           v-if="!transaksiStore.isCheckedIn"
           ref="cardVideo"
-          class="flex row justify-between content-center items-center q-px-sm relative bg-transparent overflow-hidden q-gutter-md no-wrap"
+          class="flex row justify-between content-center items-center q-px-sm relative bg-transparent overflow-hidden no-wrap"
           style="width: 100%; max-height: 62vh"
         >
-          <div class="col-6 relative overflow-hidden q-mr-md">
+          <div class="col-6 relative overflow-hidden">
             <q-chip
               class="absolute bg-transparent"
               icon="camera"
@@ -155,7 +154,7 @@
             />
             <!-- height: '62vh', -->
           </div>
-          <div class="col-6 relative overflow-hidden q-ml-md">
+          <div class="col-6 relative overflow-hidden q-ml-xs">
             <q-chip
               class="absolute bg-transparent"
               icon="camera"
@@ -206,11 +205,11 @@
           v-show="
             !componentStore.hideInputPlatNomor && !transaksiStore.isCheckedIn
           "
-          input-class="input-box  text-black text-weight-bolder"
-          class="input-box rounded-corner relative text-uppercase q-pa-md q-mb-xl bg-grey-1 text-dark"
+          input-class="input-box  text-white text-weight-bolder"
+          class="input-box rounded-corner relative text-uppercase q-pa-md q-mb-xl bg-grey-2"
           input-style="height:90px;border:0"
-          label-color="black text-body1 q-pb-sm"
-          color="bg-grey-2"
+          label-color="grey-2 text-body1 q-pb-sm"
+          
           item-aligned
           borderless
           v-model="transaksiStore.platNomor"
@@ -472,15 +471,6 @@ const router = useRouter();
 
 const inputPlatNomorRef = ref(null);
 const prefix = ref(ls.get("prefix"));
-// defineExpose({
-//   inputPlatNomorRef,
-// });
-
-// nopolInput.register(inputPlatNomorRef)
-
-const testPrint = () => {
-  window.electron.print();
-};
 
 const onClickKendaraanKeluar = () => {
   const dialog = $q.dialog({

@@ -472,6 +472,119 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     }
   };
 
+  // New method to get detailed vehicle out data for today
+  const getVehicleOutDetailsToday = async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      console.log("🚀 ~ getVehicleOutDetailsToday ~ Date range:", {
+        today: today.toISOString(),
+        endOfDay: endOfDay.toISOString()
+      });
+
+      const result = await db.allDocs({
+        include_docs: true,
+        startkey: 'transaction_',
+        endkey: 'transaction_\ufff0'
+      });
+      
+      console.log("🚀 ~ getVehicleOutDetailsToday ~ Raw database results:", result.rows.length);
+      
+      // Debug: Show all transaction types and statuses
+      const allDocs = result.rows.map(row => row.doc as any);
+      const parkingTransactions = allDocs.filter(doc => doc?.type === 'parking_transaction');
+      const statusBreakdown = parkingTransactions.reduce((acc: any, doc: any) => {
+        acc[doc.status] = (acc[doc.status] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log("🚀 ~ Status breakdown of all parking transactions:", statusBreakdown);
+      console.log("🚀 ~ All parking transactions:", parkingTransactions.map((doc: any) => ({
+        id: doc._id,
+        plat: doc.no_pol,
+        status: doc.status,
+        waktu_masuk: doc.waktu_masuk,
+        waktu_keluar: doc.waktu_keluar,
+        tanggal: doc.tanggal
+      })));
+
+      // Filter for transactions that exited today (status 1 and waktu_keluar today)
+      const todayExitTransactions = result.rows
+        .map(row => row.doc)
+        .filter((doc: any) => {
+          // Must be a parking transaction
+          if (!doc || doc.type !== 'parking_transaction') {
+            return false;
+          }
+          
+          // Must have exit status (1) and exit time
+          if (doc.status !== 1 || !doc.waktu_keluar) {
+            console.log(`🚀 Skipping transaction ${doc._id}: status=${doc.status}, waktu_keluar=${doc.waktu_keluar}`);
+            return false;
+          }
+          
+          // Check if exit time is today
+          const exitDate = new Date(doc.waktu_keluar);
+          const isToday = exitDate >= today && exitDate <= endOfDay;
+          
+          console.log(`🚀 Transaction ${doc._id}: status=${doc.status}, waktu_keluar=${doc.waktu_keluar}, isToday=${isToday}`);
+          
+          return isToday;
+        });
+
+      console.log("🚀 ~ Filtered exit transactions today:", todayExitTransactions.length);
+      
+      if (todayExitTransactions.length > 0) {
+        console.log("🚀 ~ Exit transactions details:", todayExitTransactions.map((t: any) => ({
+          id: t?._id || 'unknown',
+          plat: t?.no_pol || 'unknown',
+          status: t?.status || 0,
+          waktu_keluar: t?.waktu_keluar || 'unknown',
+          bayar_keluar: t?.bayar_keluar || 0,
+          id_kendaraan: t?.id_kendaraan || 0
+        })));
+      } else {
+        console.log("🚀 ~ No exit transactions found for today");
+      }
+
+      // Get jenis kendaraan data for mapping
+      const jenisKendaraanData = await getJenisKendaraan();
+
+      // Group by vehicle type and calculate totals
+      const vehicleStats = jenisKendaraanData.map(jenis => {
+        const vehicleTransactions = todayExitTransactions.filter((t: any) => 
+          t.id_kendaraan === jenis.id
+        );
+
+        const count = vehicleTransactions.length;
+        const uang_masuk = vehicleTransactions.reduce((total, t: any) => 
+          total + (parseInt(t.bayar_keluar || 0)), 0
+        );
+
+        if (count > 0) {
+          console.log(`🚀 Vehicle type ${jenis.label}: count=${count}, revenue=${uang_masuk}`);
+        }
+
+        return {
+          id: jenis.id,
+          jenis_kendaraan: jenis.label, // Use 'label' instead of 'jenis_kendaraan'
+          count,
+          uang_masuk
+        };
+      }).filter(item => item.count > 0); // Only return types with actual exits
+
+      console.log('🚗 Final vehicle out details today:', vehicleStats);
+      return vehicleStats;
+
+    } catch (error) {
+      console.error('❌ Error fetching vehicle out details:', error);
+      return [];
+    }
+  };
+
   const getCountVehicleInside = async (): Promise<void> => {
     try {
       if (API_URL.value && API_URL.value !== '-') {
@@ -1469,6 +1582,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     calculateParkingFee,
     getCountVehicleInToday,
     getCountVehicleOutToday,
+    getVehicleOutDetailsToday,
     getCountVehicleInside,
     searchTransactionByPlateNumber,
     calculateParkingFeeForTransaction,

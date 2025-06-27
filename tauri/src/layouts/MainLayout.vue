@@ -118,7 +118,7 @@ onMounted(() => {
 <template>
   <q-layout
     view="lHh Lpr lFf"
-    class="bg-grey-8"
+    class="bg-grey-3"
   >
     <!-- DEMO VERSI BETA Overlay (text only, no background) -->
     <!-- <div
@@ -177,7 +177,7 @@ onMounted(() => {
     </q-drawer>
 
     <q-page-container>
-      <router-view class="full-width bg-gray-8" />
+      <router-view class="full-width bg-gray-3" />
       <KeyboardOverlay class="z-top" />
     </q-page-container>
   </q-layout>
