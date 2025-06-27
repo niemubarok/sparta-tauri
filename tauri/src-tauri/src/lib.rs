@@ -220,6 +220,17 @@ pub fn run() {
             command::camera_handler::start_rtsp_live_stream,
             command::camera_handler::stop_rtsp_live_stream,
             command::alpr_handler::process_alpr_image,
+            command::printer_handler::print_thermal_ticket,     // Tambahkan
+            command::printer_handler::list_thermal_printers,    // Tambahkan
+            command::printer_handler::test_print_barcode,
+                command::printer_handler::set_default_printer,      // New
+            command::printer_handler::get_default_printer,      // New
+            command::printer_handler::get_printer_status,
+            command::printer_handler::discover_thermal_printers,
+            command::printer_handler::test_printer_connection,
+            command::printer_handler::check_epson_printers,
+
+            
             get_active_gate_id,
             set_active_gate_id,
         ])

@@ -120,6 +120,14 @@
         icon="settings"
         label="Settings"
         @click="onClickSettings()"
+      />
+      <q-btn
+        push
+        style="width: 300px; height: 100px"
+        color="primary"
+        icon="print"
+        label="Test Printer"
+        @click="onClickTestPrinter()"
       >
         <!-- <q-btn
           push
@@ -136,8 +144,9 @@
 
 <script setup>
 import { defineComponent, onBeforeMount, onMounted } from "vue";
-import LoginDialog from "src/components/LoginDialog.vue";
+import PrinterTestDialog from "src/components/PrinterTestDialog.vue";
 import ApiUrlDialog from "src/components/ApiUrlDialog.vue";
+
 import Logo from "src/components/Logo.vue";
 
 import SettingsDialog from "src/components/SettingsDialog.vue";
@@ -180,6 +189,12 @@ const onClickDemoPage = () => {
     // });
     // dialog.update();
   // }
+};
+
+const onClickTestPrinter = () => {
+  $q.dialog({
+    component: PrinterTestDialog,
+  });
 };
 
 const onClickEntryGate = () => {

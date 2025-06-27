@@ -353,15 +353,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       // Add to history
       transactionHistory.value.unshift(transaction);
       
-      const message = isPrepaidMode 
-        ? 'Transaksi prepaid berhasil disimpan' 
-        : 'Transaksi masuk berhasil disimpan';
-      
-      $q.notify({
-        type: 'positive',
-        message: message,
-        position: 'top'
-      });
+    
     } catch (error) {
       console.error('Error processing entry transaction:', error);
       $q.notify({

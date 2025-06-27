@@ -343,6 +343,7 @@ import { useTransaksiStore } from "src/stores/transaksi-store";
 import { useComponentStore } from "src/stores/component-store";
 import { useSettingsService } from "src/stores/settings-service";
 import { usePetugasStore } from "src/stores/petugas-store";
+import { useGateStore } from "src/stores/gate-store";
 import { userStore } from "src/stores/user-store";
 import LoginDialog from "src/components/LoginDialog.vue";
 import ApiUrlDialog from "src/components/ApiUrlDialog.vue";
@@ -375,6 +376,9 @@ const transaksiStore = useTransaksiStore();
 const componentStore = useComponentStore();
 const settingsService = useSettingsService();
 const petugasStore = usePetugasStore();
+
+
+const gateStore = useGateStore()
 const gateSettings = computed(() => settingsService.gateSettings);
 const $q = useQuasar();
 
@@ -584,6 +588,10 @@ const onInputPlatNomor = () => {
 
 const onClickBukaManual = async () => {
   try {
+    console.log("Buka Manual");
+    
+    gateStore.writeToPort('entry', ' *OPEN1#')
+    return
     // Get image from driver camera
     const imageData = await driverCameraRef.value?.getImage();
     
@@ -783,8 +791,6 @@ const processEntry = async (isPrepaidMode = false) => {
     // Update statistics
     await updateStatistics();
     
-    // Open gate
-    componentStore.openGate();
     
     // For postpaid mode, hide input and show payment card
     // For prepaid mode, payment is already done, just reset the form
@@ -990,8 +996,15 @@ onMounted(async () => {
     await settingsService.initializeSettings();
   }
 
+  const portConfig = {
+    portName:"COM10",
+    type:'entry'
+  }
+
   // Initialize petugas store
   try {
+
+    await gateStore.initializeSerialPort(portConfig)
     await petugasStore.loadFromLocal();
     if (petugasStore.daftarPetugas.length === 0) {
       console.log('Initializing petugas data...');

@@ -57,6 +57,7 @@ declare module 'vue' {
     PetugasCard: typeof import('./components/PetugasCard.vue')['default']
     PetugasValidationDemo: typeof import('./components/PetugasValidationDemo.vue')['default']
     PlatNomor: typeof import('./components/PlatNomor.vue')['default']
+    PrinterTestDialog: typeof import('./components/PrinterTestDialog.vue')['default']
     QRCodeScannerDialog: typeof import('./components/QRCodeScannerDialog.vue')['default']
     Quotes: typeof import('./components/Quotes.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

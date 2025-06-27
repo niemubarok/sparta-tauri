@@ -212,7 +212,8 @@ const handleKeydownOnJenisKendaraan = (event) => {
         dialogRef.value.hide();
       }
     }
-  } else if (matchingOption) {
+  } else 
+  if (matchingOption) {
     // Gunakan option yang sesuai dengan shortcut
     console.log("matchingOption", matchingOption);
     jenisKendaraanModel.value = matchingOption.id;

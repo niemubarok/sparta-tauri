@@ -36,3 +36,16 @@ reqwest = { version = "0.11", features = ["json", "multipart"] }
 tokio-tungstenite = "0.21"
 futures-util = "0.3"
 env_logger = "0.11"
+escpos = "0.15.3"
+thermal_printer = "0.1.1"  # Update ke versi terbaru
+
+# Windows-specific dependencies
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = [
+    "libloaderapi",
+    "winspool", 
+    "wingdi", 
+    "winerror",
+    "std",
+    "winnt"
+] }

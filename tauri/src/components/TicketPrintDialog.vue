@@ -1,6 +1,13 @@
+<!-- filepath: tauri/src/components/TicketPrintDialog.vue -->
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide" persistent>
-    <q-card class="ticket-print-card" style="min-width: 400px;">
+    <q-card 
+      ref="cardRef"
+      class="ticket-print-card" 
+      style="min-width: 400px;"
+      tabindex="0"
+      @keydown="handleKeydown"
+    >
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6">Cetak Tiket Parkir</div>
         <q-space />
@@ -9,10 +16,58 @@
           class="bg-yellow-7 text-dark q-mr-sm" 
           label="Tekan ENTER untuk cetak"
         />
+        <!-- <q-btn 
+          flat 
+          dense 
+          icon="settings" 
+          @click="showPrinterTest = true" 
+          title="Test Printer"
+          class="q-mr-sm"
+        /> -->
         <q-btn icon="close" flat round dense @click="onDialogCancel" />
       </q-card-section>
 
       <q-card-section>
+        <!-- Printer Status Banner -->
+        <div v-if="printerStatus" class="q-mb-md">
+          <q-banner 
+            :class="printerStatus.success ? 'bg-positive' : 'bg-warning'"
+            text-color="white"
+            rounded
+            dense
+          >
+            <template v-slot:avatar>
+              <q-icon 
+                :name="printerStatus.success ? 'local_print_shop' : 'warning'" 
+                color="white" 
+              />
+            </template>
+            {{ printerStatus.message }}
+          </q-banner>
+        </div>
+
+        <!-- Current Printer Info -->
+        <div v-if="currentPrinter" class="q-mb-md">
+          <q-chip 
+            :color="currentPrinter.includes('EPSON') || currentPrinter.includes('TM-T82') ? 'primary' : 'secondary'"
+            text-color="white" 
+            icon="print"
+            dense
+          >
+            Printer: {{ currentPrinter }}
+          </q-chip>
+          
+          <!-- <q-btn
+            flat
+            dense
+            icon="cable"
+            @click="testCurrentPrinter"
+            :loading="testingPrinter"
+            title="Test printer connection"
+            class="q-ml-sm"
+          /> -->
+        </div>
+
         <!-- Ticket Preview -->
         <div class="ticket-preview q-pa-md" ref="ticketRef">
           <div class="ticket-header text-center q-mb-md">
@@ -32,6 +87,7 @@
                   <div v-for="n in 20" :key="n" class="barcode-line" 
                        :style="{ height: Math.random() * 30 + 20 + 'px' }"></div>
                 </div>
+                <div class="text-caption q-mt-xs">{{ barcodeData }}</div>
               </div>
             </div>
 
@@ -124,6 +180,17 @@
             class="q-ml-xs"
           />
         </q-btn>
+        
+        <!-- <q-btn
+          flat
+          label="Test Print"
+          color="orange"
+          @click="testPrint"
+          :loading="testPrinting"
+          icon="bug_report"
+          :disable="printing"
+        /> -->
+        
         <q-btn
           unelevated
           label="Cetak Tiket"
@@ -141,21 +208,31 @@
         </q-btn>
       </q-card-actions>
     </q-card>
+
+    <!-- Printer Test Dialog -->
+    <!-- <PrinterTestDialog 
+      v-model="showPrinterTest"
+      @hide="showPrinterTest = false"
+    /> -->
   </q-dialog>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import { formatCurrency, formatDate, formatTime } from 'src/utils/format-utils';
 import { useTarifStore } from 'src/stores/tarif-store';
+import { useGateStore } from 'src/stores/gate-store';
+import { invoke } from '@tauri-apps/api/core';
 import { useSettingsService } from 'src/stores/settings-service';
 import ls from 'localstorage-slim';
+// import PrinterTestDialog from './PrinterTestDialog.vue';
 
 // Quasar dialog composition
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
 const tarifStore = useTarifStore();
+const gateStore = useGateStore();
 const settingsService = useSettingsService();
 
 const props = defineProps({
@@ -180,11 +257,15 @@ const emit = defineEmits([
 
 // Reactive data
 const printing = ref(false);
+const testPrinting = ref(false);
+const testingPrinter = ref(false);
 const ticketRef = ref(null);
+const showPrinterTest = ref(false);
+const currentPrinter = ref('');
+const printerStatus = ref(null);
+const cardRef = ref(null); // Add cardRef
 
 // Computed
-// Note: showDialog is not needed when using dialog plugin
-
 const entryTime = computed(() => new Date());
 
 // Compute the correct tariff based on operation mode and vehicle type
@@ -232,8 +313,13 @@ const ticketNumber = computed(() => {
   return `${gate}${date}${time}${sequence}`;
 });
 
+const barcodeData = computed(() => {
+  // Generate barcode data for the ticket
+  return `SPARTA-${ticketNumber.value}`;
+});
+
 const companyName = computed(() => {
-  return ls.get('companyName') || 'SISTEM PARKIR';
+  return ls.get('companyName') || 'SISTEM PARKIR SPARTA';
 });
 
 const gateLocation = computed(() => {
@@ -248,9 +334,7 @@ const operatorName = computed(() => {
 
 // Methods
 const generateBarcode = () => {
-  // Simple barcode generation for demo
-  // In production, use a proper barcode library
-  return ticketNumber.value;
+  return barcodeData.value;
 };
 
 const onPrint = async () => {
@@ -264,8 +348,11 @@ const onPrint = async () => {
       barcode: generateBarcode()
     };
     
-    // Print using browser print API
-    await printTicket();
+    // Print thermal ticket with barcode
+    await printThermalTicket();
+    
+    // Open gate after successful print
+    await gateStore.writeToPort('entry', '*open#');
     
     emit('printed', updatedTransaction);
     
@@ -280,158 +367,205 @@ const onPrint = async () => {
   }
 };
 
-const printTicket = async () => {
-  // Create print window with ticket content
-  const printWindow = window.open('', '_blank');
-  const ticketContent = ticketRef.value.innerHTML;
-  
-  const printHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Tiket Parkir</title>
-      <style>
-        body {
-          font-family: 'Courier New', monospace;
-          font-size: 12px;
-          margin: 0;
-          padding: 10px;
-          width: 80mm;
-        }
-        .ticket-header {
-          text-align: center;
-          margin-bottom: 10px;
-        }
-        .text-h6 {
-          font-size: 16px;
-          font-weight: bold;
-        }
-        .text-subtitle2 {
-          font-size: 14px;
-        }
-        .text-caption {
-          font-size: 10px;
-          color: #666;
-        }
-        .text-weight-bold {
-          font-weight: bold;
-        }
-        .text-primary {
-          color: #1976d2;
-        }
-        .text-positive {
-          color: #21ba45;
-        }
-        .text-warning {
-          color: #f2c037;
-        }
-        .text-orange {
-          color: #ff9800;
-        }
-        .text-grey-6 {
-          color: #757575;
-        }
-        .barcode-container {
-          margin: 10px 0;
-          text-align: center;
-        }
-        .barcode-text {
-          font-size: 14px;
-          font-weight: bold;
-          margin-bottom: 5px;
-        }
-        .barcode-lines {
-          display: flex;
-          justify-content: center;
-          align-items: end;
-          height: 40px;
-          margin: 5px 0;
-        }
-        .barcode-line {
-          width: 2px;
-          background: black;
-          margin: 0 1px;
-        }
-        .vehicle-info, .time-info, .payment-info {
-          margin: 10px 0;
-        }
-        .row {
-          display: flex;
-        }
-        .col-6 {
-          flex: 1;
-        }
-        .ticket-footer {
-          text-align: center;
-          margin-top: 10px;
-          border-top: 1px dashed #666;
-          padding-top: 10px;
-        }
-        hr {
-          border: none;
-          border-top: 1px dashed #666;
-          margin: 10px 0;
-        }
-        @media print {
-          body { margin: 0; }
-        }
-      </style>
-    </head>
-    <body>
-      ${ticketContent}
-    </body>
-    </html>
-  `;
-  
-  printWindow.document.write(printHTML);
-  printWindow.document.close();
-  
-  // Wait for content to load, then print
-  printWindow.onload = () => {
-    printWindow.print();
-    printWindow.close();
-  };
+const printThermalTicket = async () => {
+  try {
+    // Prepare ticket data for thermal printer
+    const ticketData = {
+      ticketNumber: ticketNumber.value,
+      platNomor: props.transaction?.plat_nomor || '',
+      jenisKendaraan: props.transaction?.jenis_kendaraan || '',
+      waktuMasuk: formatTime(entryTime.value),
+      tarif: currentTariff.value,
+      companyName: companyName.value,
+      gateLocation: gateLocation.value,
+      operatorName: operatorName.value,
+      isPaid: isTransactionPaid.value,
+      barcodeData: generateBarcode()
+    };
+
+    console.log('Printing thermal ticket with data:', ticketData);
+
+    // Print to thermal printer (EPSON TM-T82X)
+    const result = await invoke('print_thermal_ticket', { 
+      ticketData,
+      printerName: currentPrinter.value || null
+    });
+    
+    console.log('Thermal print result:', result);
+    
+    // Update printer status
+    printerStatus.value = {
+      success: true,
+      message: result.message || 'Tiket berhasil dicetak!'
+    };
+    
+  } catch (error) {
+    console.error('Error printing to thermal printer:', error);
+    
+    // Update printer status
+    printerStatus.value = {
+      success: false,
+      message: `Error: ${error}`
+    };
+    
+    // Fallback to browser print if available
+    console.log('Attempting fallback to browser print...');
+    await printTicketBrowser();
+    
+    throw error;
+  }
 };
 
-// Keyboard event handler
+const printTicketBrowser = async () => {
+  try {
+    // Browser fallback printing
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        window.print();
+        resolve();
+      }, 100);
+    });
+  } catch (error) {
+    console.error('Browser print fallback failed:', error);
+    throw new Error('Semua metode print gagal');
+  }
+};
+
+const testPrint = async () => {
+  testPrinting.value = true;
+  
+  try {
+    const testBarcodeData = `TEST-${Date.now().toString(36).toUpperCase()}`;
+    
+    const result = await invoke('test_print_barcode', { 
+      barcodeData: testBarcodeData,
+      printerName: currentPrinter.value || null
+    });
+    
+    printerStatus.value = {
+      success: true,
+      message: 'Test print berhasil - Printer siap digunakan'
+    };
+    
+  } catch (error) {
+    console.error('Test print error:', error);
+    
+    printerStatus.value = {
+      success: false,
+      message: `Test print gagal: ${error}`
+    };
+  } finally {
+    testPrinting.value = false;
+  }
+};
+
+const testCurrentPrinter = async () => {
+  if (!currentPrinter.value) {
+    return;
+  }
+  
+  testingPrinter.value = true;
+  
+  try {
+    const result = await invoke('test_printer_connection', { 
+      printerIdentifier: currentPrinter.value 
+    });
+    
+    printerStatus.value = {
+      success: true,
+      message: `Koneksi ke ${currentPrinter.value} berhasil`
+    };
+    
+  } catch (error) {
+    console.error('Printer connection test error:', error);
+    
+    printerStatus.value = {
+      success: false,
+      message: `Koneksi ke ${currentPrinter.value} gagal: ${error}`
+    };
+  } finally {
+    testingPrinter.value = false;
+  }
+};
+
+const loadDefaultPrinter = async () => {
+  try {
+    const printer = await invoke('get_default_printer');
+    currentPrinter.value = printer;
+    
+    console.log('Default printer loaded:', printer);
+    
+    // Test connection to default printer
+    // if (printer && printer !== 'Manual Entry') {
+    //   await testCurrentPrinter();
+    // }
+  } catch (error) {
+    console.error('Failed to load default printer:', error);
+    
+    // Try to discover printers
+    try {
+      const printers = await invoke('list_thermal_printers');
+      if (printers.length > 0) {
+        currentPrinter.value = printers[0];
+        console.log('Using first available printer:', printers[0]);
+      }
+    } catch (discoverError) {
+      console.error('Failed to discover printers:', discoverError);
+      
+      printerStatus.value = {
+        success: false,
+        message: 'Tidak ada printer thermal yang terdeteksi'
+      };
+    }
+  }
+};
+
+// Improved keyboard handler - now attached directly to the card
 const handleKeydown = (event) => {
   const key = event.key.toUpperCase();
   
   if (key === 'ENTER') {
     event.preventDefault();
-    if (!printing.value) {
+    event.stopPropagation(); // Prevent event bubbling
+    if (!printing.value && !testPrinting.value) {
       onPrint();
     }
   } else if (key === 'ESCAPE') {
     event.preventDefault();
-    if (!printing.value) {
+    event.stopPropagation();
+    if (!printing.value && !testPrinting.value) {
       onDialogCancel();
+    }
+  } else if (key === 'F2') {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!printing.value && !testPrinting.value) {
+      testPrint();
     }
   }
 };
 
-// Watch for transaction changes
-watch(() => props.transaction, (newTransaction) => {
-  if (newTransaction) {
-    console.log('TicketPrintDialog received transaction:', newTransaction);
-  }
-}, { immediate: true });
-
-// Add keyboard event listeners
+// Updated onMounted
 onMounted(async () => {
-  window.addEventListener('keydown', handleKeydown);
+  await nextTick();
   
-  // Load tariff data when dialog opens
+  // Focus the card element instead of using window event listener
+  if (cardRef.value && cardRef.value.$el) {
+    cardRef.value.$el.focus();
+  }
+  
   try {
-    await tarifStore.loadTarifBertingkat();
-    await tarifStore.loadTarifPrepaid();
+    await tarifStore.loadTarifPrepaidFromLocal();
+    await tarifStore.loadTarifMemberFromLocal();
   } catch (error) {
     console.error('Error loading tariff data:', error);
   }
+  
+  await loadDefaultPrinter();
 });
 
+// Remove window event listener cleanup
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown);
 });
 </script>
 
@@ -529,5 +663,9 @@ onUnmounted(() => {
 .q-separator {
   border-top: 1px dashed #666;
   margin: 10px 0;
+}
+
+.q-banner {
+  border-radius: 8px;
 }
 </style>
