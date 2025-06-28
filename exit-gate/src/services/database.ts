@@ -43,6 +43,11 @@ export interface GateSettings {
   baud_rate: number
   gate_timeout: number // seconds to auto-close gate
   camera_enabled: boolean
+  webcam_enabled: boolean
+  cctv_enabled: boolean
+  cctv_url?: string
+  image_quality: number
+  capture_timeout: number
   server_url?: string
   // Remote sync settings
   sync_config?: SyncConfig
@@ -242,6 +247,11 @@ class DatabaseService {
       baud_rate: 9600,
       gate_timeout: 10,
       camera_enabled: false,
+      webcam_enabled: true,
+      cctv_enabled: false,
+      cctv_url: '',
+      image_quality: 0.8,
+      capture_timeout: 5000,
       sync_config: {
         remote_url: 'http://localhost:5984', // Base URL tanpa nama database
         auto_sync: false,

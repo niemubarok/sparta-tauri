@@ -1,0 +1,49 @@
+Nama Sheet: Members
+
+Kolom yang wajib diisi (header baris pertama):
+- name
+- phone
+- membership_type_id
+
+Kolom opsional (boleh dikosongkan):
+- member_id
+- card_number
+- email
+- address
+- identity_number
+- start_date (format: yyyy-mm-dd)
+- end_date (format: yyyy-mm-dd)
+- payment_status (pending/paid/overdue)
+- notes
+- emergency_contact_name
+- emergency_contact_phone
+- emergency_contact_relationship
+- vehicle_1_license_plate
+- vehicle_1_type (Contoh: Mobil, Motor)
+- vehicle_1_brand
+- vehicle_1_model
+- vehicle_1_color
+- vehicle_2_license_plate
+- vehicle_2_type
+- vehicle_2_brand
+- vehicle_2_model
+- vehicle_2_color
+- (dan seterusnya untuk vehicle_3, vehicle_4, dst. jika diperlukan)
+
+
+Contoh data:
+
+| name         | phone        | membership_type_id          | card_number | email              | start_date | end_date   | vehicle_1_license_plate | vehicle_1_type | vehicle_2_license_plate | vehicle_2_type | emergency_contact_name | emergency_contact_phone | emergency_contact_relationship |
+|--------------|--------------|-----------------------------|-------------|--------------------|------------|------------|-------------------------|----------------|-------------------------|----------------|------------------------|-------------------------|--------------------------------|
+| John Doe     | 081234567890 | membership_type_vip_001     | 1122334455  | john@example.com   | 2025-07-01 | 2026-06-30 | B 1234 ABC              | Mobil          | B 5678 DEF              | Motor          | Jane Doe               | 081234567891            | Istri                          |
+| Jane Smith   | 081234567891 | membership_type_premium_001 | 2233445566  | jane@example.com   | 2025-07-01 | 2026-06-30 | B 9876 XYZ              | Mobil          |                         |                | John Smith             | 081234567892            | Suami                          |
+
+
+Catatan:
+- `card_number` adalah nomor kartu fisik yang digunakan member untuk tap di gate.
+- `membership_type_id` harus sesuai dengan `_id` tipe member di database (lihat master tipe member).
+- Untuk menambahkan kendaraan, isi kolom `vehicle_1_license_plate`, `vehicle_1_type`, dst.
+- Jika member memiliki lebih dari satu kendaraan, gunakan kolom `vehicle_2_...`, `vehicle_3_...`, dan seterusnya.
+- Jika tidak ada kendaraan atau kontak darurat, biarkan kolom-kolom tersebut kosong.
+
+Simpan file ini sebagai .xlsx sebelum diupload ke aplikasi.

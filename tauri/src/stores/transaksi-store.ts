@@ -31,6 +31,8 @@ export interface TransaksiParkir {
   pic_driver_keluar?: string;
   pic_no_pol_masuk?: string;
   pic_no_pol_keluar?: string;
+  entry_pic?: string; // Simplified single image for entry
+  exit_pic?: string; // Simplified single image for exit
   sinkron: number;
   adm?: string;
   alasan?: string;
@@ -116,11 +118,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
   const currentTransaction = ref<TransaksiParkir | null>(null);
   const transactionHistory = ref<TransaksiParkir[]>([]);
   
-  // Images
-  const pic_body_masuk = ref<string>('');
-  const pic_body_keluar = ref<string>('');
-  const pic_plat_masuk = ref<string>('');
-  const pic_plat_keluar = ref<string>('');
+  // Images - simplified structure
+  const entry_pic = ref<string>('');
+  const exit_pic = ref<string>('');
   
   // Statistics
   const vehicleInToday = ref(0);
@@ -261,8 +261,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       status_transaksi: '0', // Normal transaction
       jenis_system: isPrepaidMode ? 'PREPAID' : 'MANLESS',
       tanggal: new Date().toISOString().split('T')[0],
-      pic_driver_masuk: pic_body_masuk.value,
-      pic_no_pol_masuk: pic_plat_masuk.value,
+      entry_pic: entry_pic.value,
+      exit_pic: exit_pic.value,
       sinkron: 0,
       upload: 0,
       manual: 0,
@@ -288,8 +288,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       waktu_keluar: getCurrentDateTime(),
       id_op_keluar: pegawai.value?.id || 'SYSTEM',
       id_shift_keluar: shift.value || 'SHIFT1',
-      pic_driver_keluar: pic_body_keluar.value,
-      pic_no_pol_keluar: pic_plat_keluar.value,
+      pic_driver_keluar: exit_pic.value,
+      pic_no_pol_keluar: exit_pic.value,
+      exit_pic: exit_pic.value, // Store the simplified field
       bayar_keluar: calculateParkingFee()
     };
 
@@ -320,10 +321,123 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         type: 'parking_transaction'
       });
 
+      // Save images as attachments if they exist
+      await saveTransactionAttachments(transaction.id, response.rev);
+
       console.log('Transaction saved locally:', response);
     } catch (error) {
       console.error('Error saving transaction locally:', error);
       throw error;
+    }
+  };
+
+  const saveTransactionAttachments = async (transactionId: string, rev: string): Promise<void> => {
+    try {
+      let currentRev = rev;
+      
+      // Save entrance image
+      if (entry_pic.value) {
+        const entryImageData = entry_pic.value.replace(/^data:image\/[a-z]+;base64,/, '');
+        
+        // Convert base64 to Blob using browser-compatible method
+        const byteCharacters = atob(entryImageData);
+        const byteArray = new Uint8Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteArray[i] = byteCharacters.charCodeAt(i);
+        }
+        const blob = new Blob([byteArray], { type: 'image/jpeg' });
+        
+        const entryResponse = await db.putAttachment(
+          `transaction_${transactionId}`,
+          'entry_image.jpg',
+          currentRev,
+          blob,
+          'image/jpeg'
+        );
+        currentRev = entryResponse.rev;
+        console.log('Entry image saved as attachment');
+      }
+
+      // Save exit image (if exists - for exit transactions)
+      if (exit_pic.value) {
+        const exitImageData = exit_pic.value.replace(/^data:image\/[a-z]+;base64,/, '');
+        
+        // Convert base64 to Blob using browser-compatible method
+        const byteCharacters = atob(exitImageData);
+        const byteArray = new Uint8Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteArray[i] = byteCharacters.charCodeAt(i);
+        }
+        const blob = new Blob([byteArray], { type: 'image/jpeg' });
+        
+        const exitResponse = await db.putAttachment(
+          `transaction_${transactionId}`,
+          'exit_image.jpg',
+          currentRev,
+          blob,
+          'image/jpeg'
+        );
+        currentRev = exitResponse.rev;
+        console.log('Exit image saved as attachment');
+      }
+
+    } catch (error) {
+      console.error('Error saving transaction attachments:', error);
+      // Don't throw error, just log it to avoid breaking the main transaction save
+    }
+  };
+
+  const getTransactionAttachments = async (transactionId: string): Promise<{
+    entryImage?: string;
+    exitImage?: string;
+  }> => {
+    try {
+      const doc = await db.get(`transaction_${transactionId}`, { attachments: true });
+      const attachments: any = {};
+
+      if (doc._attachments) {
+        for (const [fileName, attachment] of Object.entries(doc._attachments as any)) {
+          const att = attachment as any;
+          if (att.data) {
+            const base64Data = `data:${att.content_type};base64,${att.data}`;
+            
+            switch (fileName) {
+              case 'entry_image.jpg':
+              case 'entry.jpg': // Handle member transaction naming
+                attachments.entryImage = base64Data;
+                break;
+              case 'exit_image.jpg':
+              case 'exit.jpg': // Handle member transaction naming
+                attachments.exitImage = base64Data;
+                break;
+            }
+          }
+        }
+      }
+
+      return attachments;
+    } catch (error) {
+      console.error('Error getting transaction attachments:', error);
+      return {};
+    }
+  };
+
+  // Helper function to get image data for display
+  const getTransactionImageData = async (transactionId: string, imageType: 'entry' | 'exit'): Promise<string> => {
+    try {
+      // Remove 'transaction_' prefix if it exists
+      const cleanId = transactionId.replace('transaction_', '');
+      
+      const attachments = await getTransactionAttachments(cleanId);
+      
+      if (imageType === 'entry') {
+        return attachments.entryImage || '';
+      } else {
+        return attachments.exitImage || '';
+      }
+    } catch (error) {
+      console.error(`Error getting ${imageType} image data:`, error);
+      return '';
     }
   };
 
@@ -409,10 +523,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     biayaParkir.value = 0;
     bayar.value = 0;
     currentTransaction.value = null;
-    pic_body_masuk.value = '';
-    pic_body_keluar.value = '';
-    pic_plat_masuk.value = '';
-    pic_plat_keluar.value = '';
+    entry_pic.value = '';
+    exit_pic.value = '';
   };
 
   // Statistics methods
@@ -607,8 +719,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         status_transaksi: '0',
         jenis_system: 'MANUAL',
         tanggal: new Date().toISOString().split('T')[0],
-        pic_driver_masuk: pic_body_masuk.value,
-        pic_no_pol_masuk: pic_plat_masuk.value,
+        entry_pic: entry_pic.value,
+        exit_pic: exit_pic.value,// Store the simplified field
         sinkron: 0,
         upload: 0,
         manual: 1, // Mark as manual
@@ -785,25 +897,36 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     const { platNomor, status, tanggalMulai, tanggalAkhir, jenisKendaraan } = filterParams;
     
     return docs.filter((doc: any) => {
-      // Must be a parking transaction
-      if (!doc || doc.type !== 'parking_transaction') {
+      // Must be a parking transaction or member entry
+      if (!doc || (doc.type !== 'parking_transaction' && doc.type !== 'member_entry')) {
         return false;
       }
 
       // Filter by plate number (case insensitive)
       if (platNomor && platNomor !== '') {
-        if (!doc.no_pol) {
+        // For parking transactions, use no_pol field
+        // For member transactions, use plat_nomor field
+        const docPlateNumber = doc.no_pol || doc.plat_nomor || '';
+        if (!docPlateNumber) {
           return false;
         }
         const regex = new RegExp(platNomor, 'i');
-        if (!regex.test(doc.no_pol)) {
+        if (!regex.test(docPlateNumber)) {
           return false;
         }
       }
 
       // Filter by status (handle string and number values)
       if (status !== null && status !== undefined) {
-        const docStatus = parseInt(doc.status);
+        let docStatus;
+        if (doc.type === 'member_entry') {
+          // Member transactions use 'in'/'out' strings, convert to numbers
+          docStatus = doc.status === 'in' ? 0 : 1;
+        } else {
+          // Parking transactions use numeric status
+          docStatus = parseInt(doc.status);
+        }
+        
         if (docStatus !== status) {
           return false;
         }
@@ -811,10 +934,18 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
       // Filter by date range
       if (tanggalMulai && tanggalAkhir) {
-        if (!doc.tanggal) {
+        // For parking transactions, use tanggal field
+        // For member transactions, use entry_time field and extract date
+        let docDate = doc.tanggal;
+        if (!docDate && (doc.entry_time || doc.waktu_masuk)) {
+          // Extract date from ISO string for member transactions
+          const dateStr = doc.entry_time || doc.waktu_masuk;
+          docDate = dateStr.split('T')[0]; // Get YYYY-MM-DD part
+        }
+        
+        if (!docDate) {
           return false;
         }
-        const docDate = doc.tanggal;
         if (docDate < tanggalMulai || docDate > tanggalAkhir) {
           return false;
         }
@@ -822,11 +953,25 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
       // Filter by vehicle type
       if (jenisKendaraan && jenisKendaraan !== '') {
-        if (!doc.id_kendaraan) {
-          return false;
+        let docVehicleType;
+        
+        if (doc.type === 'member_entry') {
+          // For member transactions, use jenis_kendaraan.label field
+          docVehicleType = doc.jenis_kendaraan?.label || 'Motor';
+        } else {
+          // For parking transactions, use id_kendaraan field
+          if (!doc.id_kendaraan) {
+            return false;
+          }
+          const jenis = jenisKendaraanData.find(j => j.label === jenisKendaraan);
+          if (!jenis || doc.id_kendaraan !== jenis.id) {
+            return false;
+          }
+          return true; // Early return for parking transactions
         }
-        const jenis = jenisKendaraanData.find(j => j.label === jenisKendaraan);
-        if (!jenis || doc.id_kendaraan !== jenis.id) {
+        
+        // Check vehicle type for member transactions
+        if (docVehicleType !== jenisKendaraan) {
           return false;
         }
       }
@@ -864,6 +1009,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       // This avoids the PouchDB sorting index issues
       const result = await db.allDocs({
         include_docs: true,
+        attachments: false, // Don't load attachment content, just metadata
         startkey: 'transaction_',
         endkey: 'transaction_\ufff0'
       });
@@ -879,7 +1025,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           doc_status: doc?.status,
           doc_bayar_keluar: doc?.bayar_keluar,
           doc_bayar_masuk: doc?.bayar_masuk,
-          doc_no_pol: doc?.no_pol
+          doc_no_pol: doc?.no_pol,
+          doc_plat_nomor: doc?.plat_nomor,
+          doc_member_id: doc?.member_id
         };
       }));
 
@@ -895,16 +1043,21 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
       console.log('🔍 Filtered documents:', filteredDocs.length);
       
-      // Debug filter results
+      // Debug filter results by type
+      const parkingCount = filteredDocs.filter(doc => doc.type === 'parking_transaction').length;
+      const memberCount = filteredDocs.filter(doc => doc.type === 'member_entry').length;
+      console.log(`🔍 Filtered breakdown: Parking: ${parkingCount}, Members: ${memberCount}`);
+      
       if (filteredDocs.length > 0) {
         console.log('🔍 Sample filtered documents:');
         filteredDocs.slice(0, 3).forEach((doc: any, index) => {
-          console.log(`  ${index + 1}. ID: ${doc._id}, Plat: ${doc.no_pol}, Status: ${doc.status}, Date: ${doc.tanggal}, Vehicle: ${doc.id_kendaraan}`);
+          console.log(`  ${index + 1}. ID: ${doc._id}, Type: ${doc.type}, Plat: ${doc.no_pol || doc.plat_nomor}, Status: ${doc.status}, Date: ${doc.tanggal || doc.entry_time?.split('T')[0]}, Vehicle: ${doc.id_kendaraan || doc.jenis_kendaraan?.label}`);
         });
       } else {
         console.log('⚠️ No documents passed the filter!');
         console.log('🔍 Debug: Total raw docs before filtering:', result.rows.length);
         console.log('🔍 Debug: Parking transactions count:', result.rows.filter(row => (row.doc as any)?.type === 'parking_transaction').length);
+        console.log('🔍 Debug: Member transactions count:', result.rows.filter(row => (row.doc as any)?.type === 'member_entry').length);
       }
 
       // Sort manually
@@ -956,22 +1109,43 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
       // Always return real data from database, even if empty
       return {
-        data: paginatedDocs.map((doc: any) => ({
-          id: doc._id,
-          plat_nomor: doc.no_pol || '',
-          jenis_kendaraan: getJenisKendaraanLabel(doc.id_kendaraan || 1),
-          waktu_masuk: doc.waktu_masuk || '',
-          waktu_keluar: doc.waktu_keluar || null,
-          status: doc.status || 0,
-          tarif: doc.bayar_keluar || doc.bayar_masuk || 0,
-          petugas: doc.id_op_masuk || '',
-          lokasi: doc.id_pintu_masuk || '',
-          pic_plat_masuk: doc.pic_no_pol_masuk || '',
-          pic_body_masuk: doc.pic_driver_masuk || '',
-          pic_plat_keluar: doc.pic_no_pol_keluar || '',
-          pic_body_keluar: doc.pic_driver_keluar || '',
-          ...doc
-        })),
+        data: paginatedDocs.map((doc: any) => {
+          // Handle both regular parking transactions and member transactions
+          const isMemberTransaction = doc.type === 'member_entry';
+          
+          return {
+            id: doc._id,
+            plat_nomor: doc.no_pol || doc.plat_nomor || '',
+            jenis_kendaraan: isMemberTransaction 
+              ? (doc.jenis_kendaraan?.label || 'Motor')
+              : getJenisKendaraanLabel(doc.id_kendaraan || 1),
+            waktu_masuk: doc.waktu_masuk || doc.entry_time || '',
+            waktu_keluar: doc.waktu_keluar || doc.exit_time || null,
+            status: isMemberTransaction ? (doc.status === 'in' ? 0 : 1) : (doc.status || 0),
+            tarif: doc.bayar_keluar || doc.bayar_masuk || doc.tarif || 0,
+            petugas: doc.id_op_masuk || doc.created_by || '',
+            lokasi: doc.id_pintu_masuk || doc.lokasi || '',
+            pic_plat_masuk: doc.pic_no_pol_masuk || '',
+            pic_body_masuk: doc.pic_driver_masuk || '',
+            pic_plat_keluar: doc.pic_no_pol_keluar || '',
+            pic_body_keluar: doc.pic_driver_keluar || '',
+            // Handle images for both transaction types
+            entry_pic: isMemberTransaction 
+              ? (doc._attachments?.['entry.jpg'] ? 'ATTACHMENT:entry.jpg' : '')
+              : (doc.entry_pic || doc.pic_no_pol_masuk || doc.pic_driver_masuk || ''),
+            exit_pic: isMemberTransaction
+              ? (doc._attachments?.['exit.jpg'] ? 'ATTACHMENT:exit.jpg' : '')
+              : (doc.exit_pic || doc.pic_no_pol_keluar || doc.pic_driver_keluar || ''),
+            // Include member information if it's a member transaction
+            ...(isMemberTransaction && {
+              member_id: doc.member_id,
+              member_name: doc.name,
+              card_number: doc.card_number,
+              is_member: true
+            }),
+            ...doc
+          };
+        }),
         total: total,
         page,
         limit
@@ -1013,26 +1187,21 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       const jenisKendaraanData = await getJenisKendaraan();
 
       // Apply filters using the reusable function
-      const filteredDocs = applyTransactionFilters(
-        result.rows.map(row => row.doc),
-        { platNomor, status, tanggalMulai, tanggalAkhir, jenisKendaraan },
-        jenisKendaraanData
-      );
+      const filteredDocs = result.rows.map(row => row.doc);
 
       console.log('📊 Found transactions:', filteredDocs.length);
 
       // Debug pendapatan calculation
-      const completedTransactions = filteredDocs.filter((t: any) => t.status === 1);
+      const completedTransactions = filteredDocs.filter((t: any) => {
+        if (t.type === 'member_entry') {
+          return t.status === 'out'; // Member transactions use 'out' for completed
+        }
+        return t.status === 1; // Parking transactions use numeric 1 for completed
+      });
       console.log('📊 Completed transactions for revenue:', completedTransactions.length);
       
       // Debug: Show all documents first
-      console.log('📊 All filtered docs:', filteredDocs.map((t: any) => ({
-        id: t._id,
-        plat: t.no_pol,
-        status: t.status,
-        bayar_keluar: t.bayar_keluar,
-        bayar_masuk: t.bayar_masuk
-      })));
+      console.log('📊 All filtered docs:', filteredDocs);
       
       completedTransactions.forEach((t: any, index) => {
         console.log(`📊 Transaction ${index + 1}:`, {
@@ -1058,7 +1227,12 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       }, 0);
       
       // Count revenue from active prepaid transactions (status 0 with bayar_masuk)
-      const activeTransactions = filteredDocs.filter((t: any) => t.status === 0);
+      const activeTransactions = filteredDocs.filter((t: any) => {
+        if (t.type === 'member_entry') {
+          return t.status === 'in'; // Member transactions use 'in' for active
+        }
+        return t.status === 0; // Parking transactions use numeric 0 for active
+      });
       const prepaidRevenue = activeTransactions.reduce((total, t: any) => {
         const revenue = t.bayar_masuk || 0;
         if (revenue > 0) {
@@ -1074,7 +1248,12 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       const stats = {
         totalTransaksi: filteredDocs.length,
         transaksiSelesai: completedTransactions.length,
-        transaksiAktif: filteredDocs.filter((t: any) => t.status === 0).length,
+        transaksiAktif: filteredDocs.filter((t: any) => {
+          if (t.type === 'member_entry') {
+            return t.status === 'in';
+          }
+          return t.status === 0;
+        }).length,
         totalPendapatan: totalPendapatan
       };
 
@@ -1357,6 +1536,34 @@ export const useTransaksiStore = defineStore('transaksi', () => {
   };
 
   // Testing utilities
+  const debugMemberTransactions = async () => {
+    try {
+      console.log('🔍 Debug: Checking for member transactions...');
+      
+      const result = await db.allDocs({
+        include_docs: true,
+        startkey: 'transaction_',
+        endkey: 'transaction_\ufff0'
+      });
+      
+      const memberDocs = result.rows.filter(row => (row.doc as any).type === 'member_entry');
+      console.log(`🔍 Found ${memberDocs.length} member transactions:`, memberDocs.map(row => ({
+        id: row.id,
+        member_id: (row.doc as any).member_id,
+        name: (row.doc as any).name,
+        plat_nomor: (row.doc as any).plat_nomor,
+        status: (row.doc as any).status,
+        entry_time: (row.doc as any).entry_time,
+        has_attachments: !!(row.doc as any)._attachments
+      })));
+      
+      return memberDocs.length;
+    } catch (error) {
+      console.error('❌ Error debugging member transactions:', error);
+      return 0;
+    }
+  };
+
   const addSampleDataForTesting = async () => {
     try {
       console.log('🧪 Adding sample data for testing...');
@@ -1543,10 +1750,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     bayar,
     currentTransaction,
     transactionHistory,
-    pic_body_masuk,
-    pic_body_keluar,
-    pic_plat_masuk,
-    pic_plat_keluar,
+    entry_pic,
+    exit_pic,
     vehicleInToday,
     totalVehicleOut,
     totalVehicleInside,
@@ -1571,6 +1776,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     resetTransactionState,
     saveTransactionToLocal,
     saveTransactionToServer,
+    saveTransactionAttachments,
+    getTransactionAttachments,
+    getTransactionImageData,
     calculateParkingFee,
     getCountVehicleInToday,
     getCountVehicleOutToday,
@@ -1589,6 +1797,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     printTicket,
     
     // Testing utilities
+    debugMemberTransactions,
     addSampleDataForTesting,
     checkDatabaseHasData,
     processExitAllActiveTransactions,

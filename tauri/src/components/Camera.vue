@@ -25,8 +25,15 @@
       <q-skeleton v-if="!imageSrc" class="full-height">
         <template v-slot:default>
           <div class="absolute-center text-center text-grey-7">
-            <q-icon name="camera_alt" size="xl" />
-            <div>{{ message }}</div>
+            <q-icon 
+              :name="cameraStatus ? 'camera_alt' : 'camera_off'" 
+              :color="cameraStatus ? 'grey-6' : 'red-6'"
+              size="xl" 
+            />
+            <div class="q-mt-sm">{{ message }}</div>
+            <div v-if="!cameraStatus && message.includes('check settings')" class="q-mt-xs text-caption">
+              Press F7 to open settings
+            </div>
           </div>
         </template>
       </q-skeleton>
@@ -128,8 +135,8 @@ const connectionCheckInterval = ref(null);
 const intervalId = ref(null);
 const isLiveStreamEnabled = ref(false); // Actual current state of the RTSP stream, true if playing/attempting, false otherwise
 const isLiveModeActive = ref(
-  (props.cameraType === 'cctv' )
-    ? (ls.get(`liveModeActive_${props.cameraUrl}_${props.label || 'default'}`) === null ? true : !!ls.get(`liveModeActive_${props.cameraUrl}_${props.label || 'default'}`))
+  (props.cameraType === 'cctv')
+    ? (ls.get(`liveModeActive_${props.cameraUrl}_${props.label || 'default'}`) === null ? false : !!ls.get(`liveModeActive_${props.cameraUrl}_${props.label || 'default'}`))
     : false
 );
 const cameraStore = useCameraStore()
@@ -143,6 +150,7 @@ const retryCount = ref(0);
 const maxRetries = 3;
 const retryDelay = 2000; // 2 seconds
 const notFoundCount = ref(0);
+const liveStreamVideoRef=ref(null)
 
 // Update the computed cameraDeviceId
 const cameraDeviceId = computed(() => props.deviceId);
@@ -272,14 +280,45 @@ const fetchCameraImage = async () => {
     //   return;
     // }
     
-    const    config = {
-      username: props.username,
-      password: props.password,
-      ipAddress: props.ipAddress, // Mengubah ip_address menjadi ipAddress
-      rtspStreamPath: props.rtspStreamPath,
+    // Validate required parameters first
+    if (!props.ipAddress || props.ipAddress === '192.168.10.25') {
+      console.warn('Using default IP address - camera may not be configured');
+      message.value = 'Camera not configured - check settings';
+      cameraStatus.value = false;
+      return null;
     }
-    // Use Tauri invoke to capture image from CCTV
-    const response = await invoke('capture_cctv_image', { args: config });
+    
+    // Make sure the args structure matches what the Rust command expects
+    const args = {
+      username: props.username || null,
+      password: props.password || null,
+      ip_address: props.ipAddress,
+      rtsp_stream_path: props.rtspStreamPath,
+    };
+
+    // console.log('📸 Capturing CCTV image with config:', {
+    //   ...args,
+    //   password: args.password ? '***' : null,
+    //   cameraType: props.cameraType,
+    //   isInterval: props.isInterval,
+    //   isLiveModeActive: isLiveModeActive.value
+    // });
+    
+    // Use Tauri invoke to capture image from CCTV with timeout
+    const response = await Promise.race([
+      invoke('capture_cctv_image', { args }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('CCTV capture timeout')), 8000)
+      )
+    ]);
+    
+    // console.log('📸 CCTV capture response:', {
+    //   is_success: response?.is_success,
+    //   has_base64: response?.base64 ? 'yes' : 'no',
+    //   message: response?.message,
+    //   base64_length: response?.base64?.length || 0
+    // });
+    
     if (response && response.is_success && response.base64) {
       imageSrc.value = response.base64;
       
@@ -289,11 +328,63 @@ const fetchCameraImage = async () => {
       cameraStatus.value = true;
       return response.base64;
     } else {
-      message.value = response && response.message ? response.message : 'Failed to capture image from CCTV';
+      const errorMsg = response?.message || 'Unknown error from CCTV camera';
+      
+      // Handle specific RTSP errors
+      if (errorMsg.includes('5XX Server Error') || errorMsg.includes('Server returned 5XX')) {
+        message.value = 'Camera server error - check IP and credentials';
+      } else if (errorMsg.includes('Connection refused') || errorMsg.includes('Network unreachable')) {
+        message.value = 'Camera connection refused - check network';
+      } else if (errorMsg.includes('Authentication failed') || errorMsg.includes('401')) {
+        message.value = 'Camera auth failed - check username/password';
+      } else if (errorMsg.includes('timeout')) {
+        message.value = 'Camera connection timeout';
+      } else {
+        message.value = `CCTV Error: ${errorMsg}`;
+      }
+      
       cameraStatus.value = false;
+      console.error('❌ CCTV capture failed:', {
+        response,
+        args: {
+          ...args,
+          password: args.password ? '***' : null
+        },
+        errorMessage: errorMsg
+      });
+      
+      // Return null to indicate failure
+      return null;
     }
   } catch (error) {
+    console.error('❌ Error fetching CCTV image:', {
+      error,
+      errorMessage: error.message,
+      args: {
+        username: props.username || null,
+        password: props.password ? '***' : null,
+        ip_address: props.ipAddress,
+        rtsp_stream_path: props.rtspStreamPath,
+      },
+      cameraType: props.cameraType,
+      ipAddress: props.ipAddress
+    });
+    
     ++notFoundCount.value;
+    
+    // Set appropriate error message based on error type
+    if (error.message && error.message.includes('missing required key')) {
+      message.value = 'Camera configuration error';
+    } else if (error.message && error.message.includes('timeout')) {
+      message.value = 'Camera connection timeout';
+    } else if (error.message && error.message.includes('CCTV capture timeout')) {
+      message.value = 'Camera response timeout - check connection';
+    } else if (error.message && error.message.includes('5XX Server Error')) {
+      message.value = 'Camera server error - check IP and settings';
+    } else {
+      message.value = `Camera error: ${error.message || 'Unknown error'}`;
+    }
+    
     if (error.code === 'ERR_NETWORK' && retryCount.value < maxRetries) {
       message.value = `Connection lost. Retrying... (${retryCount.value + 1}/${maxRetries})`;
       retryCount.value++;
@@ -301,9 +392,11 @@ const fetchCameraImage = async () => {
     } else if (notFoundCount.value >= 5) {
       clearInterval(intervalId);
       cameraStatus.value = false;
-      message.value = 'Camera connection failed';
+      message.value = 'Camera connection failed - check settings (F7)';
       emit('error', error);
     }
+    
+    return null;
   }
 };
 
@@ -376,24 +469,31 @@ const startLiveStream = async () => {
     // Start listening for live frames from the backend
     unlistenLiveFrame = await listen(`cctv-live-frame::${streamId.value}`, (event) => {
       const base64Payload = event.payload;
-      // console.log(`Received frame for stream ${streamId.value}. Payload length: ${base64Payload.length}`);
-      // Log first 50 and last 50 characters of the payload for inspection
-      // console.log(`Payload snippet: ${base64Payload.substring(0, 50)}...${base64Payload.substring(base64Payload.length - 50)}`);
       imageSrc.value = `data:image/jpeg;base64,${base64Payload}`;
-      // console.log(`imageSrc updated. Length: ${imageSrc.value.length}`);
       cameraStatus.value = true;
       message.value = '';
     });
-    // Invoke the Rust command to start the RTSP live stream
-    const result = await invoke('start_rtsp_live_stream', {
-      args: {
-        streamId: streamId.value,
-        username: props.username,
-        password: props.password,
-        ipAddress: props.ipAddress,
-        rtspStreamPath: props.rtspStreamPath,
-      },
-    });
+    
+    // Set a placeholder message while waiting for the stream to start
+    message.value = 'Starting live stream...';
+    imageSrc.value = ''; // Clear previous image
+    
+    // Invoke the Rust command to start the RTSP live stream with timeout
+    const result = await Promise.race([
+      invoke('start_rtsp_live_stream', {
+        args: {
+          stream_id: streamId.value,
+          username: props.username || null,
+          password: props.password || null,
+          ip_address: props.ipAddress,
+          rtsp_stream_path: props.rtspStreamPath,
+        },
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Live stream start timeout')), 10000)
+      )
+    ]);
+    
     if (!result.is_success) {
       throw new Error(result.message || 'Failed to start RTSP live stream');
     }
@@ -401,20 +501,41 @@ const startLiveStream = async () => {
     console.log('RTSP Live stream started:', result.message);
     isLiveStreamEnabled.value = true; // Set to true when stream successfully starts
 
-    // Set a placeholder message while waiting for the first frame
-    message.value = 'Starting live stream...';
-    imageSrc.value = ''; // Clear previous image
-
     // Clear interval if it was running for snapshot mode
     if (intervalId.value) {
       clearInterval(intervalId.value);
       intervalId.value = null;
     }
+    
+    // Set timeout to fallback to snapshot if no frames received
+    setTimeout(() => {
+      if (!imageSrc.value && isLiveStreamEnabled.value) {
+        console.warn('No frames received from live stream, falling back to snapshot mode');
+        handleModeChange(false); // Switch to snapshot mode
+      }
+    }, 15000); // 15 seconds timeout
+    
   } catch (error) {
     console.error('Error starting live stream:', error);
-    message.value = 'Failed to start live stream';
+    message.value = 'Live stream failed, switching to snapshot mode';
     cameraStatus.value = false;
     isLiveStreamEnabled.value = false; // Ensure stream enabled is false on error
+    
+    // Auto-fallback to snapshot mode
+    setTimeout(() => {
+      if (props.cameraType === 'cctv') {
+        console.log('Auto-switching to snapshot mode due to live stream failure');
+        isLiveModeActive.value = false;
+        ls.set(`liveModeActive_${props.cameraUrl}_${props.label || 'default'}`, false);
+        
+        // Start interval mode
+        const intervalValue = ls.get("interval") || 15000; // Increased to 15 seconds to reduce load
+        if (intervalId.value) clearInterval(intervalId.value);
+        intervalId.value = setInterval(fetchCameraImage, intervalValue);
+        fetchCameraImage(); // Initial fetch
+      }
+    }, 2000);
+    
     emit('error', error);
   }
 };
@@ -439,7 +560,7 @@ const stopLiveStream = async () => {
   if (streamId.value && isLiveStreamEnabled.value) {
     try {
       const result = await invoke('stop_rtsp_live_stream', {
-        streamId: streamId.value,
+        stream_id: streamId.value,
       });
       if (result.is_success) {
         console.log('Live stream stopped:', result.message);
@@ -503,64 +624,88 @@ onMounted(async () => {
     return;
   }
 
-  // CCTV camera logic
-  const intervalValue = ls.get("interval") || 5000;
-  // let intervalId; // intervalId is already defined in the component scope
+  // CCTV camera logic with interval protection
+  const intervalValue = ls.get("interval") || 15000; // Increased from 10000 to 15000 to reduce CCTV load
+  
+  // Clear any existing interval before starting new one
+  if (intervalId.value) {
+    console.log(`🛑 Clearing existing interval for ${props.label || 'camera'}`);
+    clearInterval(intervalId.value);
+    intervalId.value = null;
+  }
 
   if (props.cameraType === 'cctv') {
-    if (isLiveModeActive.value ) {
+    if (isLiveModeActive.value) {
+      console.log(`📺 Starting in live mode for CCTV camera: ${props.label || 'unnamed'}`);
       isLiveStreamEnabled.value = true; // Attempt to start live stream
       await nextTick();
       startLiveStream();
-    } else if (props.isInterval) {
-      if (intervalId.value) clearInterval(intervalId.value); // Clear existing interval if any
-      intervalId.value = setInterval(fetchCameraImage, intervalValue);
-      fetchCameraImage(); // Initial fetch
     } else {
-      await fetchCameraImage(); // Fetch once if not interval and not live
+      console.log(`📸 Starting in snapshot mode for CCTV camera: ${props.label || 'unnamed'} (interval: ${intervalValue}ms)`);
+      intervalId.value = setInterval(() => {
+        console.log(`📷 Interval capture for ${props.label || 'camera'} - ${props.ipAddress}`);
+        fetchCameraImage();
+      }, intervalValue);
+      fetchCameraImage(); // Initial fetch
     }
   } else if (props.isInterval) { // For non-CCTV types that support interval
-    if (intervalId.value) clearInterval(intervalId.value); // Clear existing interval if any
-    intervalId.value = setInterval(fetchCameraImage, intervalValue);
+    console.log(`📸 Starting interval mode for ${props.cameraType} camera: ${props.label || 'unnamed'} (interval: ${intervalValue}ms)`);
+    intervalId.value = setInterval(() => {
+      console.log(`📷 Interval capture for ${props.label || 'camera'}`);
+      fetchCameraImage();
+    }, intervalValue);
     fetchCameraImage(); // Initial fetch
   } else if (props.cameraType !== 'usb') { // For non-USB, non-interval types, fetch once
+    console.log(`📷 Single fetch for ${props.cameraType} camera: ${props.label || 'unnamed'}`);
     await fetchCameraImage();
   }
 
   // The logic for starting CCTV live stream or interval is now within the main block above
   // This specific block is redundant after the changes.
-
-  onUnmounted(() => {
-    // socket.off('snapshot_result');
-    // clearInterval(connectionCheckInterval);
-    // if (intervalId.value) clearInterval(intervalId.value); // Now handled in onUnmounted
-    if (stream.value) { // For USB camera stream
-      stream.value.getTracks().forEach(track => track.stop());
-    }
-  });
 });
 
-// onUnmounted(() => {
-//   if (stream.value) {
-//     stream.value.getTracks().forEach(track => track.stop());
-//   }
-//   if (liveStreamVideoRef.value && (liveStreamVideoRef.value.srcObject || liveStreamVideoRef.value.src)) {
-//     if (liveStreamVideoRef.value.srcObject) {
-//       const tracks = liveStreamVideoRef.value.srcObject.getTracks();
-//       tracks.forEach(track => track.stop());
-//       liveStreamVideoRef.value.srcObject = null;
-//     }
-//     liveStreamVideoRef.value.src = ''; // Clear src for MJPEG case too
-//   }
-//   // Stop RTSP stream if it was running
-//   if (props.cameraType === 'cctv' && isLiveStreamEnabled.value) { // Check isLiveStreamEnabled
-//     stopLiveStream(); // Use the new unified stopLiveStream function
-//   }
-//   // Clear interval if it was running
-//   if (intervalId.value) {
-//     clearInterval(intervalId.value);
-//   }
-// });
+// Proper onUnmounted cleanup outside of onMounted
+onUnmounted(() => {
+  console.log(`🧹 Cleaning up Camera component: ${props.label || 'unnamed'}`);
+  
+  // Clear any active intervals
+  if (intervalId.value) {
+    console.log('🛑 Clearing camera interval');
+    clearInterval(intervalId.value);
+    intervalId.value = null;
+  }
+  
+  // Stop USB camera stream
+  if (stream.value) {
+    console.log('🛑 Stopping USB camera stream');
+    stream.value.getTracks().forEach(track => track.stop());
+    stream.value = null;
+  }
+  
+  // Stop live stream for CCTV
+  if (props.cameraType === 'cctv' && isLiveStreamEnabled.value) {
+    console.log('🛑 Stopping CCTV live stream');
+    stopLiveStream();
+  }
+  
+  // Clean up live stream video references
+  if (liveStreamVideoRef.value) {
+    if (liveStreamVideoRef.value.srcObject) {
+      const tracks = liveStreamVideoRef.value.srcObject.getTracks();
+      tracks.forEach(track => track.stop());
+      liveStreamVideoRef.value.srcObject = null;
+    }
+    liveStreamVideoRef.value.src = '';
+  }
+  
+  // Stop any backend live streams
+  if (unlistenLiveFrame) {
+    unlistenLiveFrame();
+    unlistenLiveFrame = null;
+  }
+  
+  console.log('✅ Camera component cleanup completed');
+});
 
 const handleModeChange = async (newValue) => { // newValue is the new state of isLiveModeActive, already updated by v-model
   if (props.cameraType === 'cctv' ) {
@@ -584,15 +729,19 @@ const handleModeChange = async (newValue) => { // newValue is the new state of i
       stopLiveStream();
       imageSrc.value = ''; // Clear current image to show skeleton/loading
       message.value = 'Loading Image...'; // Reset message for interval mode
-      message.value = 'Loading Image...';
-      // if (props.isInterval) {
-        const intervalValue = ls.get("interval") || 5000;
-        if (intervalId.value) clearInterval(intervalId.value);
-        intervalId.value = setInterval(fetchCameraImage, intervalValue);
-        await fetchCameraImage(); // Initial fetch for interval mode
-      // } else {
-      //   await fetchCameraImage(); // Fetch once if not interval mode
-      // }
+      
+      const intervalValue = ls.get("interval") || 15000; // Increased to 15 seconds to reduce load
+      if (intervalId.value) {
+        console.log(`🛑 Clearing existing interval before switching to interval mode for ${props.label || 'camera'}`);
+        clearInterval(intervalId.value);
+      }
+      
+      console.log(`📸 Switching to interval mode for ${props.label || 'camera'} (interval: ${intervalValue}ms)`);
+      intervalId.value = setInterval(() => {
+        console.log(`📷 Mode-switch interval capture for ${props.label || 'camera'}`);
+        fetchCameraImage();
+      }, intervalValue);
+      await fetchCameraImage(); // Initial fetch for interval mode
     }
   }
 };

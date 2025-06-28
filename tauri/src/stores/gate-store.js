@@ -88,6 +88,7 @@ export const useGateStore = defineStore('gate', {
     },
 
     async writeToPort(type, data) {
+      console.log("🚀 ~ writeToPort ~ data:", data)
       try {
         if (this.serialConnected) {
           await invoke('write_serial', { data });

@@ -44,10 +44,16 @@ pub struct PrinterDevice {
 
 #[command]
 pub async fn print_thermal_ticket(ticket_data: TicketData, printer_name: Option<String>) -> Result<PrintResponse, String> {
+    // Debug: Log barcode data yang diterima
+    info!("print_thermal_ticket received barcode_data: '{}'", ticket_data.barcode_data);
+    info!("print_thermal_ticket received ticket_number: '{}'", ticket_data.ticket_number);
+    
     let selected_printer = match printer_name {
         Some(name) => name,
         None => get_default_printer_name().await?
     };
+
+    
 
     // Untuk EPSON TM-T82X, coba Windows driver dulu karena lebih reliable
     match print_with_driver(&ticket_data, &selected_printer).await {
@@ -321,9 +327,12 @@ fn generate_raw_commands(ticket_data: &TicketData) -> Vec<u8> {
     commands
 }
 
-
 fn add_epson_barcode(commands: &mut Vec<u8>, data: &str) {
+    // Debug: Log original dan validated barcode data
+    info!("Original barcode data: '{}'", data);
+    
     let barcode_data = validate_barcode_data(data);
+    info!("Validated barcode data: '{}'", barcode_data);
     
     if barcode_data.is_empty() {
         // If barcode data is invalid, print as text
@@ -332,33 +341,23 @@ fn add_epson_barcode(commands: &mut Vec<u8>, data: &str) {
         return;
     }
     
-    // Debug: Print barcode data as text first (untuk testing)
-    // commands.extend_from_slice("Barcode Data: ".as_bytes());
-    commands.extend_from_slice(barcode_data.as_bytes());
-    commands.extend_from_slice(&[0x0A]); // LF
-    
-    // EPSON TM-T82X barcode settings (lebih basic approach)
-    commands.extend_from_slice(&[0x1D, 0x68, 0x50]); // GS h 80 (Set barcode height - lebih kecil)
+    // EPSON TM-T82X barcode settings - no HRI text
+    commands.extend_from_slice(&[0x1D, 0x68, 0x50]); // GS h 80 (Set barcode height)
     commands.extend_from_slice(&[0x1D, 0x77, 0x02]); // GS w 2 (Set barcode width)
-    commands.extend_from_slice(&[0x1D, 0x48, 0x02]); // GS H 2 (HRI below barcode)
-    commands.extend_from_slice(&[0x1D, 0x66, 0x00]); // GS f 0 (HRI font A)
+    commands.extend_from_slice(&[0x1D, 0x48, 0x00]); // GS H 0 (No HRI text)
     
-    // Try Code39 instead of Code128 (more compatible)
+    // Code39 barcode (most compatible with EPSON TM-T82X)
     commands.extend_from_slice(&[0x1D, 0x6B, 0x04]); // GS k 4 (Code39)
     commands.extend_from_slice(barcode_data.as_bytes()); // Data
     commands.extend_from_slice(&[0x00]); // NULL terminator for Code39
     
-    // Alternative: If Code39 doesn't work, try different approach
     commands.extend_from_slice(&[0x0A]); // LF after barcode
-    
-    // Manual barcode as asterisks (fallback visual)
-    // commands.extend_from_slice("*".as_bytes());
-    // commands.extend_from_slice(barcode_data.as_bytes());
-    // commands.extend_from_slice("*".as_bytes());
-    // commands.extend_from_slice(&[0x0A]); // LF
 }
 
 fn validate_barcode_data(data: &str) -> String {
+    // Debug: Log input data
+    info!("validate_barcode_data input: '{}'", data);
+    
     // For Code39: Only alphanumeric and some special characters
     let cleaned: String = data.chars()
         .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '.' || *c == ' ')
@@ -367,15 +366,22 @@ fn validate_barcode_data(data: &str) -> String {
     // Convert to uppercase for Code39
     let uppercase = cleaned.to_uppercase();
     
-    // Limit length (Code39 works better with shorter strings)
-    if uppercase.len() > 20 {
-        uppercase[..20].to_string()
+    // Debug: Log cleaned data
+    info!("validate_barcode_data cleaned: '{}'", uppercase);
+    
+    // Extend limit for longer ticket numbers - Code39 can handle up to 43 characters on EPSON
+    let result = if uppercase.len() > 30 {
+        uppercase[..30].to_string()
     } else if uppercase.is_empty() {
         "NODATA".to_string() // Default value
     } else {
         uppercase
-    }
+    };
+    
+    info!("validate_barcode_data result: '{}'", result);
+    result
 }
+
 
 async fn send_to_printer_driver(data: &[u8], printer_name: &str) -> Result<(), String> {
     #[cfg(target_os = "windows")]

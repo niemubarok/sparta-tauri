@@ -60,10 +60,100 @@
                   @blur="enableScanner"
                 />
               </div>
-              <div class="col">
+            </div>
+          </q-card-section>
+        </q-card>
+
+        <!-- Camera Settings -->
+        <q-card class="q-mb-lg">
+          <q-card-section>
+            <div class="text-h6 q-mb-md">Camera Configuration</div>
+            
+            <div class="row q-gutter-md">
+              <div class="col-12">
                 <q-toggle
                   v-model="settings.camera_enabled"
-                  label="Enable Camera"
+                  label="Enable Camera System"
+                  left-label
+                />
+              </div>
+            </div>
+
+            <div v-if="settings.camera_enabled" class="q-mt-md">
+              <div class="row q-gutter-md">
+                <div class="col">
+                  <q-toggle
+                    v-model="settings.webcam_enabled"
+                    label="Enable Webcam"
+                    left-label
+                  />
+                </div>
+                <div class="col">
+                  <q-toggle
+                    v-model="settings.cctv_enabled"
+                    label="Enable CCTV"
+                    left-label
+                  />
+                </div>
+              </div>
+
+              <div v-if="settings.cctv_enabled" class="row q-gutter-md q-mt-md">
+                <div class="col-12">
+                  <q-input
+                    v-model="settings.cctv_url"
+                    label="CCTV Snapshot URL"
+                    placeholder="http://192.168.1.100/snapshot"
+                    outlined
+                    @focus="disableScanner"
+                    @blur="enableScanner"
+                  />
+                </div>
+              </div>
+
+              <div class="row q-gutter-md q-mt-md">
+                <div class="col">
+                  <q-slider
+                    v-model="settings.image_quality"
+                    :min="0.1"
+                    :max="1"
+                    :step="0.1"
+                    label
+                    label-always
+                    color="primary"
+                  />
+                  <div class="text-caption text-center">Image Quality: {{ Math.round(settings.image_quality * 100) }}%</div>
+                </div>
+                <div class="col">
+                  <q-input
+                    v-model.number="settings.capture_timeout"
+                    type="number"
+                    label="Capture timeout (ms)"
+                    outlined
+                    min="1000"
+                    max="10000"
+                    step="500"
+                    @focus="disableScanner"
+                    @blur="enableScanner"
+                  />
+                </div>
+              </div>
+
+              <div class="row q-gutter-md q-mt-md">
+                <q-btn
+                  color="primary"
+                  icon="videocam"
+                  label="Test Webcam"
+                  :loading="testingCamera.webcam"
+                  :disable="!settings.webcam_enabled || testingCamera.cctv"
+                  @click="testWebcam"
+                />
+                <q-btn
+                  color="secondary"
+                  icon="camera_alt"
+                  label="Test CCTV"
+                  :loading="testingCamera.cctv"
+                  :disable="!settings.cctv_enabled || !settings.cctv_url || testingCamera.webcam"
+                  @click="testCCTV"
                 />
               </div>
             </div>
@@ -277,6 +367,7 @@ import { useQuasar } from 'quasar'
 import { databaseService, type GateSettings } from '../services/database'
 import { gateService } from '../services/gate-service'
 import { barcodeScanner, type ScannerConfig } from '../services/barcode-scanner'
+import { cameraService } from '../services/camera-service'
 import SyncManager from '../components/SyncManager.vue'
 import AudioSettings from '../components/AudioSettings.vue'
 
@@ -290,6 +381,11 @@ const settings = ref<GateSettings>({
   baud_rate: 9600,
   gate_timeout: 10,
   camera_enabled: false,
+  webcam_enabled: true,
+  cctv_enabled: false,
+  cctv_url: '',
+  image_quality: 0.8,
+  capture_timeout: 5000,
   created_at: '',
   updated_at: ''
 })
@@ -303,6 +399,10 @@ const barcodeConfig = ref<ScannerConfig>({
 const availablePorts = ref<string[]>([])
 const loadingPorts = ref(false)
 const saving = ref(false)
+const testingCamera = ref({
+  webcam: false,
+  cctv: false
+})
 const connecting = ref(false)
 const testing = ref(false)
 const scannerEnabled = ref(true)
@@ -415,6 +515,11 @@ async function resetSettings() {
       baud_rate: 9600,
       gate_timeout: 10,
       camera_enabled: false,
+      webcam_enabled: true,
+      cctv_enabled: false,
+      cctv_url: '',
+      image_quality: 0.8,
+      capture_timeout: 5000,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
@@ -605,6 +710,84 @@ function disableScanner() {
 
 function enableScanner() {
   barcodeScanner.temporaryEnable()
+}
+
+// Camera test functions
+async function testWebcam() {
+  testingCamera.value.webcam = true
+  
+  try {
+    // Update camera service settings first
+    cameraService.updateSettings({
+      webcam_enabled: settings.value.webcam_enabled,
+      image_quality: settings.value.image_quality,
+      capture_timeout: settings.value.capture_timeout
+    })
+    
+    const success = await cameraService.testWebcam()
+    
+    if (success) {
+      $q.notify({
+        type: 'positive',
+        message: 'Webcam test successful!',
+        icon: 'videocam'
+      })
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Webcam test failed. Please check camera permissions.',
+        icon: 'error'
+      })
+    }
+  } catch (error) {
+    console.error('Webcam test error:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Webcam test failed: ' + error,
+      icon: 'error'
+    })
+  } finally {
+    testingCamera.value.webcam = false
+  }
+}
+
+async function testCCTV() {
+  testingCamera.value.cctv = true
+  
+  try {
+    // Update camera service settings first
+    cameraService.updateSettings({
+      cctv_enabled: settings.value.cctv_enabled,
+      cctv_url: settings.value.cctv_url,
+      image_quality: settings.value.image_quality,
+      capture_timeout: settings.value.capture_timeout
+    })
+    
+    const success = await cameraService.testCCTV()
+    
+    if (success) {
+      $q.notify({
+        type: 'positive',
+        message: 'CCTV test successful!',
+        icon: 'camera_alt'
+      })
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'CCTV test failed. Please check URL and network connection.',
+        icon: 'error'
+      })
+    }
+  } catch (error) {
+    console.error('CCTV test error:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'CCTV test failed: ' + error,
+      icon: 'error'
+    })
+  } finally {
+    testingCamera.value.cctv = false
+  }
 }
 </script>
 

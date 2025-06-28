@@ -186,6 +186,35 @@
       :rows-per-page-options="[10, 25, 50, 100]"
       class="my-sticky-header-table"
     >
+      <template v-slot:body-cell-images="props">
+        <q-td :props="props">
+          <div class="q-gutter-xs">
+            <q-chip
+              v-if="hasImages(props.row)"
+              :color="getImageCount(props.row) === 2 ? 'green' : 'orange'"
+              text-color="white"
+              icon="camera_alt"
+              :label="getImageCount(props.row)"
+              size="sm"
+              clickable
+              @click="viewDetail(props.row)"
+            >
+              <q-tooltip>{{ getImageCount(props.row) }} gambar tersedia ({{ getImageCount(props.row) === 2 ? 'Masuk & Keluar' : getImageCount(props.row) === 1 ? 'Masuk saja' : 'Lengkap' }}) - Klik untuk lihat detail</q-tooltip>
+            </q-chip>
+            <q-chip
+              v-else
+              color="grey-5"
+              text-color="white"
+              icon="no_photography"
+              label="0"
+              size="sm"
+            >
+              <q-tooltip>Tidak ada gambar</q-tooltip>
+            </q-chip>
+          </div>
+        </q-td>
+      </template>
+
       <template v-slot:body-cell-status="props">
         <q-td :props="props">
           <q-badge
@@ -361,51 +390,135 @@
           </div>
 
           <!-- Images Section -->
-          <div v-if="selectedTransaction.pic_plat_masuk || selectedTransaction.pic_body_masuk" class="q-mt-md">
+          <div v-if="hasImages(selectedTransaction)" class="q-mt-md">
             <q-separator class="q-mb-md" />
-            <div class="text-subtitle2 q-mb-md">Foto Masuk</div>
-            <div class="row q-gutter-md">
-              <div v-if="selectedTransaction.pic_plat_masuk" class="col">
-                <div class="text-caption q-mb-xs">Foto Plat Masuk</div>
-                <q-img
-                  :src="selectedTransaction.pic_plat_masuk"
-                  style="height: 200px; width: 300px"
-                  class="rounded-borders cursor-pointer"
-                  @click="showImage(selectedTransaction.pic_plat_masuk)"
-                />
+            
+            <!-- Header dengan informasi gambar -->
+            <div class="row items-center justify-between q-mb-md">
+              <div class="text-subtitle1 text-weight-medium">
+                <q-icon name="camera_alt" class="q-mr-sm" />
+                Dokumentasi CCTV Transaksi
               </div>
-              <div v-if="selectedTransaction.pic_body_masuk" class="col">
-                <div class="text-caption q-mb-xs">Foto Kendaraan Masuk</div>
-                <q-img
-                  :src="selectedTransaction.pic_body_masuk"
-                  style="height: 200px; width: 300px"
-                  class="rounded-borders cursor-pointer"
-                  @click="showImage(selectedTransaction.pic_body_masuk)"
-                />
+              <q-chip 
+                color="blue" 
+                text-color="white" 
+                icon="info"
+                :label="`${getImageCount(selectedTransaction)} Gambar`"
+                size="sm"
+              />
+            </div>
+
+            <!-- Foto Masuk -->
+            <div v-if="selectedTransaction.entry_pic" class="q-mb-lg">
+              <div class="text-subtitle2 q-mb-md text-positive">
+                <q-icon name="login" class="q-mr-xs" />
+                Foto Saat Masuk Parkir
+                <q-badge v-if="selectedTransaction.is_member" color="purple" class="q-ml-sm">
+                  Member
+                </q-badge>
+              </div>
+              <div class="row justify-center">
+                <div class="col-md-8 col-xs-12">
+                  <q-card flat bordered class="image-card">
+                    <q-card-section class="q-pa-sm">
+                      <div class="text-caption text-weight-medium q-mb-xs text-blue-8 text-center">
+                        <q-icon name="camera_alt" class="q-mr-xs" size="sm" />
+                        Foto Kamera Masuk
+                      </div>
+                      
+                      <!-- Loading state for member transactions -->
+                      <div v-if="loadingEntryImage" class="flex flex-center q-pa-xl">
+                        <q-spinner-hourglass size="50px" color="primary" />
+                        <div class="text-caption q-ml-md">Memuat gambar...</div>
+                      </div>
+                      
+                      <!-- Image display -->
+                      <q-img
+                        v-else
+                        :src="getImageSrc(selectedTransaction, 'entry')"
+                        style="height: 300px; max-width: 100%"
+                        class="rounded-borders cursor-pointer image-hover"
+                        @click="showImage(getImageSrc(selectedTransaction, 'entry'))"
+                        fit="contain"
+                        spinner-color="primary"
+                        loading="lazy"
+                      >
+                        <div class="absolute-bottom text-subtitle2 text-center bg-dark text-white q-pa-xs">
+                          Klik untuk memperbesar
+                        </div>
+                        <template v-slot:error>
+                          <div class="absolute-full flex flex-center bg-grey-3 text-grey-7">
+                            <div class="text-center">
+                              <q-icon name="broken_image" size="md" />
+                              <div class="text-caption">Gambar tidak dapat dimuat</div>
+                            </div>
+                          </div>
+                        </template>
+                      </q-img>
+                    </q-card-section>
+                  </q-card>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div v-if="selectedTransaction.pic_plat_keluar || selectedTransaction.pic_body_keluar" class="q-mt-md">
-            <div class="text-subtitle2 q-mb-md">Foto Keluar</div>
-            <div class="row q-gutter-md">
-              <div v-if="selectedTransaction.pic_plat_keluar" class="col">
-                <div class="text-caption q-mb-xs">Foto Plat Keluar</div>
-                <q-img
-                  :src="selectedTransaction.pic_plat_keluar"
-                  style="height: 200px; width: 300px"
-                  class="rounded-borders cursor-pointer"
-                  @click="showImage(selectedTransaction.pic_plat_keluar)"
-                />
+            <!-- Foto Keluar -->
+            <div v-if="selectedTransaction.exit_pic">
+              <div class="text-subtitle2 q-mb-md text-negative">
+                <q-icon name="logout" class="q-mr-xs" />
+                Foto Saat Keluar Parkir
+                <q-badge v-if="selectedTransaction.is_member" color="purple" class="q-ml-sm">
+                  Member
+                </q-badge>
               </div>
-              <div v-if="selectedTransaction.pic_body_keluar" class="col">
-                <div class="text-caption q-mb-xs">Foto Kendaraan Keluar</div>
-                <q-img
-                  :src="selectedTransaction.pic_body_keluar"
-                  style="height: 200px; width: 300px"
-                  class="rounded-borders cursor-pointer"
-                  @click="showImage(selectedTransaction.pic_body_keluar)"
-                />
+              <div class="row justify-center">
+                <div class="col-md-8 col-xs-12">
+                  <q-card flat bordered class="image-card">
+                    <q-card-section class="q-pa-sm">
+                      <div class="text-caption text-weight-medium q-mb-xs text-red-8 text-center">
+                        <q-icon name="camera_alt" class="q-mr-xs" size="sm" />
+                        Foto Kamera Keluar
+                      </div>
+                      
+                      <!-- Loading state for member transactions -->
+                      <div v-if="loadingExitImage" class="flex flex-center q-pa-xl">
+                        <q-spinner-hourglass size="50px" color="primary" />
+                        <div class="text-caption q-ml-md">Memuat gambar...</div>
+                      </div>
+                      
+                      <!-- Image display -->
+                      <q-img
+                        v-else
+                        :src="getImageSrc(selectedTransaction, 'exit')"
+                        style="height: 300px; max-width: 100%"
+                        class="rounded-borders cursor-pointer image-hover"
+                        @click="showImage(getImageSrc(selectedTransaction, 'exit'))"
+                        fit="contain"
+                        spinner-color="primary"
+                        loading="lazy"
+                      >
+                        <div class="absolute-bottom text-subtitle2 text-center bg-dark text-white q-pa-xs">
+                          Klik untuk memperbesar
+                        </div>
+                        <template v-slot:error>
+                          <div class="absolute-full flex flex-center bg-grey-3 text-grey-7">
+                            <div class="text-center">
+                              <q-icon name="broken_image" size="md" />
+                              <div class="text-caption">Gambar tidak dapat dimuat</div>
+                            </div>
+                          </div>
+                        </template>
+                      </q-img>
+                    </q-card-section>
+                  </q-card>
+                </div>
+              </div>
+            </div>
+
+            <!-- Info jika tidak ada gambar -->
+            <div v-if="!hasImages(selectedTransaction)" class="text-center q-pa-lg">
+              <q-icon name="no_photography" size="lg" color="grey-5" />
+              <div class="text-caption text-grey-6 q-mt-sm">
+                Tidak ada dokumentasi gambar untuk transaksi ini
               </div>
             </div>
           </div>
@@ -424,18 +537,108 @@
     </q-dialog>
 
     <!-- Image Dialog -->
-    <q-dialog v-model="showImageModal">
-      <q-card>
-        <q-card-section class="row items-center q-pb-none">
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+    <q-dialog v-model="showImageModal" maximized>
+      <q-card class="bg-black">
+        <q-card-section class="row items-center justify-between q-pa-md bg-dark text-white">
+          <div class="text-h6">
+            <q-icon name="photo" class="q-mr-sm" />
+            Preview Gambar CCTV
+          </div>
+          <div class="q-gutter-sm">
+            <q-btn 
+              v-if="getImageList(selectedTransaction).length > 1"
+              icon="navigate_before" 
+              flat 
+              round 
+              dense 
+              @click="navigateImage(-1)"
+              :disable="currentImageIndex === 0"
+            >
+              <q-tooltip>Gambar Sebelumnya</q-tooltip>
+            </q-btn>
+            <q-chip 
+              v-if="getImageList(selectedTransaction).length > 1"
+              color="blue" 
+              text-color="white"
+              size="sm"
+            >
+              {{ currentImageIndex + 1 }} / {{ getImageList(selectedTransaction).length }}
+            </q-chip>
+            <q-btn 
+              v-if="getImageList(selectedTransaction).length > 1"
+              icon="navigate_next" 
+              flat 
+              round 
+              dense 
+              @click="navigateImage(1)"
+              :disable="currentImageIndex === getImageList(selectedTransaction).length - 1"
+            >
+              <q-tooltip>Gambar Selanjutnya</q-tooltip>
+            </q-btn>
+            <q-btn icon="close" flat round dense v-close-popup>
+              <q-tooltip>Tutup</q-tooltip>
+            </q-btn>
+          </div>
         </q-card-section>
-        <q-card-section>
-          <q-img
-            :src="selectedImage"
-            style="max-width: 80vw; max-height: 80vh"
-            class="rounded-borders"
-          />
+        
+        <q-card-section class="flex flex-center q-pa-none" style="height: calc(100vh - 80px)">
+          <div class="text-center full-width">
+            <!-- Image info -->
+            <div class="text-white q-mb-md">
+              <div class="text-subtitle1 text-weight-medium">
+                {{ getCurrentImageInfo() }}
+              </div>
+              <div class="text-caption text-grey-4">
+                Plat Nomor: {{ selectedTransaction?.plat_nomor }} | 
+                {{ selectedTransaction?.waktu_masuk ? formatDateTime(selectedTransaction.waktu_masuk) : '' }}
+              </div>
+            </div>
+            
+            <!-- Main image -->
+            <q-img
+              :src="selectedImage"
+              style="max-width: 90vw; max-height: 80vh"
+              class="rounded-borders"
+              fit="contain"
+              spinner-color="white"
+              spinner-size="lg"
+            >
+              <template v-slot:error>
+                <div class="absolute-full flex flex-center bg-grey-8 text-white">
+                  <div class="text-center">
+                    <q-icon name="broken_image" size="xl" />
+                    <div class="text-h6 q-mt-md">Gambar tidak dapat dimuat</div>
+                    <div class="text-caption">Periksa koneksi atau file gambar</div>
+                  </div>
+                </div>
+              </template>
+            </q-img>
+            
+            <!-- Navigation thumbnails -->
+            <div v-if="getImageList(selectedTransaction).length > 1" class="q-mt-md">
+              <div class="row justify-center q-gutter-sm">
+                <div 
+                  v-for="(image, index) in getImageList(selectedTransaction)" 
+                  :key="index"
+                  class="cursor-pointer"
+                  @click="selectImageByIndex(index)"
+                >
+                  <q-img
+                    :src="image.src"
+                    style="width: 80px; height: 60px"
+                    class="rounded-borders"
+                    :class="currentImageIndex === index ? 'image-selected' : 'image-thumbnail'"
+                    fit="cover"
+                  >
+                    <div v-if="currentImageIndex === index" class="absolute-full bg-primary" style="opacity: 0.3"></div>
+                  </q-img>
+                  <div class="text-caption text-white q-mt-xs text-center" style="max-width: 80px">
+                    {{ image.label }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -463,9 +666,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useTransaksiStore } from 'src/stores/transaksi-store'
+import { getTransactionAttachment } from 'src/boot/pouchdb'
 import ls from 'localstorage-slim'
 
 // Utility function for date formatting (alternative to date-fns)
@@ -495,10 +699,17 @@ const processing = ref(false)
 const transaksiList = ref([])
 const selectedTransaction = ref(null)
 const selectedImage = ref('')
+const currentImageIndex = ref(0)
 const exitTransaction = ref(null)
 const showDetailDialog = ref(false)
 const showImageModal = ref(false)
 const showExitDialog = ref(false)
+
+// Image loading states for member transactions
+const loadingEntryImage = ref(false)
+const loadingExitImage = ref(false)
+const entryImageData = ref('')
+const exitImageData = ref('')
 
 // Computed statistics based on current filtered data
 const computedStatistics = computed(() => {
@@ -591,6 +802,13 @@ const columns = [
     align: 'left',
     field: 'jenis_kendaraan',
     sortable: true
+  },
+  {
+    name: 'images',
+    label: 'Gambar',
+    align: 'center',
+    field: '',
+    style: 'width: 80px'
   },
   {
     name: 'waktu_masuk',
@@ -773,14 +991,214 @@ const refreshData = () => {
   loadTransaksi()
 }
 
-const viewDetail = (transaction) => {
+const viewDetail = async (transaction) => {
   selectedTransaction.value = transaction
+  
+  // Load attachment images if they exist
+  if (transaction._attachments) {
+    const imageList = getImageList(transaction)
+    
+    for (const image of imageList) {
+      if (image.isAttachment && !image.src) {
+        try {
+          const attachmentUrl = await loadAttachmentImage(image.transactionId, image.attachmentName)
+          if (attachmentUrl) {
+            image.src = attachmentUrl
+          }
+        } catch (error) {
+          console.error('Error loading attachment for detail view:', error)
+        }
+      }
+    }
+  }
+  
   showDetailDialog.value = true
 }
 
-const showImage = (imageSrc) => {
+const showImage = async (imageSrc, imageObj = null) => {
+  // Find the index of the selected image
+  const imageList = getImageList(selectedTransaction.value)
+  let index = -1
+  
+  if (imageObj) {
+    // If imageObj is provided, find by object reference
+    index = imageList.findIndex(img => img === imageObj)
+    
+    // Load attachment if needed
+    if (imageObj.isAttachment && !imageObj.src) {
+      try {
+        const attachmentUrl = await loadAttachmentImage(imageObj.transactionId, imageObj.attachmentName)
+        if (attachmentUrl) {
+          imageObj.src = attachmentUrl
+          imageSrc = attachmentUrl
+        }
+      } catch (error) {
+        console.error('Error loading attachment for image view:', error)
+        $q.notify({
+          type: 'negative',
+          message: 'Gagal memuat gambar attachment',
+          position: 'top'
+        })
+        return
+      }
+    }
+  } else {
+    // Find by src
+    index = imageList.findIndex(img => img.src === imageSrc)
+  }
+  
   selectedImage.value = imageSrc
+  currentImageIndex.value = index >= 0 ? index : 0
   showImageModal.value = true
+}
+
+// Get list of all images for current transaction
+const getImageList = (transaction) => {
+  if (!transaction) return []
+  
+  const images = []
+  
+  // Handle old format (direct fields)
+  if (transaction.entry_pic) {
+    images.push({
+      src: transaction.entry_pic,
+      label: 'Foto Masuk',
+      type: 'entry',
+      isAttachment: false
+    })
+  }
+  
+  if (transaction.exit_pic) {
+    images.push({
+      src: transaction.exit_pic,
+      label: 'Foto Keluar',
+      type: 'exit',
+      isAttachment: false
+    })
+  }
+  
+  // Handle new format (attachments) - placeholder for now
+  if (transaction._attachments) {
+    const attachmentNames = Object.keys(transaction._attachments)
+    
+    // Add entry attachment if exists
+    if (attachmentNames.includes('entry.jpg')) {
+      images.push({
+        src: '', // Will be loaded async
+        label: 'Foto Masuk',
+        type: 'entry',
+        isAttachment: true,
+        attachmentName: 'entry.jpg',
+        transactionId: transaction._id
+      })
+    }
+    
+    // Add exit attachment if exists
+    if (attachmentNames.includes('exit.jpg')) {
+      images.push({
+        src: '', // Will be loaded async
+        label: 'Foto Keluar',
+        type: 'exit',
+        isAttachment: true,
+        attachmentName: 'exit.jpg',
+        transactionId: transaction._id
+      })
+    }
+    
+    // Add other image attachments
+    attachmentNames.forEach(name => {
+      if (name !== 'entry.jpg' && name !== 'exit.jpg' && 
+          (name.includes('.jpg') || name.includes('.jpeg') || name.includes('.png'))) {
+        let label = 'Gambar'
+        if (name.includes('plate')) label = 'Foto Plat'
+        else if (name.includes('driver')) label = 'Foto Driver'
+        else if (name.includes('vehicle')) label = 'Foto Kendaraan'
+        
+        images.push({
+          src: '', // Will be loaded async
+          label,
+          type: 'other',
+          isAttachment: true,
+          attachmentName: name,
+          transactionId: transaction._id
+        })
+      }
+    })
+  }
+  
+  return images
+}
+
+// Load attachment image data
+const loadAttachmentImage = async (transactionId, attachmentName) => {
+  try {
+    const blob = await getTransactionAttachment(transactionId, attachmentName)
+    const url = URL.createObjectURL(blob)
+    return url
+  } catch (error) {
+    console.error('Error loading attachment:', error)
+    return null
+  }
+}
+
+// Navigate between images
+const navigateImage = async (direction) => {
+  const imageList = getImageList(selectedTransaction.value)
+  const newIndex = currentImageIndex.value + direction
+  
+  if (newIndex >= 0 && newIndex < imageList.length) {
+    currentImageIndex.value = newIndex
+    const targetImage = imageList[newIndex]
+    
+    // Load attachment if needed
+    if (targetImage.isAttachment && !targetImage.src) {
+      try {
+        const attachmentUrl = await loadAttachmentImage(targetImage.transactionId, targetImage.attachmentName)
+        if (attachmentUrl) {
+          targetImage.src = attachmentUrl
+        }
+      } catch (error) {
+        console.error('Error loading attachment during navigation:', error)
+      }
+    }
+    
+    selectedImage.value = targetImage.src
+  }
+}
+
+// Select image by index
+const selectImageByIndex = async (index) => {
+  const imageList = getImageList(selectedTransaction.value)
+  if (index >= 0 && index < imageList.length) {
+    currentImageIndex.value = index
+    const targetImage = imageList[index]
+    
+    // Load attachment if needed
+    if (targetImage.isAttachment && !targetImage.src) {
+      try {
+        const attachmentUrl = await loadAttachmentImage(targetImage.transactionId, targetImage.attachmentName)
+        if (attachmentUrl) {
+          targetImage.src = attachmentUrl
+        }
+      } catch (error) {
+        console.error('Error loading attachment by index:', error)
+      }
+    }
+    
+    selectedImage.value = targetImage.src
+  }
+}
+
+// Get current image info
+const getCurrentImageInfo = () => {
+  const imageList = getImageList(selectedTransaction.value)
+  if (currentImageIndex.value >= 0 && currentImageIndex.value < imageList.length) {
+    const currentImage = imageList[currentImageIndex.value]
+    const isEntry = currentImage.type === 'entry'
+    
+    return `${currentImage.label} - ${isEntry ? 'Kamera Masuk' : 'Kamera Keluar'}`
+  }
+  return 'Detail Gambar'
 }
 
 const processExit = (transaction) => {
@@ -1039,6 +1457,85 @@ const getStatusLabel = (status) => {
 
 const isAdmin = computed(() => ls.get('isAdmin') || false)
 
+// Functions to load member transaction images from attachments
+const loadMemberTransactionImages = async (transaction) => {
+  if (!transaction || !transaction.is_member) return
+  
+  // Reset previous image data
+  entryImageData.value = ''
+  exitImageData.value = ''
+  
+  try {
+    // Load entry image if it has attachment marker
+    if (transaction.entry_pic && transaction.entry_pic.startsWith('ATTACHMENT:')) {
+      loadingEntryImage.value = true
+      const imageData = await transaksiStore.getTransactionImageData(transaction.id, 'entry')
+      entryImageData.value = imageData
+    }
+    
+    // Load exit image if it has attachment marker
+    if (transaction.exit_pic && transaction.exit_pic.startsWith('ATTACHMENT:')) {
+      loadingExitImage.value = true
+      const imageData = await transaksiStore.getTransactionImageData(transaction.id, 'exit')
+      exitImageData.value = imageData
+    }
+  } catch (error) {
+    console.error('Error loading member transaction images:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal memuat gambar member',
+      position: 'top'
+    })
+  } finally {
+    loadingEntryImage.value = false
+    loadingExitImage.value = false
+  }
+}
+
+// Get the actual image source (for both parking and member transactions)
+const getImageSrc = (transaction, imageType) => {
+  if (!transaction) return ''
+  
+  const imageField = imageType === 'entry' ? 'entry_pic' : 'exit_pic'
+  const imageValue = transaction[imageField]
+  
+  if (!imageValue) return ''
+  
+  // If it's a member transaction with attachment marker, use loaded image data
+  if (transaction.is_member && imageValue.startsWith('ATTACHMENT:')) {
+    return imageType === 'entry' ? entryImageData.value : exitImageData.value
+  }
+  
+  // For parking transactions, return the direct image data
+  return imageValue
+}
+
+// Helper functions for images
+const hasImages = (transaction) => {
+  if (!transaction) return false
+  
+  // Check for direct image data (parking transactions)
+  const hasDirectImages = !!(transaction.entry_pic && !transaction.entry_pic.startsWith('ATTACHMENT:')) || 
+                         !!(transaction.exit_pic && !transaction.exit_pic.startsWith('ATTACHMENT:'))
+  
+  // Check for attachment markers (member transactions)
+  const hasAttachmentMarkers = !!(transaction.entry_pic && transaction.entry_pic.startsWith('ATTACHMENT:')) ||
+                              !!(transaction.exit_pic && transaction.exit_pic.startsWith('ATTACHMENT:'))
+  
+  return hasDirectImages || hasAttachmentMarkers
+}
+
+const getImageCount = (transaction) => {
+  if (!transaction) return 0
+  let count = 0
+  
+  // Count direct images (parking transactions) or attachment markers (member transactions)
+  if (transaction.entry_pic) count++
+  if (transaction.exit_pic) count++
+  
+  return count
+}
+
 // Computed for active filters
 const hasActiveFilters = computed(() => {
   return !!(
@@ -1087,6 +1584,14 @@ onMounted(() => {
   
   loadTransaksi()
 })
+
+// Auto-load member transaction images when transaction is selected
+watch(() => selectedTransaction.value, async (newTransaction) => {
+  if (newTransaction && newTransaction.is_member) {
+    console.log('🖼️ Auto-loading member transaction images for:', newTransaction._id)
+    await loadMemberTransactionImages(newTransaction)
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>
@@ -1123,5 +1628,68 @@ onMounted(() => {
 
 .cursor-pointer:hover {
   opacity: 0.8;
+}
+
+/* Image styles */
+.image-card {
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.image-card:hover {
+  border-color: var(--q-primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+.image-hover {
+  transition: all 0.3s ease;
+}
+
+.image-hover:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.image-thumbnail {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.image-thumbnail:hover {
+  opacity: 1;
+  border-color: var(--q-primary);
+}
+
+.image-selected {
+  border: 2px solid var(--q-primary);
+  opacity: 1;
+}
+
+/* Custom loading spinner for images */
+.q-img__loading {
+  color: var(--q-primary);
+}
+
+/* Better responsive image containers */
+@media (max-width: 768px) {
+  .image-card {
+    margin-bottom: 1rem;
+  }
+  
+  .q-img {
+    max-height: 150px !important;
+  }
+}
+
+/* Animation for image modal */
+.q-dialog__inner {
+  transition: all 0.3s ease;
+}
+
+/* Enhance chip colors */
+.q-chip--outline {
+  border-width: 2px;
 }
 </style>

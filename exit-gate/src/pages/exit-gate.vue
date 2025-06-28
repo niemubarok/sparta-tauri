@@ -56,7 +56,11 @@
           Barcode Scanner
         </div>
         <div class="text-center">
-          <div v-if="!lastScan" class="text-grey-6">
+          <div v-if="processing" class="q-mb-md">
+            <q-spinner-dots size="lg" color="primary" />
+            <div class="text-body1 q-mt-sm">Processing transaction...</div>
+          </div>
+          <div v-else-if="!lastScan" class="text-grey-6">
             Waiting for barcode scan...
           </div>
           <div v-else>
@@ -75,7 +79,7 @@
       <q-card-section>
         <div class="text-h6 q-mb-md text-green-8">
           <q-icon name="check_circle" class="q-mr-sm" />
-          Transaction Found
+          Exit Processed Successfully
         </div>
         <div class="row q-gutter-md">
           <div class="col">
@@ -97,25 +101,12 @@
             <div class="text-subtitle1 text-green-8">{{ formatCurrency(currentTransaction.bayar_keluar || 0) }}</div>
           </div>
         </div>
+        <div class="q-mt-md text-center">
+          <q-chip color="green" text-color="white" icon="directions_car" size="lg">
+            Gate Opening...
+          </q-chip>
+        </div>
       </q-card-section>
-      <q-card-actions align="center" class="q-pa-md">
-        <q-btn 
-          color="green" 
-          size="lg" 
-          icon="exit_to_app"
-          label="Process Exit"
-          :loading="processing"
-          @click="processExit"
-        />
-        <q-btn 
-          color="grey" 
-          size="lg" 
-          icon="cancel"
-          label="Cancel"
-          :disable="processing"
-          @click="cancelTransaction"
-        />
-      </q-card-actions>
     </q-card>
 
     <!-- Error Display -->
@@ -205,6 +196,7 @@ import { databaseService, type ParkingTransaction, type VehicleType, type SyncSt
 import { barcodeScanner, type BarcodeResult } from '../services/barcode-scanner'
 import { gateService, GateStatus } from '../services/gate-service'
 import { audioService } from '../services/audio-service'
+import { cameraService, type CameraCapture } from '../services/camera-service'
 
 const $q = useQuasar()
 
@@ -231,11 +223,17 @@ const todayStats = ref({
 // Show manual controls in development
 const showManualControls = ref(true)
 
+// Auto-clear transaction timer
+let clearTransactionTimer: number | null = null
+
 // Initialize services
 onMounted(async () => {
   try {
     // Initialize database
     await databaseService.initialize()
+    
+    // Initialize camera
+    await cameraService.initializeWebcam()
     
     // Load vehicle types
     vehicleTypes.value = await databaseService.getVehicleTypes()
@@ -265,7 +263,13 @@ onMounted(async () => {
 onUnmounted(() => {
   barcodeScanner.destroy()
   gateService.destroy()
+  cameraService.destroy()
   databaseService.removeSyncStatusListener(handleSyncStatusChange)
+  
+  // Clear transaction timer
+  if (clearTransactionTimer) {
+    clearTimeout(clearTransactionTimer)
+  }
 })
 
 // Handle barcode scan
@@ -299,12 +303,27 @@ async function handleBarcodeScanned(result: BarcodeResult) {
     if (transaction) {
       currentTransaction.value = transaction
       console.log('Transaction found:', transaction)
+      
+      // Automatically process exit for found transaction
+      await processExit()
     } else {
       showError(`No active transaction found for barcode: ${result.code}`)
+      // Play error sound for transaction not found
+      try {
+        await audioService.playErrorSound()
+      } catch (error) {
+        console.warn('Failed to play error sound:', error)
+      }
     }
   } catch (error) {
     console.error('Error finding transaction:', error)
     showError('Error looking up transaction')
+    // Play error sound for lookup error
+    try {
+      await audioService.playErrorSound()
+    } catch (error) {
+      console.warn('Failed to play error sound:', error)
+    }
   }
 }
 
@@ -331,6 +350,16 @@ async function processExit() {
     // Calculate exit fee (you may want to implement time-based pricing)
     const exitFee = calculateExitFee(currentTransaction.value)
     
+    // Capture images from cameras
+    let cameraCapture: CameraCapture | null = null
+    try {
+      cameraCapture = await cameraService.captureAll(currentTransaction.value._id)
+      console.log('Camera capture completed:', cameraCapture)
+    } catch (cameraError) {
+      console.warn('Camera capture failed:', cameraError)
+      // Continue with exit process even if camera fails
+    }
+    
     // Update transaction in database
     const success = await databaseService.exitTransaction(currentTransaction.value._id, {
       waktu_keluar: new Date().toISOString(),
@@ -339,6 +368,26 @@ async function processExit() {
     
     if (!success) {
       throw new Error('Failed to update transaction')
+    }
+    
+    // Upload images to server if available
+    if (cameraCapture && (cameraCapture.webcam || cameraCapture.cctv)) {
+      try {
+        const settings = await databaseService.getSettings()
+        if (settings?.server_url) {
+          const uploadSuccess = await cameraService.uploadImages(cameraCapture, settings.server_url)
+          if (uploadSuccess) {
+            console.log('Images uploaded successfully')
+          } else {
+            console.warn('Image upload failed')
+          }
+        } else {
+          console.warn('No server URL configured for image upload')
+        }
+      } catch (uploadError) {
+        console.warn('Image upload error:', uploadError)
+        // Continue with exit process even if upload fails
+      }
     }
     
     // Open the gate
@@ -361,6 +410,15 @@ async function processExit() {
       // Clear current transaction
       currentTransaction.value = null
       
+      // Auto-clear transaction display after 5 seconds
+      if (clearTransactionTimer) {
+        clearTimeout(clearTransactionTimer)
+      }
+      clearTransactionTimer = window.setTimeout(() => {
+        currentTransaction.value = null
+        lastScan.value = null
+      }, 5000)
+      
       // Reload statistics
       await loadTodayStats()
     } else {
@@ -378,6 +436,12 @@ async function processExit() {
 function cancelTransaction() {
   currentTransaction.value = null
   errorMessage.value = ''
+  
+  // Clear timer if exists
+  if (clearTransactionTimer) {
+    clearTimeout(clearTransactionTimer)
+    clearTransactionTimer = null
+  }
 }
 
 // Calculate exit fee (basic implementation)

@@ -310,12 +310,12 @@ const ticketNumber = computed(() => {
   const time = now.toTimeString().slice(0, 8).replace(/:/g, '');
   const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
   
-  return `${gate}${date}${time}${sequence}`;
+  return `${time}${sequence}`;
 });
 
 const barcodeData = computed(() => {
   // Generate barcode data for the ticket
-  return `SPARTA-${ticketNumber.value}`;
+  return `${ticketNumber.value}`;
 });
 
 const companyName = computed(() => {
@@ -369,18 +369,18 @@ const onPrint = async () => {
 
 const printThermalTicket = async () => {
   try {
-    // Prepare ticket data for thermal printer
+    // Prepare ticket data for thermal printer - SEMUA FIELD HARUS camelCase sesuai serde
     const ticketData = {
-      ticketNumber: ticketNumber.value,
-      platNomor: props.transaction?.plat_nomor || '',
-      jenisKendaraan: props.transaction?.jenis_kendaraan || '',
-      waktuMasuk: formatTime(entryTime.value),
-      tarif: currentTariff.value,
-      companyName: companyName.value,
-      gateLocation: gateLocation.value,
-      operatorName: operatorName.value,
-      isPaid: isTransactionPaid.value,
-      barcodeData: generateBarcode()
+      ticketNumber: ticketNumber.value,           // ✅ ticket_number
+      platNomor: props.transaction?.plat_nomor || '',           // ✅ plat_nomor
+      jenisKendaraan: props.transaction?.jenis_kendaraan || '', // ✅ jenis_kendaraan  
+      waktuMasuk: formatTime(entryTime.value),                 // ✅ waktu_masuk
+      tarif: currentTariff.value,                              // ✅ tarif
+      companyName: companyName.value,                          // ✅ company_name
+      gateLocation: gateLocation.value,                        // ✅ gate_location
+      operatorName: operatorName.value,                        // ✅ operator_name
+      isPaid: isTransactionPaid.value,                         // ✅ is_paid
+      barcodeData: generateBarcode()                           // ✅ barcode_data
     };
 
     console.log('Printing thermal ticket with data:', ticketData);

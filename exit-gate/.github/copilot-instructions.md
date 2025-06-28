@@ -3,7 +3,7 @@
 This project is a Tauri + Quasar (Vue 3 + TypeScript) application for an exit gate system. It must:
 - Accept input from a USB barcode scanner (as keyboard input)
 - On scan, check local PouchDB for a matching transaction (same schema as entry gate)
-- If found, send a serial command to open the gate (via Tauri backend, serialport)
+- If found, send a gpio command to open the gate (via Tauri backend)
 - Update the transaction status in the database
 - Be optimized for Raspberry Pi deployment
 - Use the same transaction schema and logic as the entry gate system

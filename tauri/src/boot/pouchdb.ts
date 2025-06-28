@@ -179,16 +179,46 @@ const addTransactionAttachment = async (
   contentType: string = 'image/jpeg'
 ) => {
   try {
+    console.log('📎 Adding attachment:', {
+      transactionId,
+      attachmentName,
+      dataLength: data.length,
+      contentType,
+      rev
+    });
+    
+    // Convert base64 to Blob (browser-compatible)
+    const binaryString = atob(data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    const blob = new Blob([bytes], { type: contentType });
+    console.log('💾 Blob created:', {
+      size: blob.size,
+      type: blob.type
+    });
+    
     const response = await localDbs.transactions.putAttachment(
       transactionId,
       attachmentName,
       rev,
-      Buffer.from(data, 'base64'),
+      blob,
       contentType
     );
+    
+    console.log('✅ Attachment saved successfully:', response);
     return response;
   } catch (err) {
-    console.error('Error adding attachment:', err);
+    console.error('❌ Error adding attachment:', err);
+    console.error('📋 Attachment details:', {
+      transactionId,
+      attachmentName,
+      dataLength: data?.length || 0,
+      contentType,
+      rev
+    });
     throw err;
   }
 };
@@ -219,6 +249,7 @@ export {
     lastSyncError,
     addTransaction, // Export the new function
     addTransactionAttachment,
+    getTransactionAttachment,
     // Petugas functions
     addPetugas,
     updatePetugas,
@@ -757,5 +788,26 @@ const initializeDesignDocs = async () => {
     if (err.name !== 'conflict') {
       console.error('Error initializing design docs:', err);
     }
+  }
+};
+
+/**
+ * Mengambil attachment gambar dari dokumen transaksi.
+ * @param transactionId ID dokumen transaksi
+ * @param attachmentName Nama attachment (misal: 'entry.jpg')
+ */
+const getTransactionAttachment = async (
+  transactionId: string,
+  attachmentName: string
+) => {
+  try {
+    const response = await localDbs.transactions.getAttachment(
+      transactionId,
+      attachmentName
+    );
+    return response;
+  } catch (err) {
+    console.error('Error getting attachment:', err);
+    throw err;
   }
 };

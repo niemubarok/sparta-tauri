@@ -126,10 +126,14 @@ const jenisKendaraanOptions = ref([]);
 const jenisKendaraanModel = ref(null);
 const jenisKendaraanRef = ref(null);
 const defaultJenisKendaraan = ref(ls.get("defaultJenisKendaraan"));
-const defaultShortcut = ref("A");
+const defaultShortcut = ref("C");
 const matchingDefaultOption = ref(null);
 
 const onClickTicket = (type) => {
+
+  // Remove keydown event listener before proceeding
+  window.removeEventListener("keydown", handleKeydownOnJenisKendaraan);
+
   if (props.isPrepaidMode) {
     // Prepaid mode - langsung cetak tiket dengan tarif prepaid
     const vehicleId = transaksiStore.selectedJenisKendaraan.id;
@@ -189,6 +193,8 @@ const onClickTicket = (type) => {
   }
 };
 
+const ticketDialogOpened = ref(false)
+
 const handleKeydownOnJenisKendaraan = (event) => {
   const key = event.key.toUpperCase();
   
@@ -201,7 +207,8 @@ const handleKeydownOnJenisKendaraan = (event) => {
     dialogRef.value.hide();
   }
 
-  if (key === "ENTER") {
+  if (key === "ENTER" && !ticketDialogOpened.value) {
+    ticketDialogOpened.value = true;
     // Gunakan default option
     if (matchingDefaultOption.value) {
       jenisKendaraanModel.value = matchingDefaultOption.value.id;
@@ -212,8 +219,8 @@ const handleKeydownOnJenisKendaraan = (event) => {
         dialogRef.value.hide();
       }
     }
-  } else 
-  if (matchingOption) {
+  } else if (matchingOption && !ticketDialogOpened.value) {
+    ticketDialogOpened.value = true;
     // Gunakan option yang sesuai dengan shortcut
     console.log("matchingOption", matchingOption);
     jenisKendaraanModel.value = matchingOption.id;
