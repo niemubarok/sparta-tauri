@@ -1,11 +1,12 @@
 <!-- filepath: tauri/src/components/TicketPrintDialog.vue -->
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" persistent>
+  <q-dialog ref="dialogRef" @hide="onDialogHide" @show="onDialogShow" persistent>
     <q-card 
       ref="cardRef"
       class="ticket-print-card" 
       style="min-width: 400px;"
       tabindex="0"
+      autofocus
       @keydown="handleKeydown"
     >
       <q-card-section class="row items-center q-pb-none">
@@ -198,6 +199,7 @@
           @click="onPrint"
           :loading="printing"
           icon="print"
+          ref="printButtonRef"
         >
           <q-badge
             color="orange"
@@ -264,6 +266,7 @@ const showPrinterTest = ref(false);
 const currentPrinter = ref('');
 const printerStatus = ref(null);
 const cardRef = ref(null); // Add cardRef
+const printButtonRef = ref(null); // Add printButtonRef
 
 // Computed
 const entryTime = computed(() => new Date());
@@ -333,6 +336,56 @@ const operatorName = computed(() => {
 });
 
 // Methods
+const onDialogShow = async () => {
+  console.log('🎫 TicketPrintDialog shown, attempting to set focus...');
+  
+  // Wait for dialog to be fully rendered
+  await nextTick();
+  
+  setTimeout(() => {
+    setDialogFocus();
+  }, 200);
+};
+
+const setDialogFocus = () => {
+  let focusSet = false;
+  
+  // Try to focus the card element
+  if (cardRef.value && cardRef.value.$el) {
+    try {
+      cardRef.value.$el.focus();
+      focusSet = true;
+      console.log('✅ Focus set on card element');
+    } catch (error) {
+      console.warn('❌ Failed to focus card element:', error);
+    }
+  }
+  
+  // Fallback: focus the dialog container
+  if (!focusSet && dialogRef.value && dialogRef.value.$el) {
+    try {
+      const dialogContent = dialogRef.value.$el.querySelector('.q-card');
+      if (dialogContent) {
+        dialogContent.focus();
+        focusSet = true;
+        console.log('✅ Focus set on dialog content');
+      }
+    } catch (error) {
+      console.warn('❌ Failed to focus dialog content:', error);
+    }
+  }
+  
+  // Last resort: focus the print button
+  if (!focusSet && printButtonRef.value && printButtonRef.value.$el) {
+    try {
+      printButtonRef.value.$el.focus();
+      console.log('✅ Focus set on print button');
+    } catch (error) {
+      console.warn('❌ Failed to focus print button:', error);
+    }
+  }
+};
+
 const generateBarcode = () => {
   return barcodeData.value;
 };
@@ -545,14 +598,14 @@ const handleKeydown = (event) => {
   }
 };
 
-// Updated onMounted
+// Updated onMounted with improved focus handling
 onMounted(async () => {
   await nextTick();
   
-  // Focus the card element instead of using window event listener
-  if (cardRef.value && cardRef.value.$el) {
-    cardRef.value.$el.focus();
-  }
+  // Wait a bit longer for dialog to fully render
+  setTimeout(() => {
+    setDialogFocus();
+  }, 300); // Increased delay to 300ms for better reliability
   
   try {
     await tarifStore.loadTarifPrepaidFromLocal();
@@ -570,6 +623,14 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.ticket-print-card {
+  outline: none; /* Remove default focus outline */
+}
+
+.ticket-print-card:focus {
+  box-shadow: 0 0 0 2px #1976d2; /* Add custom focus indicator */
+}
+
 .ticket-preview {
   background: white;
   border: 1px solid #e0e0e0;

@@ -728,16 +728,12 @@ const handleMemberCardTap = async (cardNumber) => {
     
     console.log('🏍️ Vehicle type set to:', transaksiStore.selectedJenisKendaraan);
     
-    // Capture gambar masuk
+    // Capture gambar masuk dengan optimasi kecepatan
     console.log('📸 Starting image capture for member transaction...');
-    await captureEntryImages();
+    captureEntryImages(false); // Use normal mode for member transactions
     
-    // Verify image was captured before saving transaction
-    if (!transaksiStore.entry_pic) {
-      console.warn('⚠️ No entry image captured, but proceeding with transaction');
-    } else {
-      console.log('✅ Entry image confirmed before saving transaction');
-    }
+    // Don't wait for image capture to complete - proceed immediately
+    console.log('✅ Member transaction proceeding without waiting for image capture');
     
     // Simpan transaksi ke database transactions
     await saveMemberTransaction(member);
@@ -780,10 +776,14 @@ const saveMemberTransaction = async (member) => {
       entryPicLength: transaksiStore.entry_pic?.length || 0,
       entryPicPreview: transaksiStore.entry_pic?.substring(0, 50) + '...' || 'null'
     });
+
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    const id = `${timestamp}${random}` 
     
     // Data transaksi member (tanpa gambar dulu)
     const trx = {
-      _id: `transaction_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      _id: `transaction_${id}`,
       type: 'member_entry',
       member_id: member.member_id,
       name: member.name,
@@ -795,10 +795,11 @@ const saveMemberTransaction = async (member) => {
       membership_type_id: member.membership_type_id,
       created_by: pegawai || 'system',
       lokasi: transaksiStore.lokasiPos?.label || '',
-      status: 'in',
+      status: 0,
       is_member: true,
       tarif: 0, // Member tidak dikenakan tarif
-      payment_status: 'paid' // Member sudah bayar melalui membership
+      payment_status: 'paid', // Member sudah bayar melalui membership
+      has_image: !!transaksiStore.entry_pic // Flag untuk menandai apakah ada gambar
     };
     
     // Debug: Check transaction object before saving
@@ -806,7 +807,8 @@ const saveMemberTransaction = async (member) => {
       id: trx._id,
       member_name: trx.name,
       plate: trx.plat_nomor,
-      type: trx.type
+      type: trx.type,
+      has_image: trx.has_image
     });
     
     // 1. Simpan transaksi dulu
@@ -861,16 +863,17 @@ const saveMemberTransaction = async (member) => {
         }
       } catch (attachmentError) {
         console.error('❌ Error saving entry image attachment:', attachmentError);
-        // Don't throw error, just log it
+        // Don't throw error, just log it - transaction continues without image
+        console.log('📝 Transaction saved successfully without image attachment');
         $q.notify({
-          type: 'warning',
-          message: 'Transaksi tersimpan, tetapi gagal menyimpan gambar',
+          type: 'info',
+          message: 'Transaksi tersimpan berhasil, gambar tidak dapat disimpan',
           position: 'top',
           timeout: 3000
         });
       }
     } else {
-      console.warn('⚠️ No entry image to save as attachment');
+      console.log('📝 No entry image to save as attachment - transaction saved without image');
     }
     
   } catch (err) {
@@ -1050,29 +1053,56 @@ const captureExitImages = async () => {
   try {
     console.log('📸 Capturing exit images from exit camera...');
     
-    // Capture exit image
+    // Check if exit camera ref exists and is available
+    if (!exitCameraRef.value) {
+      console.warn('⚠️ Exit camera ref not available, continuing without exit image');
+      transaksiStore.exit_pic = null;
+      
+      // $q.notify({
+      //   type: 'info',
+      //   message: 'Kamera keluar tidak tersedia, transaksi tetap dilanjutkan',
+      //   position: 'top',
+      //   timeout: 2000
+      // });
+      return;
+    }
+    
+    // Capture exit image with error handling
     const exitImageData = await exitCameraRef.value?.getImage();
     if (exitImageData && typeof exitImageData === 'string') {
       transaksiStore.exit_pic = exitImageData;
       console.log('✅ Exit image captured');
+      
+      $q.notify({
+        type: 'positive',
+        message: 'Gambar keluar berhasil diambil',
+        position: 'top',
+        timeout: 2000
+      });
+    } else {
+      console.warn('⚠️ No exit image data received, continuing without image');
+      transaksiStore.exit_pic = null;
+      
+      // $q.notify({
+      //   type: 'info',
+      //   message: 'Tidak dapat mengambil gambar keluar, transaksi tetap dilanjutkan',
+      //   position: 'top',
+      //   timeout: 2000
+      // });
     }
     
-    console.log('✅ Exit images captured successfully');
+    console.log('✅ Exit image capture process completed');
     
-    $q.notify({
-      type: 'positive',
-      message: 'Gambar keluar berhasil diambil',
-      position: 'top',
-      timeout: 2000
-    });
   } catch (error) {
     console.error('❌ Error capturing exit images:', error);
-    $q.notify({
-      type: 'warning',
-      message: 'Gagal mengambil gambar keluar',
-      position: 'top',
-      timeout: 3000
-    });
+    transaksiStore.exit_pic = null;
+    
+    // $q.notify({
+    //   type: 'info',
+    //   message: 'Kamera keluar tidak tersedia, transaksi tetap dilanjutkan',
+    //   position: 'top',
+    //   timeout: 2000
+    // });
   }
 };
 
@@ -1121,10 +1151,11 @@ const onInputPlatNomor = () => {
 
 const onClickBukaManual = async () => {
   try {
-    gateStore.writeToPort('entry', ' *OPEN1#')
-    return
-    // Capture images from both cameras before manual open
-    await captureEntryImages();
+    // Always open gate first for manual operation
+    gateStore.writeToPort('entry', ' *OPEN1#');
+    
+    // Start image capture in fast mode (background)
+    captureEntryImages(true); // true = fast mode, non-blocking
     
     // Use transaksi store method with current gate location
     const gateId = transaksiStore.lokasiPos.value || '01';
@@ -1133,26 +1164,37 @@ const onClickBukaManual = async () => {
     if (success) {
       componentStore.openGate();
       await updateStatistics();
+      
+      $q.notify({
+        type: 'positive',
+        message: 'Gate berhasil dibuka secara manual',
+        position: 'top',
+        timeout: 2000
+      });
     }
   } catch (error) {
     console.error('Error in manual gate open:', error);
     $q.notify({
-      type: 'negative',
-      message: 'Gagal membuka gate secara manual',
-      position: 'top'
+      type: 'warning',
+      message: 'Gate dibuka, tapi gagal menyimpan data transaksi',
+      position: 'top',
+      timeout: 3000
     });
   }
 };
 
 const onClickEmergency = async () => {
   try {
-    // Capture images from both cameras for emergency entry
-    await captureEntryImages();
-    
     // Set emergency plate number if not set
     if (!transaksiStore.platNomor) {
       transaksiStore.platNomor = 'EMERGENCY';
     }
+    
+    // Always open gate first for emergency
+    gateStore.writeToPort('entry', ' *OPEN1#');
+    
+    // Start image capture in fast mode (background)
+    captureEntryImages(true); // true = fast mode, non-blocking
     
     // Use transaksi store method with emergency flag
     const gateId = transaksiStore.lokasiPos.value || '01';
@@ -1161,27 +1203,27 @@ const onClickEmergency = async () => {
     if (success) {
       componentStore.openGate();
       await updateStatistics();
-      
-      $q.notify({
-        type: 'warning',
-        message: 'Gate dibuka dalam mode emergency - Gambar tersimpan',
-        position: 'top',
-        timeout: 3000
-      });
     }
+    
+    $q.notify({
+      type: 'warning',
+      message: 'Gate dibuka dalam mode emergency',
+      position: 'top',
+      timeout: 3000
+    });
+    
   } catch (error) {
     console.error('Error in emergency gate open:', error);
     $q.notify({
-      type: 'negative',
-      message: 'Gagal membuka gate emergency',
-      position: 'top'
+      type: 'warning',
+      message: 'Gate dibuka emergency, tapi gagal menyimpan data',
+      position: 'top',
+      timeout: 3000
     });
   }
 };
 
 const onPressEnterPlatNomor = async () => {
-
-
   if (transaksiStore.platNomor.length > 7) {
     return
   }
@@ -1196,13 +1238,29 @@ const onPressEnterPlatNomor = async () => {
   }
 
   try {
-    // Capture images from both cameras before processing
-    await captureEntryImages();
-    
-    // Get customer data
-    await transaksiStore.getCustomerByNopol();
-    const dataCustomer = transaksiStore.dataCustomer;
+    // Show loading indicator for better UX
+    const loadingNotify = $q.notify({
+      type: 'ongoing',
+      message: 'Memproses plat nomor...',
+      position: 'top',
+      timeout: 0, // Don't auto-dismiss
+      spinner: true
+    });
 
+    // Start image capture in fast mode (non-blocking for speed)
+    const capturePromise = captureEntryImages(true); // true = fast mode
+    
+    // Get customer data in parallel with image capture
+    const customerPromise = transaksiStore.getCustomerByNopol();
+    
+    // Wait for customer data (usually faster than camera)
+    await customerPromise;
+    const dataCustomer = transaksiStore.dataCustomer;
+    
+    // Dismiss loading notification
+    loadingNotify();
+    
+    // Continue with dialog flow immediately
     // Check operation mode from settings service
     if (settingsService.isPrepaidMode) {
       // Prepaid mode - show vehicle selection with immediate payment
@@ -1258,29 +1316,71 @@ const onPressEnterPlatNomor = async () => {
           processEntry(false); // false = postpaid mode
         });
       }
-    } 
-    // else {
-    //   // Fallback to manual mode
-    //   console.warn('Unknown operation mode, falling back to postpaid mode');
-    //   const _jenisKendaraanDialog = $q.dialog({
-    //     component: JenisKendaraanDialog,
-    //     componentProps: {
-    //       isPrepaidMode: false,
-    //       customerData: dataCustomer
-    //     }
-    //   });
-
-    //   _jenisKendaraanDialog.onOk(() => {
-    //     processEntry(false);
-    //   });
-    // }
+    }
+    
   } catch (error) {
     console.error('Error processing plate number:', error);
+    
+    // Show quick error notification
     $q.notify({
-      type: 'negative',
-      message: 'Terjadi kesalahan saat memproses plat nomor',
-      position: 'top'
+      type: 'info',
+      message: 'Memproses transaksi...',
+      position: 'top',
+      timeout: 1500
     });
+    
+    // Still try to continue with transaction even if camera fails
+    try {
+      await transaksiStore.getCustomerByNopol();
+      const dataCustomer = transaksiStore.dataCustomer;
+      
+      if (settingsService.isPrepaidMode) {
+        const _jenisKendaraanDialog = $q.dialog({
+          component: JenisKendaraanDialog,
+          componentProps: {
+            isPrepaidMode: true,
+            customerData: dataCustomer
+          }
+        });
+        _jenisKendaraanDialog.onOk(() => processEntry(true));
+      } else if (settingsService.isPostpaidMode) {
+        if (!dataCustomer) {
+          const _jenisKendaraanDialog = $q.dialog({
+            component: JenisKendaraanDialog,
+            componentProps: {
+              isPrepaidMode: false,
+              customerData: null
+            }
+          });
+          _jenisKendaraanDialog.onOk(() => processEntry(false));
+        } else {
+          const jenis_kendaraan = {
+            id: dataCustomer.id_jenis_kendaraan,
+            label: dataCustomer.jenis_kendaraan,
+          };
+          transaksiStore.selectedJenisKendaraan = jenis_kendaraan;
+          const expiration = checkSubscriptionExpiration(dataCustomer.akhir);
+          const _ticketDialog = $q.dialog({
+            component: TicketDialog,
+            componentProps: {
+              title: jenis_kendaraan?.label,
+              nama: dataCustomer?.nama,
+              alamat: dataCustomer?.alamat,
+              expiration: expiration,
+            },
+          });
+          _ticketDialog.onOk(() => processEntry(false));
+        }
+      }
+    } catch (fallbackError) {
+      console.error('Fallback processing also failed:', fallbackError);
+      $q.notify({
+        type: 'negative',
+        message: 'Gagal memproses transaksi',
+        position: 'top',
+        timeout: 2000
+      });
+    }
   }
 };
 
@@ -1390,9 +1490,9 @@ const handleKeyDown = (event) => {
           position: "bottom",
         });
       }
-    } else if (event.shiftKey === true && event.key === "R") {
-      event.preventDefault();
-      onClickKendaraanKeluar();
+    // } else if (event.shiftKey === true && event.key === "R") {
+    //   event.preventDefault();
+    //   onClickKendaraanKeluar();
     } else if (event.key === "F5") {
       event.preventDefault();
       logout();
@@ -1447,12 +1547,15 @@ const onClickSettings = () => {
 
 const onCameraError = (err) => {
   console.error('Camera error:', err);
-  $q.notify({
-    type: 'negative',
-    message: `Camera error: ${err.message || err}`,
-    position: 'top',
-    timeout: 3000
-  });
+  // $q.notify({
+  //   type: 'warning',
+  //   message: `Kamera tidak tersedia, aplikasi tetap berjalan tanpa gambar`,
+  //   position: 'top',
+  //   timeout: 2000
+  // });
+  
+  // Set status kamera error tapi aplikasi tetap lanjut
+  console.log('⚠️ Camera error handled, application continues without image capture');
 };
 
 // Handler untuk hasil capture kamera masuk
@@ -1465,12 +1568,26 @@ const onEntryCaptured = (capturedData) => {
   }
 };
 
-// Handler untuk capture gambar entry saat entry
-const captureEntryImage = async () => {
+// Handler untuk capture gambar entry saat entry dengan timeout cepat
+const captureEntryImage = async (timeoutMs = 2000) => {
   try {
-    console.log('📷 Attempting to capture entry image...');
+    console.log('📷 Attempting to capture entry image with timeout:', timeoutMs + 'ms');
     
-    const imageData = await entryCameraRef.value?.getImage();
+    // Check if camera ref exists and is available
+    if (!entryCameraRef.value) {
+      console.warn('⚠️ Entry camera ref not available, continuing without image');
+      transaksiStore.entry_pic = null;
+      return;
+    }
+    
+    // Race between camera capture and timeout
+    const imageData = await Promise.race([
+      entryCameraRef.value?.getImage(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Camera timeout')), timeoutMs)
+      )
+    ]);
+    
     console.log('📷 Image data received:', {
       imageData: !!imageData,
       type: typeof imageData,
@@ -1486,71 +1603,116 @@ const captureEntryImage = async () => {
         console.log('✅ String image saved to entry_pic');
       } else if (imageData instanceof Blob) {
         console.log('🔄 Converting Blob to base64...');
-        const reader = new FileReader();
-        reader.onload = () => {
-          imageBase64 = reader.result;
-          transaksiStore.entry_pic = imageBase64;
-          console.log('✅ Blob image converted and saved to entry_pic');
-        };
-        reader.readAsDataURL(imageData);
         
-        // Wait for conversion to complete
-        await new Promise(resolve => {
-          reader.onload = () => {
-            imageBase64 = reader.result;
-            transaksiStore.entry_pic = imageBase64;
-            console.log('✅ Blob image converted and saved to entry_pic');
-            resolve();
-          };
-        });
+        // Fast blob to base64 conversion with timeout
+        imageBase64 = await Promise.race([
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(imageData);
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Blob conversion timeout')), 1000)
+          )
+        ]);
+        
+        transaksiStore.entry_pic = imageBase64;
+        console.log('✅ Blob image converted and saved to entry_pic');
       }
     } else {
-      console.warn('⚠️ No image data received from camera');
+      console.warn('⚠️ No image data received from camera, continuing without image');
+      transaksiStore.entry_pic = null;
     }
   } catch (error) {
-    console.error('❌ Error capturing entry image:', error);
+    console.error('❌ Error capturing entry image:', error.message);
+    console.log('📝 Setting entry_pic to null and continuing without image');
+    transaksiStore.entry_pic = null;
+    
+    // Don't throw error, just continue without image
+    if (error.message !== 'Camera timeout') {
+      // $q.notify({
+      //   type: 'info',
+      //   message: 'Kamera tidak tersedia, transaksi tetap dilanjutkan',
+      //   position: 'top',
+      //   timeout: 1500
+      // });
+    }
   }
 };
 
-// Handler untuk capture gambar saat entry
-const captureEntryImages = async () => {
+// Handler untuk capture gambar saat entry dengan optimasi kecepatan
+const captureEntryImages = async (fastMode = false) => {
+  const timeoutMs = fastMode ? 1000 : 2000; // Faster timeout for quick operations
+  
   try {
-    console.log('📸 Starting capture entry images for member...');
+    console.log('📸 Starting capture entry images (fast mode:', fastMode + ')...');
     
-    // Capture gambar dari kamera masuk
-    await captureEntryImage();
+    // Start capture in background - don't wait for it to complete
+    const capturePromise = captureEntryImage(timeoutMs);
     
-    // Debug: Check if image was captured successfully
-    console.log('🖼️ After capture - entry_pic status:', {
-      hasEntryPic: !!transaksiStore.entry_pic,
-      entryPicLength: transaksiStore.entry_pic?.length || 0,
-      entryPicType: typeof transaksiStore.entry_pic
-    });
-    
-    if (transaksiStore.entry_pic) {
-      $q.notify({
-        type: 'positive',
-        message: 'Gambar masuk berhasil diambil',
-        position: 'top',
-        timeout: 2000
+    if (fastMode) {
+      // In fast mode, start capture but don't wait for completion
+      capturePromise.then(() => {
+        console.log('🖼️ Background image capture completed');
+        if (transaksiStore.entry_pic) {
+          $q.notify({
+            type: 'positive',
+            message: 'Gambar berhasil diambil',
+            position: 'top',
+            timeout: 1500
+          });
+        }
+      }).catch(() => {
+        console.log('📝 Background image capture failed, continuing without image');
       });
+      
+      // Return immediately for fast processing
+      console.log('⚡ Fast mode: continuing without waiting for image capture');
+      return;
     } else {
-      console.warn('⚠️ No entry image captured');
-      $q.notify({
-        type: 'warning',
-        message: 'Peringatan: Gagal mengambil gambar masuk',
-        position: 'top',
-        timeout: 3000
+      // Normal mode: wait for capture with timeout
+      await capturePromise;
+      
+      // Debug: Check if image was captured successfully
+      console.log('🖼️ After capture - entry_pic status:', {
+        hasEntryPic: !!transaksiStore.entry_pic,
+        entryPicLength: transaksiStore.entry_pic?.length || 0,
+        entryPicType: typeof transaksiStore.entry_pic
       });
+      
+      if (transaksiStore.entry_pic) {
+        $q.notify({
+          type: 'positive',
+          message: 'Gambar masuk berhasil diambil',
+          position: 'top',
+          timeout: 2000
+        });
+      } else {
+        console.warn('⚠️ No entry image captured, continuing without image');
+        // $q.notify({
+        //   type: 'info',
+        //   message: 'Kamera tidak tersedia, transaksi dilanjutkan tanpa gambar',
+        //   position: 'top',
+        //   timeout: 1500
+        // });
+      }
     }
   } catch (error) {
     console.error('❌ Error capturing entry image:', error);
-    $q.notify({
-      type: 'warning',
-      message: 'Gagal mengambil gambar masuk',
-      position: 'top',
-      timeout: 3000
-    });
+    console.log('📝 Continuing without image capture');
+    
+    // Set entry_pic to null and continue
+    transaksiStore.entry_pic = null;
+    
+    if (!fastMode) {
+      // $q.notify({
+      //   type: 'info',
+      //   message: 'Kamera tidak tersedia, transaksi dilanjutkan tanpa gambar',
+      //   position: 'top',
+      //   timeout: 1500
+      // });
+    }
   }
 };
 

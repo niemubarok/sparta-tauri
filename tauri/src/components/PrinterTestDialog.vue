@@ -35,6 +35,24 @@
             @click="checkEpsonPrinters"
             :loading="checkingEpson"
           />
+          
+          <q-btn
+            color="orange"
+            label="Clear Cache"
+            icon="refresh"
+            @click="clearCacheAndRefresh"
+            :disable="discovering || loadingPrinters || checkingEpson"
+            title="Clear cache dan refresh semua data"
+          />
+          
+          <q-btn
+            color="red"
+            label="Emergency Reset"
+            icon="warning"
+            @click="emergencyReset"
+            :disable="false"
+            title="Reset semua state jika ada masalah"
+          />
         </div>
 
         <!-- Printer Selection -->
@@ -347,6 +365,10 @@
                   <div><strong>EPSON Printers Found:</strong> {{ epsonPrinters.length }}</div>
                   <div><strong>Total Devices:</strong> {{ discoveredDevices.length }}</div>
                   <div><strong>Test Barcode:</strong> {{ testBarcode }}</div>
+                  <div><strong>Discovery In Progress:</strong> {{ discoveryInProgress ? 'Yes' : 'No' }}</div>
+                  <div><strong>Cache Valid:</strong> {{ isCacheValid() ? 'Yes' : 'No' }}</div>
+                  <div><strong>Cache Last Update:</strong> {{ printerCache.lastUpdate ? new Date(printerCache.lastUpdate).toLocaleTimeString() : 'Never' }}</div>
+                  <div><strong>Cache Timeout:</strong> {{ printerCache.cacheTimeout / 1000 }}s</div>
                 </div>
               </q-card-section>
             </q-card>
@@ -389,6 +411,18 @@ const checkingEpson = ref(false);
 const testingEpson = ref(false);
 const refreshing = ref(false);
 const debugMode = ref(false);
+
+// Cache untuk printer discovery
+const printerCache = ref({
+  printers: [],
+  discoveredDevices: [],
+  epsonPrinters: [],
+  lastUpdate: null,
+  cacheTimeout: 30000 // 30 seconds cache
+});
+
+// Flag untuk prevent multiple concurrent discovery
+const discoveryInProgress = ref(false);
 
 const printers = ref([]);
 const discoveredDevices = ref([]);
@@ -501,6 +535,69 @@ const quickTestPrint = async (printerName) => {
     });
   } finally {
     printing.value = false;
+  }
+};
+
+// Check if cache is still valid
+const isCacheValid = () => {
+  if (!printerCache.value.lastUpdate) return false;
+  const now = Date.now();
+  return (now - printerCache.value.lastUpdate) < printerCache.value.cacheTimeout;
+};
+
+// Load data from cache
+const loadFromCache = () => {
+  if (isCacheValid()) {
+    printers.value = [...printerCache.value.printers];
+    discoveredDevices.value = [...printerCache.value.discoveredDevices];
+    epsonPrinters.value = [...printerCache.value.epsonPrinters];
+    console.log('📦 Loaded printer data from cache');
+    return true;
+  }
+  return false;
+};
+
+// Save data to cache
+const saveToCache = () => {
+  printerCache.value = {
+    printers: [...printers.value],
+    discoveredDevices: [...discoveredDevices.value],
+    epsonPrinters: [...epsonPrinters.value],
+    lastUpdate: Date.now(),
+    cacheTimeout: 30000
+  };
+  console.log('💾 Saved printer data to cache');
+};
+
+// Prevent concurrent discovery dengan timeout fallback
+const withConcurrencyControl = async (operation, timeoutMs = 10000) => {
+  if (discoveryInProgress.value) {
+    console.log('⚠️ Discovery already in progress, waiting...');
+    
+    // Wait for current operation to complete atau timeout
+    const startTime = Date.now();
+    while (discoveryInProgress.value && (Date.now() - startTime) < timeoutMs) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    if (discoveryInProgress.value) {
+      console.error('❌ Discovery timed out, forcing reset');
+      discoveryInProgress.value = false;
+      throw new Error('Discovery operation timed out');
+    }
+    
+    // If operation completed during wait, try loading from cache
+    if (loadFromCache()) {
+      return;
+    }
+  }
+  
+  discoveryInProgress.value = true;
+  try {
+    await operation();
+    saveToCache();
+  } finally {
+    discoveryInProgress.value = false;
   }
 };
 
@@ -625,94 +722,223 @@ const quickEpsonTest = async () => {
 
 // Discover thermal printers (full device info)
 const discoverPrinters = async () => {
-  discovering.value = true;
-  try {
-    const devices = await invoke('discover_thermal_printers');
-    discoveredDevices.value = devices;
-    
-    // Also update simple printers list
-    printers.value = devices.map(device => ({
-      label: device.name,
-      value: device.name
-    }));
+  // Check cache first
+  if (loadFromCache()) {
+    console.log('📦 Using cached printer data');
     
     Notify.create({
       type: 'positive',
-      message: `Ditemukan ${devices.length} device`
+      message: `Menggunakan data cache: ${discoveredDevices.value.length} device`,
+      timeout: 2000
     });
-  } catch (error) {
-    console.error('Discover printers error:', error);
-    Notify.create({
-      type: 'negative',
-      message: `Gagal discover printer: ${error}`
-    });
-  } finally {
-    discovering.value = false;
+    return;
   }
+  
+  await withConcurrencyControl(async () => {
+    discovering.value = true;
+    
+    try {
+      console.log('🔍 Starting printer discovery...');
+      
+      // Import recovery utilities
+      const { startMonitoring, stopMonitoring } = await import('src/utils/printer-recovery');
+      
+      // Start monitoring
+      startMonitoring('printer_discovery');
+      
+      // Add timeout untuk discovery dengan fallback
+      const devices = await Promise.race([
+        invoke('discover_thermal_printers'),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Discovery timeout after 8 seconds')), 8000)
+        )
+      ]);
+      
+      // Stop monitoring on success
+      stopMonitoring();
+      
+      discoveredDevices.value = devices;
+      
+      // Also update simple printers list
+      printers.value = devices.map(device => ({
+        label: device.name,
+        value: device.name
+      }));
+      
+      console.log('✅ Discovery completed:', devices.length, 'devices found');
+      
+      Notify.create({
+        type: 'positive',
+        message: `Ditemukan ${devices.length} device`,
+        timeout: 3000
+      });
+    } catch (error) {
+      console.error('❌ Discover printers error:', error);
+      
+      // Stop monitoring on error
+      try {
+        const { stopMonitoring } = await import('src/utils/printer-recovery');
+        stopMonitoring();
+      } catch (recoveryError) {
+        console.warn('Recovery utility import failed:', recoveryError);
+      }
+      
+      // Fallback: provide manual entry option
+      const fallbackDevices = [{
+        name: "Manual Entry",
+        connection_type: "manual",
+        port: "manual",
+        status: "available"
+      }];
+      
+      discoveredDevices.value = fallbackDevices;
+      printers.value = fallbackDevices.map(device => ({
+        label: device.name,
+        value: device.name
+      }));
+      
+      Notify.create({
+        type: 'warning',
+        message: `Discovery gagal: ${error.message || error}. Menggunakan fallback.`,
+        timeout: 5000
+      });
+    } finally {
+      discovering.value = false;
+    }
+  });
 };
 
 // List thermal printers (simple names)
 const listThermalPrinters = async () => {
-  loadingPrinters.value = true;
-  try {
-    const result = await invoke('list_thermal_printers');
-    printers.value = result.map(printer => ({
-      label: printer,
-      value: printer
-    }));
-    
-    // Clear discovered devices when using simple list
-    discoveredDevices.value = [];
+  // Check cache first
+  if (loadFromCache() && printers.value.length > 0) {
+    console.log('📦 Using cached thermal printer list');
     
     Notify.create({
       type: 'positive',
-      message: `Ditemukan ${result.length} printer`
+      message: `Menggunakan data cache: ${printers.value.length} printer`,
+      timeout: 2000
     });
-  } catch (error) {
-    console.error('List printers error:', error);
-    Notify.create({
-      type: 'negative',
-      message: `Gagal list printer: ${error}`
-    });
-  } finally {
-    loadingPrinters.value = false;
+    return;
   }
+  
+  await withConcurrencyControl(async () => {
+    loadingPrinters.value = true;
+    
+    try {
+      console.log('📝 Starting thermal printer list...');
+      
+      // Add timeout untuk list printers
+      const result = await Promise.race([
+        invoke('list_thermal_printers'),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('List timeout after 6 seconds')), 6000)
+        )
+      ]);
+      
+      printers.value = result.map(printer => ({
+        label: printer,
+        value: printer
+      }));
+      
+      // Clear discovered devices when using simple list
+      discoveredDevices.value = [];
+      
+      console.log('✅ Thermal printer list completed:', result.length, 'printers found');
+      
+      Notify.create({
+        type: 'positive',
+        message: `Ditemukan ${result.length} printer`,
+        timeout: 3000
+      });
+    } catch (error) {
+      console.error('❌ List printers error:', error);
+      
+      // Fallback: provide manual entry option
+      const fallbackPrinters = [
+        { label: 'Manual Entry', value: 'Manual Entry' },
+        { label: 'EPSON TM-T82X', value: 'EPSON TM-T82X' }
+      ];
+      
+      printers.value = fallbackPrinters;
+      
+      Notify.create({
+        type: 'warning',
+        message: `List printer gagal: ${error.message || error}. Menggunakan fallback.`,
+        timeout: 5000
+      });
+    } finally {
+      loadingPrinters.value = false;
+    }
+  });
 };
 
 // Check EPSON printers specifically
 const checkEpsonPrinters = async () => {
-  checkingEpson.value = true;
-  try {
-    const result = await invoke('check_epson_printers');
-    epsonPrinters.value = result.filter(name => !name.includes('No EPSON'));
+  // Check cache first untuk EPSON printers
+  if (loadFromCache() && epsonPrinters.value.length > 0) {
+    console.log('📦 Using cached EPSON printer data');
     
-    if (epsonPrinters.value.length > 0) {
-      Notify.create({
-        type: 'positive',
-        message: `Ditemukan ${epsonPrinters.value.length} EPSON printer`,
-        timeout: 3000
-      });
+    Notify.create({
+      type: 'positive',
+      message: `Cache: ${epsonPrinters.value.length} EPSON printer`,
+      timeout: 2000
+    });
+    return;
+  }
+  
+  await withConcurrencyControl(async () => {
+    checkingEpson.value = true;
+    
+    try {
+      console.log('🖨️ Starting EPSON printer check...');
       
-      // Auto-select first EPSON printer if none selected
-      if (!selectedPrinter.value) {
-        selectedPrinter.value = epsonPrinters.value[0];
+      // Add timeout untuk EPSON check
+      const result = await Promise.race([
+        invoke('check_epson_printers'),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('EPSON check timeout after 5 seconds')), 5000)
+        )
+      ]);
+      
+      epsonPrinters.value = result.filter(name => !name.includes('No EPSON'));
+      
+      if (epsonPrinters.value.length > 0) {
+        console.log('✅ EPSON check completed:', epsonPrinters.value.length, 'EPSON printers found');
+        
+        Notify.create({
+          type: 'positive',
+          message: `Ditemukan ${epsonPrinters.value.length} EPSON printer`,
+          timeout: 3000
+        });
+        
+        // Auto-select first EPSON printer if none selected
+        if (!selectedPrinter.value) {
+          selectedPrinter.value = epsonPrinters.value[0];
+        }
+      } else {
+        console.log('⚠️ No EPSON printers found');
+        Notify.create({
+          type: 'warning',
+          message: 'Tidak ada EPSON TM-T82X yang ditemukan',
+          timeout: 3000
+        });
       }
-    } else {
+    } catch (error) {
+      console.error('❌ Check EPSON printers error:', error);
+      
+      // Fallback: assume there might be EPSON printer
+      epsonPrinters.value = ['EPSON TM-T82X (Fallback)'];
+      
       Notify.create({
         type: 'warning',
-        message: 'Tidak ada EPSON TM-T82X yang ditemukan',
-        timeout: 3000
+        message: `EPSON check gagal: ${error.message || error}. Menggunakan fallback.`,
+        timeout: 5000
       });
+    } finally {
+      checkingEpson.value = false;
     }
-  } catch (error) {
-    console.error('Check EPSON printers error:', error);
-    Notify.create({
-      type: 'negative',
-      message: `Gagal cek EPSON printer: ${error}`
-    });
-  } finally {
-    checkingEpson.value = false;
-  }
+  });
 };
 
 // Get default printer
@@ -811,6 +1037,15 @@ const generateRandomBarcode = () => {
 const refreshAll = async () => {
   refreshing.value = true;
   try {
+    // Clear cache first
+    printerCache.value = {
+      printers: [],
+      discoveredDevices: [],
+      epsonPrinters: [],
+      lastUpdate: null,
+      cacheTimeout: 30000
+    };
+    
     await Promise.all([
       discoverPrinters(),
       checkEpsonPrinters(),
@@ -832,6 +1067,115 @@ const refreshAll = async () => {
   }
 };
 
+// Clear cache dan refresh semua data
+const clearCacheAndRefresh = async () => {
+  try {
+    console.log('🧹 Clearing cache and refreshing...');
+    
+    // Reset cache
+    printerCache.value = {
+      printers: [],
+      discoveredDevices: [],
+      epsonPrinters: [],
+      lastUpdate: null,
+      cacheTimeout: 30000
+    };
+    
+    // Reset local state
+    printers.value = [];
+    discoveredDevices.value = [];
+    epsonPrinters.value = [];
+    selectedPrinter.value = '';
+    lastTestResult.value = null;
+    
+    // Force discovery flag reset
+    discoveryInProgress.value = false;
+    
+    Notify.create({
+      type: 'info',
+      message: 'Cache cleared, starting fresh discovery...',
+      timeout: 2000
+    });
+    
+    // Refresh all data
+    await refreshAll();
+    
+  } catch (error) {
+    console.error('❌ Error clearing cache:', error);
+    Notify.create({
+      type: 'negative',
+      message: `Error clearing cache: ${error}`
+    });
+  }
+};
+
+// Emergency reset untuk recovery dari stuck state
+const emergencyReset = async () => {
+  try {
+    console.log('🚨 Emergency reset triggered');
+    
+    // Import recovery utilities
+    const { forceStopPrinterOperations, resetRecoveryState } = await import('src/utils/printer-recovery');
+    
+    // Stop all ongoing operations
+    discovering.value = false;
+    loadingPrinters.value = false;
+    checkingEpson.value = false;
+    testingConnection.value = false;
+    printing.value = false;
+    checkingStatus.value = '';
+    testingEpson.value = false;
+    refreshing.value = false;
+    
+    // Use recovery utility
+    await forceStopPrinterOperations();
+    
+    // Reset discovery flag
+    discoveryInProgress.value = false;
+    
+    // Clear all data
+    printers.value = [];
+    discoveredDevices.value = [];
+    epsonPrinters.value = [];
+    selectedPrinter.value = '';
+    defaultPrinter.value = '';
+    lastTestResult.value = null;
+    
+    // Reset cache
+    printerCache.value = {
+      printers: [],
+      discoveredDevices: [],
+      epsonPrinters: [],
+      lastUpdate: null,
+      cacheTimeout: 30000
+    };
+    
+    // Reset backend operations
+    try {
+      await invoke('reset_printer_operations');
+      console.log('✅ Backend operations reset');
+    } catch (error) {
+      console.warn('❌ Backend reset failed:', error);
+    }
+    
+    // Reset recovery state
+    resetRecoveryState();
+    
+    Notify.create({
+      type: 'warning',
+      message: 'Emergency reset completed. Ready untuk discovery ulang.',
+      timeout: 3000
+    });
+    
+  } catch (error) {
+    console.error('❌ Error during emergency reset:', error);
+    Notify.create({
+      type: 'negative',
+      message: `Emergency reset error: ${error}`
+    });
+  }
+};
+
 // Printer selection handler
 const onPrinterSelected = (printerName) => {
   console.log('Selected printer:', printerName);
@@ -840,14 +1184,55 @@ const onPrinterSelected = (printerName) => {
 
 // Initialize component
 onMounted(async () => {
-  // Start with checking EPSON printers first
-  await checkEpsonPrinters();
+  console.log('🚀 PrinterTestDialog mounting...');
   
-  // Then discover all printers
-  await discoverPrinters();
+  try {
+    // Check if cache is available
+    if (loadFromCache()) {
+      console.log('📦 Loaded from cache, skipping initial discovery');
+      
+      // Just get default printer since we have cached data
+      await getDefaultPrinter();
+      
+      Notify.create({
+        type: 'info',
+        message: 'Menggunakan data cache. Klik refresh untuk update.',
+        timeout: 3000
+      });
+      
+      return;
+    }
+    
+    // No cache available, start discovery
+    console.log('🔍 No cache, starting initial discovery...');
+    
+    // Start with checking EPSON printers first (fastest usually)
+    await checkEpsonPrinters();
+    
+    // Then discover all printers in background
+    if (!discoveryInProgress.value) {
+      discoverPrinters().catch(error => {
+        console.error('Background discovery failed:', error);
+      });
+    }
+    
+    // Get default printer
+    await getDefaultPrinter();
+    
+  } catch (error) {
+    console.error('❌ Error during component initialization:', error);
+    
+    // Emergency fallback
+    emergencyReset();
+    
+    Notify.create({
+      type: 'negative',
+      message: 'Gagal inisialisasi. Gunakan Emergency Reset jika diperlukan.',
+      timeout: 5000
+    });
+  }
   
-  // Get default printer
-  await getDefaultPrinter();
+  console.log('✅ PrinterTestDialog mounting completed');
 });
 </script>
 

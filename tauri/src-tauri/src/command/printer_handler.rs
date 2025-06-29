@@ -2,6 +2,26 @@ use serde::{Deserialize, Serialize};
 use tauri::command;
 use log::{info, error};
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+
+// Global cancellation token
+static OPERATION_CANCELLED: AtomicBool = AtomicBool::new(false);
+
+// Helper untuk check cancellation
+fn is_cancelled() -> bool {
+    OPERATION_CANCELLED.load(Ordering::Relaxed)
+}
+
+// Helper untuk set cancellation
+fn cancel_operations() {
+    OPERATION_CANCELLED.store(true, Ordering::Relaxed);
+}
+
+// Helper untuk reset cancellation
+fn reset_cancellation() {
+    OPERATION_CANCELLED.store(false, Ordering::Relaxed);
+}
 
 #[derive(Serialize)]
 pub struct PrintResponse {
@@ -510,19 +530,33 @@ fn format_currency(amount: i32) -> String {
 
 #[command]
 pub async fn discover_thermal_printers() -> Result<Vec<PrinterDevice>, String> {
+    // Reset cancellation before starting
+    reset_cancellation();
+    
     let mut devices = Vec::new();
     
     // Discover installed Windows drivers (priority untuk EPSON)
     #[cfg(target_os = "windows")]
     {
-        devices.extend(discover_windows_printers().await);
+        if !is_cancelled() {
+            devices.extend(discover_windows_printers().await);
+        }
     }
     
-    // Discover USB devices
-    devices.extend(discover_usb_printers().await);
+    // Check cancellation before USB discovery
+    if !is_cancelled() {
+        devices.extend(discover_usb_printers().await);
+    }
     
-    // Discover Serial devices
-    devices.extend(discover_serial_printers().await);
+    // Check cancellation before Serial discovery
+    if !is_cancelled() {
+        devices.extend(discover_serial_printers().await);
+    }
+    
+    // Check if operation was cancelled
+    if is_cancelled() {
+        return Err("Discovery operation was cancelled".to_string());
+    }
     
     if devices.is_empty() {
         devices.push(PrinterDevice {
@@ -537,6 +571,9 @@ pub async fn discover_thermal_printers() -> Result<Vec<PrinterDevice>, String> {
 }
 
 async fn discover_usb_printers() -> Vec<PrinterDevice> {
+    use std::time::Duration;
+    use tokio::time::timeout;
+    
     let mut devices = Vec::new();
     
     #[cfg(target_os = "windows")]
@@ -544,13 +581,33 @@ async fn discover_usb_printers() -> Vec<PrinterDevice> {
         let usb_paths = vec!["LPT1:", "LPT2:", "LPT3:", "USB001", "USB002"];
         
         for path in usb_paths {
-            if std::fs::OpenOptions::new().write(true).open(path).is_ok() {
-                devices.push(PrinterDevice {
-                    name: format!("USB Thermal Printer ({})", path),
-                    connection_type: "usb".to_string(),
-                    port: path.to_string(),
-                    status: "available".to_string(),
-                });
+            // Add timeout untuk USB device check untuk avoid hanging
+            let timeout_duration = Duration::from_millis(500);
+            
+            let usb_result = timeout(timeout_duration, async {
+                tokio::task::spawn_blocking(move || {
+                    std::fs::OpenOptions::new().write(true).open(path)
+                }).await.unwrap_or_else(|_| {
+                    Err(std::io::Error::new(std::io::ErrorKind::Other, "Task failed"))
+                })
+            }).await;
+            
+            match usb_result {
+                Ok(Ok(_)) => {
+                    devices.push(PrinterDevice {
+                        name: format!("USB Thermal Printer ({})", path),
+                        connection_type: "usb".to_string(),
+                        port: path.to_string(),
+                        status: "available".to_string(),
+                    });
+                    info!("Found USB printer device: {}", path);
+                },
+                Ok(Err(_)) => {
+                    // Device not available, continue
+                },
+                Err(_) => {
+                    error!("USB device check timed out for: {}", path);
+                }
             }
         }
     }
@@ -560,13 +617,31 @@ async fn discover_usb_printers() -> Vec<PrinterDevice> {
         let usb_paths = vec!["/dev/usb/lp0", "/dev/usb/lp1", "/dev/lp0", "/dev/lp1"];
         
         for path in usb_paths {
-            if std::path::Path::new(path).exists() {
-                devices.push(PrinterDevice {
-                    name: format!("USB Thermal Printer ({})", path),
-                    connection_type: "usb".to_string(),
-                    port: path.to_string(),
-                    status: "available".to_string(),
-                });
+            // Add timeout untuk Unix USB device check
+            let timeout_duration = Duration::from_millis(500);
+            
+            let usb_result = timeout(timeout_duration, async {
+                tokio::task::spawn_blocking(move || {
+                    std::path::Path::new(path).exists()
+                }).await.unwrap_or(false)
+            }).await;
+            
+            match usb_result {
+                Ok(true) => {
+                    devices.push(PrinterDevice {
+                        name: format!("USB Thermal Printer ({})", path),
+                        connection_type: "usb".to_string(),
+                        port: path.to_string(),
+                        status: "available".to_string(),
+                    });
+                    info!("Found USB printer device: {}", path);
+                },
+                Ok(false) => {
+                    // Device not available, continue
+                },
+                Err(_) => {
+                    error!("USB device check timed out for: {}", path);
+                }
             }
         }
     }
@@ -575,16 +650,59 @@ async fn discover_usb_printers() -> Vec<PrinterDevice> {
 }
 
 async fn discover_serial_printers() -> Vec<PrinterDevice> {
+    use std::time::Duration;
+    use tokio::time::timeout;
+    
     let mut devices = Vec::new();
     
-    if let Ok(ports) = serialport::available_ports() {
-        for port in ports {
-            devices.push(PrinterDevice {
-                name: format!("Serial Thermal Printer ({})", port.port_name),
-                connection_type: "serial".to_string(),
-                port: port.port_name,
-                status: "available".to_string(),
-            });
+    // Check cancellation before starting
+    if is_cancelled() {
+        return devices;
+    }
+    
+    // Add timeout untuk serial port discovery untuk avoid hanging
+    let timeout_duration = Duration::from_secs(3);
+    
+    let serial_result = timeout(timeout_duration, async {
+        tokio::task::spawn_blocking(|| {
+            // Check cancellation inside blocking task
+            if OPERATION_CANCELLED.load(Ordering::Relaxed) {
+                return Err(serialport::Error::new(
+                    serialport::ErrorKind::Unknown, 
+                    "Operation cancelled"
+                ));
+            }
+            serialport::available_ports()
+        }).await.unwrap_or_else(|_| {
+            error!("Serial port discovery task panicked");
+            Err(serialport::Error::new(
+                serialport::ErrorKind::Unknown, 
+                "Discovery task failed"
+            ))
+        })
+    }).await;
+    
+    match serial_result {
+        Ok(Ok(ports)) => {
+            info!("Found {} serial ports", ports.len());
+            for port in ports {
+                // Check cancellation for each port
+                if is_cancelled() {
+                    break;
+                }
+                devices.push(PrinterDevice {
+                    name: format!("Serial Thermal Printer ({})", port.port_name),
+                    connection_type: "serial".to_string(),
+                    port: port.port_name,
+                    status: "available".to_string(),
+                });
+            }
+        },
+        Ok(Err(e)) => {
+            error!("Error discovering serial ports: {}", e);
+        },
+        Err(_) => {
+            error!("Serial port discovery timed out after 3 seconds");
         }
     }
     
@@ -625,58 +743,81 @@ async fn list_windows_printers() -> Result<Vec<String>, String> {
     use winapi::um::winspool::{EnumPrintersA, PRINTER_INFO_2A, PRINTER_ENUM_LOCAL};
     use std::ptr;
     use std::ffi::CStr;
+    use std::time::Duration;
+    use tokio::time::timeout;
     
-    unsafe {
-        let mut needed = 0;
-        let mut returned = 0;
-        
-        // Get buffer size
-        EnumPrintersA(
-            PRINTER_ENUM_LOCAL,
-            ptr::null_mut(),
-            2,
-            ptr::null_mut(),
-            0,
-            &mut needed,
-            &mut returned,
-        );
-        
-        if needed == 0 {
-            return Ok(vec!["EPSON TM-T82X".to_string()]);
-        }
-        
-        let mut buffer: Vec<u8> = vec![0; needed as usize];
-        
-        if EnumPrintersA(
-            PRINTER_ENUM_LOCAL,
-            ptr::null_mut(),
-            2,
-            buffer.as_mut_ptr(),
-            needed,
-            &mut needed,
-            &mut returned,
-        ) == 0 {
-            return Ok(vec!["EPSON TM-T82X".to_string()]);
-        }
-        
-        let mut printers = Vec::new();
-        let printer_info_array = buffer.as_ptr() as *const PRINTER_INFO_2A;
-        
-        for i in 0..returned {
-            let printer_info = &*printer_info_array.offset(i as isize);
-            if !printer_info.pPrinterName.is_null() {
-                let name = CStr::from_ptr(printer_info.pPrinterName)
-                    .to_string_lossy()
-                    .to_string();
-                printers.push(name);
+    // Add timeout untuk Windows printer enumeration untuk avoid hanging
+    let timeout_duration = Duration::from_secs(5);
+    
+    let enum_result = timeout(timeout_duration, async {
+        tokio::task::spawn_blocking(|| {
+            unsafe {
+                let mut needed = 0;
+                let mut returned = 0;
+                
+                // Get buffer size
+                EnumPrintersA(
+                    PRINTER_ENUM_LOCAL,
+                    ptr::null_mut(),
+                    2,
+                    ptr::null_mut(),
+                    0,
+                    &mut needed,
+                    &mut returned,
+                );
+                
+                if needed == 0 {
+                    return Ok(vec!["EPSON TM-T82X".to_string()]);
+                }
+                
+                let mut buffer: Vec<u8> = vec![0; needed as usize];
+                
+                if EnumPrintersA(
+                    PRINTER_ENUM_LOCAL,
+                    ptr::null_mut(),
+                    2,
+                    buffer.as_mut_ptr(),
+                    needed,
+                    &mut needed,
+                    &mut returned,
+                ) == 0 {
+                    return Ok(vec!["EPSON TM-T82X".to_string()]);
+                }
+                
+                let mut printers = Vec::new();
+                let printer_info_array = buffer.as_ptr() as *const PRINTER_INFO_2A;
+                
+                for i in 0..returned {
+                    let printer_info = &*printer_info_array.offset(i as isize);
+                    if !printer_info.pPrinterName.is_null() {
+                        let name = CStr::from_ptr(printer_info.pPrinterName)
+                            .to_string_lossy()
+                            .to_string();
+                        printers.push(name);
+                    }
+                }
+                
+                if printers.is_empty() {
+                    printers.push("EPSON TM-T82X".to_string());
+                }
+                
+                Ok(printers)
             }
+        }).await.unwrap_or_else(|_| {
+            error!("Windows printer enumeration task panicked");
+            Ok(vec!["EPSON TM-T82X".to_string()])
+        })
+    }).await;
+    
+    match enum_result {
+        Ok(result) => {
+            info!("Windows printer enumeration completed successfully");
+            result
+        },
+        Err(_) => {
+            error!("Windows printer enumeration timed out after 5 seconds");
+            Ok(vec!["EPSON TM-T82X".to_string()])
         }
-        
-        if printers.is_empty() {
-            printers.push("EPSON TM-T82X".to_string());
-        }
-        
-        Ok(printers)
     }
 }
 
@@ -950,4 +1091,38 @@ fn add_epson_barcode_debug(commands: &mut Vec<u8>, data: &str) {
     commands.extend_from_slice(&[0x0A]); // LF
     commands.extend_from_slice(barcode_data.as_bytes()); // Data di bawah pattern
     commands.extend_from_slice(&[0x0A]); // LF
+}
+
+// CANCELLATION COMMANDS
+
+#[command]
+pub async fn cancel_printer_operations() -> Result<PrintResponse, String> {
+    info!("Cancelling all printer operations...");
+    cancel_operations();
+    
+    Ok(PrintResponse {
+        success: true,
+        message: "All printer operations cancelled".to_string(),
+    })
+}
+
+#[command]
+pub async fn reset_printer_operations() -> Result<PrintResponse, String> {
+    info!("Resetting printer operation state...");
+    reset_cancellation();
+    
+    Ok(PrintResponse {
+        success: true,
+        message: "Printer operation state reset".to_string(),
+    })
+}
+
+#[command]
+pub async fn get_printer_operation_status() -> Result<PrintResponse, String> {
+    let is_cancelled_status = is_cancelled();
+    
+    Ok(PrintResponse {
+        success: true,
+        message: format!("Printer operations cancelled: {}", is_cancelled_status),
+    })
 }

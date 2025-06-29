@@ -229,6 +229,9 @@ pub fn run() {
             command::printer_handler::discover_thermal_printers,
             command::printer_handler::test_printer_connection,
             command::printer_handler::check_epson_printers,
+            command::printer_handler::cancel_printer_operations,    // New
+            command::printer_handler::reset_printer_operations,     // New
+            command::printer_handler::get_printer_operation_status, // New
 
             
             get_active_gate_id,

@@ -31,6 +31,9 @@ export interface ParkingTransaction {
   id_pintu_keluar?: string
   id_op_keluar?: string
   id_shift_keluar?: string
+  no_barcode?: string  // Add barcode field for exit gate compatibility
+  entry_pic?: string   // Add simplified image fields like entry gate
+  exit_pic?: string
   created_at?: string
   updated_at?: string
 }
@@ -49,6 +52,21 @@ export interface GateSettings {
   image_quality: number
   capture_timeout: number
   server_url?: string
+  // CCTV Camera configuration
+  plate_camera_ip?: string
+  plate_camera_username?: string
+  plate_camera_password?: string
+  plate_camera_snapshot_path?: string
+  plate_camera_full_url?: string // Complete snapshot URL for advanced cameras
+  driver_camera_ip?: string
+  driver_camera_username?: string
+  driver_camera_password?: string
+  driver_camera_snapshot_path?: string
+  driver_camera_full_url?: string // Complete snapshot URL for advanced cameras
+  // GPIO configuration for Raspberry Pi
+  gpio_pin?: number
+  gpio_active_high?: boolean
+  control_mode?: 'serial' | 'gpio' // 'serial' for normal mode, 'gpio' for Raspberry Pi
   // Remote sync settings
   sync_config?: SyncConfig
   created_at: string
@@ -91,6 +109,7 @@ class DatabaseService {
   private remoteTransactionsDb: PouchDB.Database | null = null
   private remoteKendaraanDb: PouchDB.Database | null = null
   private remoteTarifDb: PouchDB.Database | null = null
+  private remotePetugasDb: PouchDB.Database | null = null
   private syncHandlers: Map<string, PouchDB.Replication.Sync<{}>> = new Map()
   private syncStatus: SyncStatus = {
     connected: false,
@@ -104,7 +123,8 @@ class DatabaseService {
   private syncTimer: number | null = null
 
   constructor() {
-    this.db = new PouchDB('exit_gate_db')
+    // Use same database name as entry gate for consistency
+    this.db = new PouchDB('transactions')
   }
 
   // Initialize database with default settings
@@ -127,8 +147,52 @@ class DatabaseService {
     }
   }
 
-  // Find transaction by barcode (using transaction id)
+  // Find transaction by barcode (using transaction id) - align with entry gate method
   async findTransactionByBarcode(barcode: string): Promise<ParkingTransaction | null> {
+    try {
+      // Try to get by transaction ID (barcode as suffix)
+      try {
+        const doc = await this.db.get(`transaction_${barcode}`) as ParkingTransaction
+        if (
+          (doc.type === 'parking_transaction' || doc.type === 'member_entry') &&
+          doc.status === 0
+        ) {
+          return doc
+        }
+      } catch (error) {
+        // Not found by direct ID, continue
+      }
+
+      // Try to get by barcode field (no_barcode) using a query if available
+      // Only if pouchdb-find (map/reduce) is enabled, otherwise skip
+      if ((this.db as any).find) {
+        try {
+          const result = await (this.db as any).find({
+            selector: {
+              _id: `transaction_${barcode}`,
+              status: 0,
+              type: { $in: ['parking_transaction', 'member_entry'] }
+            },
+            limit: 1
+          })
+          if (result.docs && result.docs.length > 0) {
+            return result.docs[0] as ParkingTransaction
+          }
+        } catch (error) {
+          // Ignore find errors
+        }
+      }
+
+      // If pouchdb-find is not available, skip scanning all transactions for performance
+      return null
+    } catch (error) {
+      console.error('Error finding transaction by barcode:', error)
+      return null
+    }
+  }
+
+  // Find transaction by plate number - additional method like entry gate
+  async findTransactionByPlate(plateNumber: string): Promise<ParkingTransaction | null> {
     try {
       const result = await this.db.allDocs({
         include_docs: true,
@@ -140,18 +204,18 @@ class DatabaseService {
         .map(row => row.doc as ParkingTransaction)
         .find(doc => 
           doc?.type === 'parking_transaction' && 
-          doc?.id === barcode &&
+          doc?.no_pol?.toUpperCase() === plateNumber.toUpperCase() &&
           doc?.status === 0 // Only find transactions that haven't exited yet
         )
 
       return transaction || null
     } catch (error) {
-      console.error('Error finding transaction by barcode:', error)
+      console.error('Error finding transaction by plate:', error)
       return null
     }
   }
 
-  // Update transaction status on exit
+  // Update transaction status on exit - align with entry gate method
   async exitTransaction(transactionId: string, exitData: {
     waktu_keluar: string
     bayar_keluar?: number
@@ -160,6 +224,7 @@ class DatabaseService {
     id_shift_keluar?: string
     pic_driver_keluar?: string
     pic_no_pol_keluar?: string
+    exit_pic?: string  // Add support for simplified exit image
   }): Promise<boolean> {
     try {
       const doc = await this.db.get(transactionId) as ParkingTransaction
@@ -248,10 +313,21 @@ class DatabaseService {
       gate_timeout: 10,
       camera_enabled: false,
       webcam_enabled: true,
-      cctv_enabled: false,
+      cctv_enabled: true, // Enable CCTV by default for exit gate
       cctv_url: '',
       image_quality: 0.8,
       capture_timeout: 5000,
+      // Default CCTV camera settings - use your URL format
+      plate_camera_full_url: 'http://username:password@192.168.1.11/ISAPI/Streaming/channels/101/picture',
+      plate_camera_ip: '192.168.1.11', // Backup for component-based URL
+      plate_camera_username: 'username',
+      plate_camera_password: 'password',
+      plate_camera_snapshot_path: 'ISAPI/Streaming/channels/101/picture',
+      driver_camera_full_url: 'http://username:password@192.168.1.12/ISAPI/Streaming/channels/101/picture',
+      driver_camera_ip: '192.168.1.12',
+      driver_camera_username: 'username',
+      driver_camera_password: 'password',
+      driver_camera_snapshot_path: 'ISAPI/Streaming/channels/101/picture',
       sync_config: {
         remote_url: 'http://localhost:5984', // Base URL tanpa nama database
         auto_sync: false,
@@ -282,6 +358,41 @@ class DatabaseService {
     } catch (error) {
       console.error('Error getting vehicle types:', error)
       return []
+    }
+  }
+
+  // Calculate parking fee based on duration and vehicle type - align with entry gate logic
+  async calculateParkingFee(transaction: ParkingTransaction, exitTime: string = new Date().toISOString()): Promise<number> {
+    try {
+      const entryTime = new Date(transaction.waktu_masuk)
+      const exit = new Date(exitTime)
+      
+      // Calculate duration in hours (minimum 1 hour)
+      const durationMs = exit.getTime() - entryTime.getTime()
+      const durationHours = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60)))
+      
+      // Get vehicle types for tariff calculation
+      const vehicleTypes = await this.getVehicleTypes()
+      const vehicleType = vehicleTypes.find((vt: VehicleType) => vt.id_kendaraan === transaction.id_kendaraan)
+      const hourlyRate = vehicleType?.tarif || 5000 // Default 5000 IDR per hour
+      
+      // Basic calculation: hours * hourly rate
+      // This can be enhanced with more complex tariff rules
+      const totalFee = durationHours * hourlyRate
+      
+      console.log(`Parking fee calculation:`, {
+        plateNumber: transaction.no_pol,
+        entryTime: entryTime.toISOString(),
+        exitTime,
+        durationHours,
+        hourlyRate,
+        totalFee
+      })
+      
+      return totalFee
+    } catch (error) {
+      console.error('Error calculating parking fee:', error)
+      return 0
     }
   }
 
@@ -356,16 +467,18 @@ class DatabaseService {
         baseUrl = url.toString()
       }
       
-      // Initialize multiple remote databases
+      // Initialize multiple remote databases - align with entry gate structure
       this.remoteTransactionsDb = new PouchDB(`${baseUrl}/transactions`)
       this.remoteKendaraanDb = new PouchDB(`${baseUrl}/kendaraan`)
       this.remoteTarifDb = new PouchDB(`${baseUrl}/tarif`)
+      this.remotePetugasDb = new PouchDB(`${baseUrl}/petugas`)
       
       // Test connections
       await Promise.all([
         this.remoteTransactionsDb.info(),
         this.remoteKendaraanDb.info(),
-        this.remoteTarifDb.info()
+        this.remoteTarifDb.info(),
+        this.remotePetugasDb.info()
       ])
       
       // Start sync for all databases
@@ -458,6 +571,16 @@ class DatabaseService {
           back_off_function: (delay) => Math.min(delay * 2, 10000)
         })
         this.syncHandlers.set('tarif', tarifSync)
+      }
+
+      // Sync petugas database
+      if (this.remotePetugasDb) {
+        const petugasSync = this.db.sync(this.remotePetugasDb, {
+          live: config.continuous,
+          retry: true,
+          back_off_function: (delay) => Math.min(delay * 2, 10000)
+        })
+        this.syncHandlers.set('petugas', petugasSync)
       }
 
       // Set up periodic sync if not continuous
@@ -659,6 +782,86 @@ class DatabaseService {
     }
   }
 
+  // Get active parking transactions - useful for exit gate statistics
+  async getActiveTransactions(): Promise<ParkingTransaction[]> {
+    try {
+      const result = await this.db.allDocs({
+        include_docs: true,
+        startkey: 'transaction_',
+        endkey: 'transaction_\ufff0'
+      })
+
+      return result.rows
+        .map(row => row.doc as ParkingTransaction)
+        .filter(doc => 
+          doc?.type === 'parking_transaction' && 
+          doc?.status === 0 // Only active (not exited) transactions
+        )
+    } catch (error) {
+      console.error('Error getting active transactions:', error)
+      return []
+    }
+  }
+
+  // Enhanced exit method with automatic fee calculation
+  async processVehicleExit(plateNumberOrBarcode: string, operatorId?: string, gateId?: string): Promise<{
+    success: boolean
+    transaction?: ParkingTransaction
+    fee?: number
+    message?: string
+  }> {
+    try {
+      // Try to find transaction by barcode first, then by plate number
+      let transaction = await this.findTransactionByBarcode(plateNumberOrBarcode)
+      
+      if (!transaction) {
+        transaction = await this.findTransactionByPlate(plateNumberOrBarcode)
+      }
+      
+      if (!transaction) {
+        return {
+          success: false,
+          message: `No active transaction found for: ${plateNumberOrBarcode}`
+        }
+      }
+      
+      const exitTime = new Date().toISOString()
+      const calculatedFee = await this.calculateParkingFee(transaction, exitTime)
+      
+      // Update transaction with exit data
+      const exitSuccess = await this.exitTransaction(transaction._id, {
+        waktu_keluar: exitTime,
+        bayar_keluar: calculatedFee,
+        id_pintu_keluar: gateId || 'EXIT_01',
+        id_op_keluar: operatorId || 'SYSTEM',
+        id_shift_keluar: 'SHIFT1' // Could be dynamic based on current shift
+      })
+      
+      if (exitSuccess) {
+        // Get updated transaction
+        const updatedTransaction = await this.db.get(transaction._id) as ParkingTransaction
+        
+        return {
+          success: true,
+          transaction: updatedTransaction,
+          fee: calculatedFee,
+          message: `Exit processed successfully for ${transaction.no_pol}`
+        }
+      } else {
+        return {
+          success: false,
+          message: 'Failed to update transaction in database'
+        }
+      }
+    } catch (error) {
+      console.error('Error processing vehicle exit:', error)
+      return {
+        success: false,
+        message: `Error processing exit: ${error instanceof Error ? error.message : 'Unknown error'}`
+      }
+    }
+  }
+
   // Get pending changes count
   async getPendingChangesCount(): Promise<number> {
     try {
@@ -710,6 +913,7 @@ class DatabaseService {
       this.remoteTransactionsDb = null
       this.remoteKendaraanDb = null
       this.remoteTarifDb = null
+      this.remotePetugasDb = null
     } catch (error) {
       console.error('Error cleaning up remote databases:', error)
     }

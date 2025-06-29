@@ -64,6 +64,75 @@
           </q-card-section>
         </q-card>
 
+        <!-- GPIO Settings (Raspberry Pi) -->
+        <q-card class="q-mb-lg" v-if="gpioAvailable">
+          <q-card-section>
+            <div class="text-h6 q-mb-md">
+              <q-icon name="memory" class="q-mr-sm" />
+              GPIO Configuration (Raspberry Pi)
+            </div>
+            
+            <div class="row q-gutter-md q-mb-md">
+              <div class="col-12">
+                <q-select
+                  v-model="settings.control_mode"
+                  :options="controlModeOptions"
+                  label="Gate Control Mode"
+                  outlined
+                  emit-value
+                  map-options
+                />
+              </div>
+            </div>
+
+            <div v-if="settings.control_mode === 'gpio'" class="q-mt-md">
+              <div class="row q-gutter-md">
+                <div class="col">
+                  <q-input
+                    v-model.number="settings.gpio_pin"
+                    type="number"
+                    label="GPIO Pin Number"
+                    outlined
+                    min="1"
+                    max="40"
+                    hint="Physical pin number on Raspberry Pi"
+                    @focus="disableScanner"
+                    @blur="enableScanner"
+                  />
+                </div>
+                <div class="col">
+                  <q-toggle
+                    v-model="settings.gpio_active_high"
+                    label="Active High"
+                    left-label
+                  />
+                  <div class="text-caption text-grey-6 q-mt-xs">
+                    Check if relay activates on HIGH signal
+                  </div>
+                </div>
+              </div>
+
+              <div class="row q-gutter-sm q-mt-md">
+                <q-btn
+                  :loading="testing"
+                  @click="testGpio"
+                  color="orange"
+                  outline
+                  icon="play_arrow"
+                  label="Test GPIO"
+                />
+                <q-btn
+                  @click="checkGpioStatus"
+                  color="info"
+                  outline
+                  icon="info"
+                  label="Check GPIO Status"
+                />
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
+
         <!-- Camera Settings -->
         <q-card class="q-mb-lg">
           <q-card-section>
@@ -97,16 +166,137 @@
                 </div>
               </div>
 
-              <div v-if="settings.cctv_enabled" class="row q-gutter-md q-mt-md">
-                <div class="col-12">
-                  <q-input
-                    v-model="settings.cctv_url"
-                    label="CCTV Snapshot URL"
-                    placeholder="http://192.168.1.100/snapshot"
-                    outlined
-                    @focus="disableScanner"
-                    @blur="enableScanner"
-                  />
+              <div v-if="settings.cctv_enabled" class="q-mt-md">
+                <!-- Plate Camera Configuration -->
+                <div class="text-subtitle2 q-mb-md">
+                  <q-icon name="camera_alt" class="q-mr-sm" />
+                  Plate Camera Configuration
+                </div>
+                
+                <div class="row q-gutter-md q-mb-md">
+                  <div class="col">
+                    <q-input
+                      v-model="settings.plate_camera_ip"
+                      label="Camera IP Address"
+                      placeholder="192.168.1.11"
+                      outlined
+                      @focus="disableScanner"
+                      @blur="enableScanner"
+                    />
+                  </div>
+                  <div class="col">
+                    <q-input
+                      v-model="settings.plate_camera_username"
+                      label="Username"
+                      placeholder="admin"
+                      outlined
+                      @focus="disableScanner"
+                      @blur="enableScanner"
+                    />
+                  </div>
+                </div>
+                
+                <div class="row q-gutter-md q-mb-md">
+                  <div class="col">
+                    <q-input
+                      v-model="settings.plate_camera_password"
+                      label="Password"
+                      type="password"
+                      placeholder="admin123"
+                      outlined
+                      @focus="disableScanner"
+                      @blur="enableScanner"
+                    />
+                  </div>
+                  <div class="col">
+                    <q-input
+                      v-model="settings.plate_camera_snapshot_path"
+                      label="Snapshot Path"
+                      placeholder="ISAPI/Streaming/channels/101/picture"
+                      outlined
+                      @focus="disableScanner"
+                      @blur="enableScanner"
+                    />
+                  </div>
+                </div>
+                
+                <div class="row q-gutter-md q-mb-md">
+                  <div class="col-12">
+                    <q-input
+                      v-model="settings.plate_camera_full_url"
+                      label="Full URL (Optional - overrides above settings)"
+                      placeholder="http://username:password@192.168.1.11/ISAPI/Streaming/channels/101/picture"
+                      outlined
+                      @focus="disableScanner"
+                      @blur="enableScanner"
+                    />
+                  </div>
+                </div>
+
+                <!-- Driver Camera Configuration -->
+                <div class="text-subtitle2 q-mb-md q-mt-lg">
+                  <q-icon name="account_circle" class="q-mr-sm" />
+                  Driver Camera Configuration
+                </div>
+                
+                <div class="row q-gutter-md q-mb-md">
+                  <div class="col">
+                    <q-input
+                      v-model="settings.driver_camera_ip"
+                      label="Camera IP Address"
+                      placeholder="192.168.1.12"
+                      outlined
+                      @focus="disableScanner"
+                      @blur="enableScanner"
+                    />
+                  </div>
+                  <div class="col">
+                    <q-input
+                      v-model="settings.driver_camera_username"
+                      label="Username"
+                      placeholder="admin"
+                      outlined
+                      @focus="disableScanner"
+                      @blur="enableScanner"
+                    />
+                  </div>
+                </div>
+                
+                <div class="row q-gutter-md q-mb-md">
+                  <div class="col">
+                    <q-input
+                      v-model="settings.driver_camera_password"
+                      label="Password"
+                      type="password"
+                      placeholder="admin123"
+                      outlined
+                      @focus="disableScanner"
+                      @blur="enableScanner"
+                    />
+                  </div>
+                  <div class="col">
+                    <q-input
+                      v-model="settings.driver_camera_snapshot_path"
+                      label="Snapshot Path"
+                      placeholder="ISAPI/Streaming/channels/101/picture"
+                      outlined
+                      @focus="disableScanner"
+                      @blur="enableScanner"
+                    />
+                  </div>
+                </div>
+                
+                <div class="row q-gutter-md q-mb-md">
+                  <div class="col-12">
+                    <q-input
+                      v-model="settings.driver_camera_full_url"
+                      label="Full URL (Optional - overrides above settings)"
+                      placeholder="http://username:password@192.168.1.12/ISAPI/Streaming/channels/101/picture"
+                      outlined
+                      @focus="disableScanner"
+                      @blur="enableScanner"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -129,9 +319,10 @@
                     type="number"
                     label="Capture timeout (ms)"
                     outlined
-                    min="1000"
-                    max="10000"
-                    step="500"
+                    min="5000"
+                    max="30000"
+                    step="1000"
+                    hint="Minimum 5 seconds, recommended 10-15 seconds for network cameras"
                     @focus="disableScanner"
                     @blur="enableScanner"
                   />
@@ -152,8 +343,15 @@
                   icon="camera_alt"
                   label="Test CCTV"
                   :loading="testingCamera.cctv"
-                  :disable="!settings.cctv_enabled || !settings.cctv_url || testingCamera.webcam"
+                  :disable="!settings.cctv_enabled || (!settings.plate_camera_full_url && !settings.plate_camera_ip) || testingCamera.webcam"
                   @click="testCCTV"
+                />
+                <q-btn
+                  color="teal"
+                  icon="update"
+                  label="Update CCTV Config"
+                  @click="updateCctvSettingsInDb"
+                  flat
                 />
               </div>
             </div>
@@ -367,7 +565,7 @@ import { useQuasar } from 'quasar'
 import { databaseService, type GateSettings } from '../services/database'
 import { gateService } from '../services/gate-service'
 import { barcodeScanner, type ScannerConfig } from '../services/barcode-scanner'
-import { cameraService } from '../services/camera-service'
+import { cameraService, updateCctvSettings } from '../services/camera-service'
 import SyncManager from '../components/SyncManager.vue'
 import AudioSettings from '../components/AudioSettings.vue'
 
@@ -381,42 +579,46 @@ const settings = ref<GateSettings>({
   baud_rate: 9600,
   gate_timeout: 10,
   camera_enabled: false,
-  webcam_enabled: true,
+  webcam_enabled: false,
   cctv_enabled: false,
-  cctv_url: '',
-  image_quality: 0.8,
-  capture_timeout: 5000,
-  created_at: '',
-  updated_at: ''
+  image_quality: 80,
+  capture_timeout: 10000, // Increase default timeout to 10 seconds
+  // CCTV Camera settings
+  plate_camera_ip: '',
+  plate_camera_username: 'admin',
+  plate_camera_password: 'admin123',
+  plate_camera_snapshot_path: 'ISAPI/Streaming/channels/101/picture',
+  plate_camera_full_url: '',
+  driver_camera_ip: '',
+  driver_camera_username: 'admin',
+  driver_camera_password: 'admin123',
+  driver_camera_snapshot_path: 'ISAPI/Streaming/channels/101/picture',
+  driver_camera_full_url: '',
+  // GPIO configuration
+  gpio_pin: 18,
+  gpio_active_high: true,
+  control_mode: 'serial',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
 })
 
-const barcodeConfig = ref<ScannerConfig>({
-  minLength: 6,
-  maxLength: 20,
-  timeout: 100
-})
-
+const scannerEnabled = ref(true)
 const availablePorts = ref<string[]>([])
 const loadingPorts = ref(false)
 const saving = ref(false)
+const testing = ref(false)
+const gpioAvailable = ref(false)
+const connecting = ref(false)
 const testingCamera = ref({
   webcam: false,
   cctv: false
 })
-const connecting = ref(false)
-const testing = ref(false)
-const scannerEnabled = ref(true)
 
-const connectionStatus = ref({
-  connected: false,
-  message: ''
-})
-
-const dbStats = ref({
-  totalTransactions: 0,
-  activeTransactions: 0,
-  exitedToday: 0
-})
+// GPIO control options
+const controlModeOptions = ref([
+  { label: 'Serial Communication', value: 'serial' },
+  { label: 'GPIO (Raspberry Pi)', value: 'gpio' }
+])
 
 const baudRateOptions = [
   { label: '9600', value: 9600 },
@@ -425,6 +627,26 @@ const baudRateOptions = [
   { label: '57600', value: 57600 },
   { label: '115200', value: 115200 }
 ]
+
+// Status tracking
+const connectionStatus = ref({
+  connected: false,
+  message: 'Not connected'
+})
+
+const dbStats = ref({
+  totalTransactions: 0,
+  activeTransactions: 0,
+  exitedToday: 0
+})
+
+// Barcode scanner configuration
+const barcodeConfig = ref<ScannerConfig>({
+  minLength: 6,
+  maxLength: 20,
+  timeout: 300,
+  suffix: 'Enter'
+})
 
 // Initialize component
 onMounted(async () => {
@@ -436,6 +658,10 @@ onMounted(async () => {
   await loadDatabaseStats()
   loadBarcodeConfig()
   checkConnectionStatus()
+  
+  // Check GPIO availability
+  gpioAvailable.value = await gateService.isRaspberryPi()
+  
   // Initialize scanner state
   scannerEnabled.value = barcodeScanner.isEnabled()
 })
@@ -515,11 +741,14 @@ async function resetSettings() {
       baud_rate: 9600,
       gate_timeout: 10,
       camera_enabled: false,
-      webcam_enabled: true,
+      webcam_enabled: false,
       cctv_enabled: false,
-      cctv_url: '',
-      image_quality: 0.8,
+      image_quality: 80,
       capture_timeout: 5000,
+      // GPIO configuration
+      gpio_pin: 18,
+      gpio_active_high: true,
+      control_mode: 'serial',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
@@ -720,7 +949,7 @@ async function testWebcam() {
     // Update camera service settings first
     cameraService.updateSettings({
       webcam_enabled: settings.value.webcam_enabled,
-      image_quality: settings.value.image_quality,
+      image_quality: settings.value.image_quality / 100, // Convert percentage to decimal
       capture_timeout: settings.value.capture_timeout
     })
     
@@ -758,8 +987,12 @@ async function testCCTV() {
     // Update camera service settings first
     cameraService.updateSettings({
       cctv_enabled: settings.value.cctv_enabled,
-      cctv_url: settings.value.cctv_url,
-      image_quality: settings.value.image_quality,
+      plate_camera_ip: settings.value.plate_camera_ip,
+      plate_camera_username: settings.value.plate_camera_username,
+      plate_camera_password: settings.value.plate_camera_password,
+      plate_camera_snapshot_path: settings.value.plate_camera_snapshot_path,
+      plate_camera_full_url: settings.value.plate_camera_full_url,
+      image_quality: settings.value.image_quality / 100, // Convert percentage to decimal
       capture_timeout: settings.value.capture_timeout
     })
     
@@ -774,7 +1007,7 @@ async function testCCTV() {
     } else {
       $q.notify({
         type: 'negative',
-        message: 'CCTV test failed. Please check URL and network connection.',
+        message: 'CCTV test failed. Please check camera configuration and network connection.',
         icon: 'error'
       })
     }
@@ -787,6 +1020,101 @@ async function testCCTV() {
     })
   } finally {
     testingCamera.value.cctv = false
+  }
+}
+
+// Update CCTV settings in database
+async function updateCctvSettingsInDb() {
+  try {
+    console.log('🔧 Updating CCTV settings in database...')
+    
+    // First ensure the fields exist, then save current form values
+    await updateCctvSettings()
+    await saveSettings() // Save the current form values
+    
+    // Reload settings from database
+    await loadSettings()
+    
+    $q.notify({
+      type: 'positive',
+      message: 'CCTV settings updated successfully!',
+      icon: 'camera_alt'
+    })
+  } catch (error) {
+    console.error('Error updating CCTV settings:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to update CCTV settings: ' + error,
+      icon: 'error'
+    })
+  }
+}
+
+// Test GPIO configuration
+async function testGpio() {
+  testing.value = true
+  try {
+    // Validate configuration first
+    if (!settings.value.gpio_pin || settings.value.gpio_active_high === undefined) {
+      throw new Error('GPIO pin and active_high must be configured')
+    }
+    
+    // Configure GPIO first
+    const gpioConfig = {
+      pin: settings.value.gpio_pin,
+      active_high: settings.value.gpio_active_high
+    }
+    
+    const configSuccess = await gateService.configureGpio(gpioConfig)
+    if (!configSuccess) {
+      throw new Error('Failed to configure GPIO')
+    }
+    
+    const result = await gateService.testGpio()
+    
+    if (result) {
+      $q.notify({
+        type: 'positive',
+        message: `GPIO test successful on pin ${settings.value.gpio_pin}`,
+        icon: 'check'
+      })
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'GPIO test failed. Please check the configuration.',
+        icon: 'error'
+      })
+    }
+  } catch (error) {
+    console.error('GPIO test error:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'GPIO test failed: ' + error,
+      icon: 'error'
+    })
+  } finally {
+    testing.value = false
+  }
+}
+
+// Check GPIO status
+async function checkGpioStatus() {
+  try {
+    const available = await gateService.isRaspberryPi()
+    const currentMode = gateService.getControlMode()
+    
+    $q.notify({
+      type: 'info',
+      message: `GPIO Available: ${available ? 'Yes' : 'No'}, Current Mode: ${currentMode}`,
+      icon: available ? 'check_circle' : 'info'
+    })
+  } catch (error) {
+    console.error('Error checking GPIO status:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to check GPIO status',
+      icon: 'error'
+    })
   }
 }
 </script>

@@ -21,4 +21,15 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serialport = "4.2.0"
 tokio = { version = "1.0", features = ["full"] }
+log = "0.4"
+base64 = "0.21"
+chrono = "0.4"
+reqwest = { version = "0.11", features = ["json"] }
+
+# Optional: Uncomment if you want to use rppal for GPIO instead of sysfs
+# rppal = { version = "0.14", optional = true }
+
+[features]
+default = []
+# gpio-rppal = ["rppal"]
 

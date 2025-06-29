@@ -1,8 +1,54 @@
 <template>
-  <q-page class="flex column items-center justify-center bg-grey-1 q-pa-md">
+  <q-page class="full-width flex column items-center justify-center bg-grey-1 q-pa-md">
     <!-- Header -->
     <div class="text-h3 text-weight-bold text-primary q-mb-lg">
       Exit Gate System
+    </div>
+
+    <!-- CCTV Camera Monitors -->
+    <div class="full-width flex-center row q-gutter-md q-mb-lg" style="min-width: 800px">
+      <div class="col-5">
+        <q-card class="shadow-4">
+          <q-card-section class="q-pa-sm">
+            <Camera
+              ref="plateExitCameraRef"
+              :camera-type="'cctv'"
+              :username="cameraSettings.PLATE_CAM_USERNAME || 'admin'"
+              :password="cameraSettings.PLATE_CAM_PASSWORD || 'admin123'"
+              :ip-address="cameraSettings.PLATE_CAM_IP || '192.168.1.100'"
+              :rtsp-stream-path="cameraSettings.PLATE_CAM_SNAPSHOT_PATH || 'Streaming/Channels/1/picture'"
+              :full-url="cameraSettings.PLATE_CAM_FULL_URL || ''"
+              :is-interval="true"
+              :interval-time="3000"
+              label="Exit Plate Camera"
+              camera-location="plate_exit"
+              @captured="onPlateCaptured"
+              @error="onCameraError"
+            />
+          </q-card-section>
+        </q-card>
+      </div>
+      <div class="col-5">
+        <q-card class="shadow-4">
+          <q-card-section class="q-pa-sm">
+            <Camera
+              ref="driverExitCameraRef"
+              :camera-type="'cctv'"
+              :username="cameraSettings.DRIVER_CAM_USERNAME || 'admin'"
+              :password="cameraSettings.DRIVER_CAM_PASSWORD || 'admin123'"
+              :ip-address="cameraSettings.DRIVER_CAM_IP || '192.168.1.101'"
+              :rtsp-stream-path="cameraSettings.DRIVER_CAM_SNAPSHOT_PATH || 'Streaming/Channels/1/picture'"
+              :full-url="cameraSettings.DRIVER_CAM_FULL_URL || ''"
+              :is-interval="true"
+              :interval-time="3000"
+              label="Exit Driver Camera"
+              camera-location="driver_exit"
+              @captured="onDriverCaptured"
+              @error="onCameraError"
+            />
+          </q-card-section>
+        </q-card>
+      </div>
     </div>
 
     <!-- Status Display -->
@@ -147,6 +193,38 @@
     <q-card v-if="showManualControls" class="q-mt-lg shadow-4" style="min-width: 400px">
       <q-card-section>
         <div class="text-h6 q-mb-md">Manual Controls</div>
+        
+        <!-- Test Transaction Check -->
+        <div class="q-mb-lg">
+          <div class="text-subtitle2 q-mb-sm">Test Transaction Check</div>
+          <div class="row q-gutter-sm items-center">
+            <div class="col">
+              <q-input
+                v-model="testBarcodeInput"
+                outlined
+                dense
+                placeholder="Enter barcode or license plate"
+                label="Test Barcode/License Plate"
+                :disable="processing"
+              >
+                <template v-slot:append>
+                  <q-icon name="qr_code" />
+                </template>
+              </q-input>
+            </div>
+            <q-btn 
+              color="teal" 
+              icon="search"
+              label="Check"
+              @click="testCheckTransaction"
+              :disable="!testBarcodeInput || processing"
+              :loading="processing"
+            />
+          </div>
+        </div>
+        
+        <!-- Gate Controls -->
+        <div class="text-subtitle2 q-mb-sm">Gate Controls</div>
         <div class="row q-gutter-md">
           <q-btn 
             color="primary" 
@@ -197,6 +275,7 @@ import { barcodeScanner, type BarcodeResult } from '../services/barcode-scanner'
 import { gateService, GateStatus } from '../services/gate-service'
 import { audioService } from '../services/audio-service'
 import { cameraService, type CameraCapture } from '../services/camera-service'
+import Camera from '../components/Camera.vue'
 
 const $q = useQuasar()
 
@@ -220,8 +299,57 @@ const todayStats = ref({
   totalRevenue: 0
 })
 
+// Camera settings and references
+const cameraSettings = ref({
+  PLATE_CAM_USERNAME: 'admin',
+  PLATE_CAM_PASSWORD: 'admin123',
+  PLATE_CAM_IP: '192.168.1.100',
+  PLATE_CAM_SNAPSHOT_PATH: 'Streaming/Channels/1/picture', // Changed to snapshot path
+  PLATE_CAM_FULL_URL: '', // Full URL for plate camera
+  DRIVER_CAM_USERNAME: 'admin',
+  DRIVER_CAM_PASSWORD: 'admin123',
+  DRIVER_CAM_IP: '192.168.1.101',
+  DRIVER_CAM_SNAPSHOT_PATH: 'Streaming/Channels/1/picture', // Changed to snapshot path
+  DRIVER_CAM_FULL_URL: '' // Full URL for driver camera
+})
+
+const plateExitCameraRef = ref(null)
+const driverExitCameraRef = ref(null)
+const capturedExitImages = ref({
+  plateImage: null,
+  driverImage: null
+})
+
 // Show manual controls in development
 const showManualControls = ref(true)
+
+// Test input for checking transactions
+const testBarcodeInput = ref('')
+
+// Load camera settings from database
+async function loadCameraSettings() {
+  try {
+    const settings = await databaseService.getSettings()
+    if (settings) {
+      cameraSettings.value = {
+        PLATE_CAM_USERNAME: settings.plate_camera_username || 'admin',
+        PLATE_CAM_PASSWORD: settings.plate_camera_password || 'admin123',
+        PLATE_CAM_IP: settings.plate_camera_ip || '192.168.1.100',
+        PLATE_CAM_SNAPSHOT_PATH: settings.plate_camera_snapshot_path || 'Streaming/Channels/1/picture',
+        PLATE_CAM_FULL_URL: settings.plate_camera_full_url || '',
+        DRIVER_CAM_USERNAME: settings.driver_camera_username || 'admin',
+        DRIVER_CAM_PASSWORD: settings.driver_camera_password || 'admin123',
+        DRIVER_CAM_IP: settings.driver_camera_ip || '192.168.1.101',
+        DRIVER_CAM_SNAPSHOT_PATH: settings.driver_camera_snapshot_path || 'Streaming/Channels/1/picture',
+        DRIVER_CAM_FULL_URL: settings.driver_camera_full_url || ''
+      }
+      console.log('📸 Camera settings loaded:', cameraSettings.value)
+    }
+  } catch (error) {
+    console.error('Error loading camera settings:', error)
+    // Use defaults if loading fails
+  }
+}
 
 // Auto-clear transaction timer
 let clearTransactionTimer: number | null = null
@@ -231,6 +359,9 @@ onMounted(async () => {
   try {
     // Initialize database
     await databaseService.initialize()
+    
+    // Load camera settings from database
+    await loadCameraSettings()
     
     // Initialize camera
     await cameraService.initializeWebcam()
@@ -337,7 +468,7 @@ function handleSyncStatusChange(status: SyncStatus) {
   syncStatus.value = status
 }
 
-// Process vehicle exit
+// Process vehicle exit - updated to use new enhanced method
 async function processExit() {
   if (!currentTransaction.value) {
     showError('No transaction selected')
@@ -347,47 +478,63 @@ async function processExit() {
   processing.value = true
   
   try {
-    // Calculate exit fee (you may want to implement time-based pricing)
-    const exitFee = calculateExitFee(currentTransaction.value)
+    // Use the new enhanced exit processing method
+    const result = await databaseService.processVehicleExit(
+      currentTransaction.value.no_pol,
+      'SYSTEM', // Operator ID
+      'EXIT_GATE_01' // Gate ID
+    )
     
-    // Capture images from cameras
-    let cameraCapture: CameraCapture | null = null
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to process exit')
+    }
+    
+    // Update current transaction with the processed result
+    currentTransaction.value = result.transaction || currentTransaction.value
+    
+    // Capture images from CCTV cameras
     try {
-      cameraCapture = await cameraService.captureAll(currentTransaction.value._id)
-      console.log('Camera capture completed:', cameraCapture)
+      await captureExitImages()
+      
+      // Convert captured images to base64 and save to transaction
+      let exitImageBase64 = null
+      
+      if (capturedExitImages.value.plateImage) {
+        // If plate image is a blob, convert to base64
+        if (capturedExitImages.value.plateImage && typeof capturedExitImages.value.plateImage === 'object' && 'size' in capturedExitImages.value.plateImage) {
+          const reader = new FileReader()
+          exitImageBase64 = await new Promise<string>((resolve) => {
+            reader.onload = () => resolve(reader.result as string)
+            reader.readAsDataURL(capturedExitImages.value.plateImage as unknown as Blob)
+          })
+        } else if (typeof capturedExitImages.value.plateImage === 'string') {
+          exitImageBase64 = capturedExitImages.value.plateImage
+        }
+      }
+      
+      // Update transaction with exit image
+      if (exitImageBase64) {
+        await databaseService.exitTransaction(currentTransaction.value._id, {
+          waktu_keluar: currentTransaction.value.waktu_keluar || new Date().toISOString(),
+          bayar_keluar: result.fee,
+          exit_pic: exitImageBase64 // Save exit image as base64 string
+        })
+        console.log('✅ Exit image saved to transaction')
+      } else {
+        // Update transaction without image
+        await databaseService.exitTransaction(currentTransaction.value._id, {
+          waktu_keluar: currentTransaction.value.waktu_keluar || new Date().toISOString(),
+          bayar_keluar: result.fee
+        })
+        console.log('⚠️ Transaction updated without exit image')
+      }
     } catch (cameraError) {
       console.warn('Camera capture failed:', cameraError)
-      // Continue with exit process even if camera fails
-    }
-    
-    // Update transaction in database
-    const success = await databaseService.exitTransaction(currentTransaction.value._id, {
-      waktu_keluar: new Date().toISOString(),
-      bayar_keluar: exitFee
-    })
-    
-    if (!success) {
-      throw new Error('Failed to update transaction')
-    }
-    
-    // Upload images to server if available
-    if (cameraCapture && (cameraCapture.webcam || cameraCapture.cctv)) {
-      try {
-        const settings = await databaseService.getSettings()
-        if (settings?.server_url) {
-          const uploadSuccess = await cameraService.uploadImages(cameraCapture, settings.server_url)
-          if (uploadSuccess) {
-            console.log('Images uploaded successfully')
-          } else {
-            console.warn('Image upload failed')
-          }
-        } else {
-          console.warn('No server URL configured for image upload')
-        }
-      } catch (uploadError) {
-        console.warn('Image upload error:', uploadError)
-        // Continue with exit process even if upload fails
-      }
+      // Continue with exit process even if camera fails - update transaction without image
+      await databaseService.exitTransaction(currentTransaction.value._id, {
+        waktu_keluar: currentTransaction.value.waktu_keluar || new Date().toISOString(),
+        bayar_keluar: result.fee
+      })
     }
     
     // Open the gate
@@ -396,7 +543,7 @@ async function processExit() {
     if (gateOpened) {
       $q.notify({
         type: 'positive',
-        message: `Exit processed successfully for ${currentTransaction.value.no_pol}`,
+        message: `Exit processed successfully for ${currentTransaction.value.no_pol}. Fee: ${formatCurrency(result.fee || 0)}`,
         icon: 'check_circle'
       })
       
@@ -407,8 +554,10 @@ async function processExit() {
         console.warn('Failed to play success sound:', error)
       }
       
-      // Clear current transaction
-      currentTransaction.value = null
+      // Clear current transaction after displaying success
+      setTimeout(() => {
+        currentTransaction.value = null
+      }, 3000)
       
       // Auto-clear transaction display after 5 seconds
       if (clearTransactionTimer) {
@@ -485,6 +634,94 @@ async function testGateSound() {
   }
 }
 
+// Test transaction check function
+async function testCheckTransaction() {
+  if (!testBarcodeInput.value.trim()) {
+    showError('Please enter a barcode or license plate')
+    return
+  }
+  
+  processing.value = true
+  
+  try {
+    // Clear any previous transaction
+    currentTransaction.value = null
+    errorMessage.value = ''
+    
+    const inputValue = testBarcodeInput.value.trim()
+    console.log('Testing transaction check for:', inputValue)
+    
+    // Try to find transaction by barcode first
+    let transaction = await databaseService.findTransactionByBarcode(inputValue)
+    
+    // If not found by barcode, try by license plate
+    if (!transaction) {
+      transaction = await databaseService.findTransactionByPlate(inputValue)
+    }
+    
+    if (transaction) {
+      currentTransaction.value = transaction
+      console.log('✅ Transaction found:', transaction)
+      
+      // Show transaction details
+      $q.notify({
+        type: 'positive',
+        message: `Transaction found for ${transaction.no_pol}`,
+        icon: 'check_circle',
+        timeout: 3000
+      })
+      
+      // Play scan sound
+      try {
+        await audioService.playScanSound()
+      } catch (error) {
+        console.warn('Failed to play scan sound:', error)
+      }
+      
+      // Ask if user wants to process exit
+      $q.dialog({
+        title: 'Transaction Found',
+        message: `Do you want to process exit for vehicle ${transaction.no_pol}?`,
+        cancel: true,
+        persistent: true
+      }).onOk(async () => {
+        await processExit()
+      })
+      
+    } else {
+      showError(`No active transaction found for: ${inputValue}`)
+      console.log('❌ No transaction found for:', inputValue)
+      
+      // Play error sound
+      try {
+        await audioService.playErrorSound()
+      } catch (error) {
+        console.warn('Failed to play error sound:', error)
+      }
+      
+      // Show additional info
+      $q.notify({
+        type: 'info',
+        message: 'Checked both barcode and license plate - no active transaction found',
+        timeout: 5000
+      })
+    }
+    
+  } catch (error) {
+    console.error('Error checking transaction:', error)
+    showError('Error checking transaction: ' + (error instanceof Error ? error.message : String(error)))
+    
+    // Play error sound
+    try {
+      await audioService.playErrorSound()
+    } catch (error) {
+      console.warn('Failed to play error sound:', error)
+    }
+  } finally {
+    processing.value = false
+  }
+}
+
 // Utility functions
 function getStatusColor(status: GateStatus): string {
   switch (status) {
@@ -539,6 +776,78 @@ function showError(message: string) {
     audioService.playErrorSound()
   } catch (error) {
     console.warn('Failed to play error sound:', error)
+  }
+}
+
+// Camera event handlers
+function onPlateCaptured(capturedData: any) {
+  // console.log('📸 Plate camera captured:', capturedData)
+  capturedExitImages.value.plateImage = capturedData.image
+ 
+}
+
+function onDriverCaptured(capturedData: any) {
+  // console.log('📸 Driver camera captured:', capturedData)
+  capturedExitImages.value.driverImage = capturedData.image
+  
+ 
+}
+
+function onCameraError(error: any) {
+
+}
+
+// Capture images when barcode is scanned
+async function captureExitImages() {
+  try {
+    console.log('📸 Capturing exit images from CCTV cameras...')
+    
+    // Capture from both cameras in parallel
+    const capturePromises = []
+    
+    if (plateExitCameraRef.value && 'getImage' in plateExitCameraRef.value) {
+      capturePromises.push(
+        (plateExitCameraRef.value as any).getImage().then((image: any) => {
+          if (image) {
+            console.log('✅ Plate exit image captured')
+            capturedExitImages.value.plateImage = image
+          }
+        }).catch((error: any) => {
+          console.warn('⚠️ Plate camera capture failed:', error)
+        })
+      )
+    }
+    
+    if (driverExitCameraRef.value && 'getImage' in driverExitCameraRef.value) {
+      capturePromises.push(
+        (driverExitCameraRef.value as any).getImage().then((image: any) => {
+          if (image) {
+            console.log('✅ Driver exit image captured')
+            capturedExitImages.value.driverImage = image
+          }
+        }).catch((error: any) => {
+          console.warn('⚠️ Driver camera capture failed:', error)
+        })
+      )
+    }
+    
+    // Wait for all captures with timeout
+    await Promise.race([
+      Promise.allSettled(capturePromises),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Camera capture timeout')), 8000) // Increased timeout for CCTV
+      )
+    ])
+    
+    console.log('📸 Exit image capture completed')
+    
+  } catch (error) {
+    console.error('❌ Error capturing exit images:', error)
+    $q.notify({
+      type: 'info',
+      message: 'Camera capture timeout - continuing without images',
+      timeout: 2000
+    })
   }
 }
 </script>

@@ -9,6 +9,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AudioSettings: typeof import('./components/AudioSettings.vue')['default']
+    Camera: typeof import('./components/Camera.vue')['default']
     EssentialLink: typeof import('./components/EssentialLink.vue')['default']
     ExampleComponent: typeof import('./components/ExampleComponent.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

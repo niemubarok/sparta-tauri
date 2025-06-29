@@ -5,6 +5,11 @@ use std::sync::Mutex;
 use std::time::Duration;
 use tauri::State;
 
+mod gpio_handler;
+mod command;
+
+use command::camera_handler;
+
 // Gate control state
 type SerialPorts = Mutex<HashMap<String, Box<dyn SerialPort + Send>>>;
 
@@ -133,7 +138,12 @@ pub fn run() {
             open_serial_port,
             open_gate,
             close_gate,
-            close_serial_port
+            close_serial_port,
+            gpio_handler::gpio_open_gate,
+            gpio_handler::gpio_close_gate,
+            gpio_handler::gpio_test_pin,
+            gpio_handler::check_gpio_availability,
+            camera_handler::capture_cctv_image
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

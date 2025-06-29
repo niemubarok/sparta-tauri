@@ -105,6 +105,19 @@
             />
           </div>
           <div class="col-md-2 col-xs-12">
+            <q-select
+              v-model="filters.isMember"
+              :options="memberOptions"
+              label="Tipe Transaksi"
+              outlined
+              dense
+              clearable
+              emit-value
+              map-options
+              @update:model-value="onFilterChange"
+            />
+          </div>
+          <div class="col-md-2 col-xs-12">
             <q-btn
               color="negative"
               icon="clear"
@@ -186,6 +199,16 @@
       :rows-per-page-options="[10, 25, 50, 100]"
       class="my-sticky-header-table"
     >
+      <template v-slot:body-cell-member_status="props">
+        <q-td :props="props">
+          <q-badge
+            :color="props.value ? 'purple' : 'blue-grey'"
+            :label="props.value ? 'Member' : 'Umum'"
+            :icon="props.value ? 'card_membership' : 'person'"
+          />
+        </q-td>
+      </template>
+
       <template v-slot:body-cell-images="props">
         <q-td :props="props">
           <div class="q-gutter-xs">
@@ -226,19 +249,19 @@
 
       <template v-slot:body-cell-waktu_masuk="props">
         <q-td :props="props">
-          {{ formatDateTime(props.value) }}
+          {{ formatDateTime(getEntryTime(props.row)) }}
         </q-td>
       </template>
 
       <template v-slot:body-cell-waktu_keluar="props">
         <q-td :props="props">
-          {{ props.value ? formatDateTime(props.value) : '-' }}
+          {{ getExitTime(props.row) ? formatDateTime(getExitTime(props.row)) : '-' }}
         </q-td>
       </template>
 
       <template v-slot:body-cell-durasi="props">
         <q-td :props="props">
-          {{ calculateDuration(props.row.waktu_masuk, props.row.waktu_keluar) }}
+          {{ calculateDuration(getEntryTime(props.row), getExitTime(props.row)) }}
         </q-td>
       </template>
 
@@ -743,7 +766,8 @@ const filters = ref({
   status: null,
   tanggalMulai: '',
   tanggalAkhir: '',
-  jenisKendaraan: null
+  jenisKendaraan: null,
+  isMember: null
 })
 
 // Pagination
@@ -776,6 +800,11 @@ const jenisKendaraanOptions = [
   { label: 'Truck/Box', value: 'Truck/Box' }
 ]
 
+const memberOptions = [
+  { label: 'Transaksi Member', value: true },
+  { label: 'Transaksi Umum', value: false }
+]
+
 // Table columns
 const columns = [
   {
@@ -792,7 +821,7 @@ const columns = [
     required: true,
     label: 'Plat Nomor',
     align: 'left',
-    field: 'plat_nomor',
+    field: row => getPlateNumber(row),
     sortable: true,
     style: 'width: 120px'
   },
@@ -800,8 +829,15 @@ const columns = [
     name: 'jenis_kendaraan',
     label: 'Jenis Kendaraan',
     align: 'left',
-    field: 'jenis_kendaraan',
+    field: row => getVehicleType(row),
     sortable: true
+  },
+  {
+    name: 'member_status',
+    label: 'Tipe',
+    align: 'center',
+    field: 'is_member',
+    style: 'width: 80px'
   },
   {
     name: 'images',
@@ -814,7 +850,7 @@ const columns = [
     name: 'waktu_masuk',
     label: 'Waktu Masuk',
     align: 'left',
-    field: 'waktu_masuk',
+    field: row => getEntryTime(row),
     sortable: true,
     style: 'width: 160px'
   },
@@ -822,7 +858,7 @@ const columns = [
     name: 'waktu_keluar',
     label: 'Waktu Keluar',
     align: 'left',
-    field: 'waktu_keluar',
+    field: row => getExitTime(row),
     sortable: true,
     style: 'width: 160px'
   },
@@ -830,7 +866,7 @@ const columns = [
     name: 'durasi',
     label: 'Durasi',
     align: 'left',
-    field: row => calculateDuration(row.waktu_masuk, row.waktu_keluar),
+    field: row => calculateDuration(getEntryTime(row), getExitTime(row)),
     style: 'width: 100px'
   },
   {
@@ -882,7 +918,8 @@ const loadTransaksi = async (props = {}) => {
       status: filters.value.status,
       tanggalMulai: filters.value.tanggalMulai || '',
       tanggalAkhir: filters.value.tanggalAkhir || '',
-      jenisKendaraan: filters.value.jenisKendaraan || ''
+      jenisKendaraan: filters.value.jenisKendaraan || '',
+      isMember: filters.value.isMember
     }
 
     console.log('🔍 Loading transaksi with filterParams:', filterParams)
@@ -922,7 +959,8 @@ const loadStatistics = async () => {
       status: filters.value.status,
       tanggalMulai: filters.value.tanggalMulai || '',
       tanggalAkhir: filters.value.tanggalAkhir || '',
-      jenisKendaraan: filters.value.jenisKendaraan || ''
+      jenisKendaraan: filters.value.jenisKendaraan || '',
+      isMember: filters.value.isMember
     }
     
     console.log('📊 Loading statistics with filters:', statsParams)
@@ -981,7 +1019,8 @@ const clearFilters = () => {
     status: null,
     tanggalMulai: '',
     tanggalAkhir: '',
-    jenisKendaraan: null
+    jenisKendaraan: null,
+    isMember: null
   }
   onFilterChange()
 }
@@ -1405,6 +1444,55 @@ const processExitAll = async () => {
   }
 }
 
+// Helper functions to handle different transaction types
+const getVehicleType = (transaction) => {
+  if (!transaction) return ''
+  
+  // For member transactions
+  if (transaction.type === 'member_entry') {
+    return transaction.vehicle?.type?.label || transaction.jenis_kendaraan?.label || ''
+  }
+  
+  // For parking transactions
+  return transaction.jenis_kendaraan || ''
+}
+
+const getPlateNumber = (transaction) => {
+  if (!transaction) return ''
+  
+  // For member transactions
+  if (transaction.type === 'member_entry') {
+    return transaction.plat_nomor || transaction.vehicle?.license_plate || ''
+  }
+  
+  // For parking transactions
+  return transaction.plat_nomor || transaction.no_pol || ''
+}
+
+const getEntryTime = (transaction) => {
+  if (!transaction) return ''
+  
+  // For member transactions
+  if (transaction.type === 'member_entry') {
+    return transaction.entry_time || ''
+  }
+  
+  // For parking transactions
+  return transaction.waktu_masuk || ''
+}
+
+const getExitTime = (transaction) => {
+  if (!transaction) return ''
+  
+  // For member transactions
+  if (transaction.type === 'member_entry') {
+    return transaction.exit_time || ''
+  }
+  
+  // For parking transactions
+  return transaction.waktu_keluar || ''
+}
+
 // Utility functions
 const formatDateTime = (dateTime) => {
   return formatDate(dateTime)
@@ -1543,7 +1631,8 @@ const hasActiveFilters = computed(() => {
     filters.value.status !== null ||
     filters.value.tanggalMulai ||
     filters.value.tanggalAkhir ||
-    filters.value.jenisKendaraan
+    filters.value.jenisKendaraan ||
+    filters.value.isMember !== null
   )
 })
 
@@ -1554,6 +1643,7 @@ const activeFilterCount = computed(() => {
   if (filters.value.tanggalMulai) count++
   if (filters.value.tanggalAkhir) count++
   if (filters.value.jenisKendaraan) count++
+  if (filters.value.isMember !== null) count++
   return count
 })
 

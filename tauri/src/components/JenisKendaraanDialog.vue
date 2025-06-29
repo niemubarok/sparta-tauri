@@ -120,6 +120,8 @@ const { dialogRef, onDialogOK } = useDialogPluginComponent();
 const onDialogHide = () => {
   componentStore.hideInputPlatNomor = false;
   window.removeEventListener("keydown", handleKeydownOnJenisKendaraan);
+  ticketDialogOpened.value = false; // Reset ticket dialog flag
+  console.log('🚪 JenisKendaraanDialog hidden, cleanup completed');
 };
 
 const jenisKendaraanOptions = ref([]);
@@ -158,32 +160,41 @@ const onClickTicket = (type) => {
       status: 0 // entry
     };
     
-    // Open ticket print dialog directly
-    $q.dialog({
-      component: TicketPrintDialog,
-      componentProps: {
-        transaction: prepaidTransaction
-      }
-    }).onOk((result) => {
-      // result should contain the emitted data from 'printed' event
-      console.log('Ticket printed successfully:', result);
-      // Close this dialog and signal parent
-      dialogRef.value.hide();
-      onDialogOK({ 
-        success: true, 
-        isPrepaid: true, 
-        transaction: result || prepaidTransaction,
-        ticketPrinted: true 
+    // Close this dialog first to ensure proper cleanup
+    dialogRef.value.hide();
+    
+    // Small delay to ensure the dialog is fully hidden before opening new one
+    setTimeout(() => {
+      // Open ticket print dialog directly
+      const ticketDialog = $q.dialog({
+        component: TicketPrintDialog,
+        componentProps: {
+          transaction: prepaidTransaction
+        }
       });
-    }).onCancel(() => {
-      // Emitted from 'cancelled' event
-      console.log('Ticket printing cancelled');
-      $q.notify({
-        type: 'info',
-        message: 'Cetak tiket dibatalkan',
-        position: 'top'
-      });
-    });
+      
+      // Add delay before handling dialog events to ensure proper rendering
+      setTimeout(() => {
+        ticketDialog.onOk((result) => {
+          // result should contain the emitted data from 'printed' event
+          console.log('Ticket printed successfully:', result);
+          onDialogOK({ 
+            success: true, 
+            isPrepaid: true, 
+            transaction: result || prepaidTransaction,
+            ticketPrinted: true 
+          });
+        }).onCancel(() => {
+          // Emitted from 'cancelled' event
+          console.log('Ticket printing cancelled');
+          $q.notify({
+            type: 'info',
+            message: 'Cetak tiket dibatalkan',
+            position: 'top'
+          });
+        });
+      }, 100);
+    }, 200);
   } else {
     // Postpaid mode - traditional flow
     transaksiStore.isCheckedIn = true;

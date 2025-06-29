@@ -107,7 +107,7 @@ export default configure((/* ctx */) => {
                 (<ViteConf>viteConf).sourcemap = !!process.env.TAURI_DEBUG
 
                 viteConf.server = {
-                    port: 1420,
+                    port: 1421,
                     strictPort: true,
                     host: mobile ? '0.0.0.0' : false,
                     open: false,
@@ -184,7 +184,7 @@ export default configure((/* ctx */) => {
 
             // https: true
             open: false, // opens browser window automatically
-            port: mobile ? 1421 : 1420,
+            port: mobile ? 1421 : 1430,
         },
 
         // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
