@@ -484,7 +484,7 @@ watch(gateSettings, (newSettings) => {
     captureInterval.value = newSettings.CAPTURE_INTERVAL || 5000;
     wsUrl.value = newSettings.WS_URL || '';
     useExternalAlpr.value = newSettings.USE_EXTERNAL_ALPR || false;
-    darkMode.value = newSettings.darkMode || false;
+    // darkMode.value = newSettings.darkMode || false;
     
     // Camera settings
     selectedPlateCam.value = newSettings.PLATE_CAM_DEVICE_ID || null;
@@ -508,7 +508,7 @@ watch(gateSettings, (newSettings) => {
     // Former global settings
     wsUrl.value = newSettings.WS_URL || 'ws://localhost:8765';
     useExternalAlpr.value = newSettings.USE_EXTERNAL_ALPR || false;
-    darkMode.value = newSettings.darkMode || false;
+    // darkMode.value = newSettings.darkMode || false;
     selectedLocation.value = newSettings.LOCATION || null;
   }
 }, { immediate: true, deep: true });
@@ -548,7 +548,7 @@ const onSaveSettings = async () => {
       // Former global settings now in gate settings
       WS_URL: wsUrl.value || 'ws://localhost:8765',
       USE_EXTERNAL_ALPR: useExternalAlpr.value || false,
-      darkMode: darkMode.value || false,
+      // darkMode: darkMode.value || false,
       LOCATION: selectedLocation.value,
     };
     

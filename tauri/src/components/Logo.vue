@@ -1,6 +1,6 @@
 <template>
   <div>
-    <img alt="logo" src="~assets/logo.png" style="width: 40vw; height: 50%" />
+    <img alt="logo" src="~assets/logo_uhamka.webp" style="width: 40vw; height: 50%" />
   </div>
 </template>
 

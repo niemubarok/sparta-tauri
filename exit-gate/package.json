@@ -11,7 +11,12 @@
     "dev": "quasar dev",
     "build": "quasar build",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "build:rpi": "bash build-rpi.sh",
+    "build:rpi:windows": "powershell -ExecutionPolicy Bypass -File build-rpi.ps1",
+    "deploy:rpi": "bash deploy-to-pi.sh",
+    "setup:gpio": "bash setup-gpio.sh",
+    "test:gpio": "bash test-gpio.sh"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.17",
@@ -55,6 +60,10 @@
       "allowedVersions": {
         "eslint": "9"
       }
-    }
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "leveldown"
+    ]
   }
 }

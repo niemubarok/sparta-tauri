@@ -1,0 +1,34 @@
+# Requirements for Python Exit Gate System (2.7 compatible syntax)
+
+# Core dependencies
+flask==1.0.4  # Last version supporting Python 2.7
+werkzeug==0.16.1  # Compatible with Flask 1.0.4
+jinja2==2.10.3  # Last Python 2.7 compatible
+markupsafe==1.1.1  # For Jinja2
+click==7.1.2  # Command line interface
+itsdangerous==1.1.0  # For Flask sessions
+
+# Database
+couchdb==1.2  # Python 2.7 compatible CouchDB client
+requests==2.27.1  # Last version supporting Python 2.7
+urllib3==1.26.12  # For requests
+
+# GPIO and Serial
+pyserial==3.5  # Last version with Python 2.7 support
+# RPi.GPIO will be installed separately on Raspberry Pi
+
+# Camera and imaging
+pillow==6.2.2  # Last version supporting Python 2.7
+# opencv-python==4.3.0.38  # Available version (commented out to avoid install issues)
+
+# Audio
+pygame==1.9.6  # For audio playback
+
+# Utilities
+configparser==4.0.2  # Backport for Python 2.7
+futures==3.3.0  # Threading utilities for Python 2.7
+enum34==1.1.10  # Enum backport for Python 2.7
+typing==3.10.0.0  # Type hints backport
+
+# Development
+gunicorn==19.10.0  # Last version supporting Python 2.7

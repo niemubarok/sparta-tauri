@@ -10,6 +10,7 @@ if (window && window.electron) {
 
 export const useComponentStore = defineStore("component", {
   state: () => ({
+    startingApp:ref(true),
     isSidebar: ref(false),
     isHeader: ref(false),
     availableCameras: ref([]),

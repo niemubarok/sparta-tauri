@@ -1,32 +1,36 @@
 import PouchDB from 'pouchdb'
 
-// Transaction interface based on entry gate schema
+// Transaction interface based on entry gate schema - supports both parking_transaction and member_entry
 export interface ParkingTransaction {
   _id: string
   _rev?: string
-  type: 'parking_transaction'
-  id: string
-  no_pol: string
-  id_kendaraan: number
+  type: 'parking_transaction' | 'member_entry'
+  
+  // Common fields
   status: number // 0 = entered, 1 = exited
-  id_pintu_masuk: string
-  waktu_masuk: string
+  
+  // Regular parking transaction fields
+  id?: string
+  no_pol?: string
+  id_kendaraan?: number
+  id_pintu_masuk?: string
+  waktu_masuk?: string
   waktu_keluar?: string
-  id_op_masuk: string
-  id_shift_masuk: string
-  kategori: string
-  status_transaksi: string
-  jenis_system: string
-  tanggal: string
-  pic_driver_masuk: string
-  pic_no_pol_masuk: string
+  id_op_masuk?: string
+  id_shift_masuk?: string
+  kategori?: string
+  status_transaksi?: string
+  jenis_system?: string
+  tanggal?: string
+  pic_driver_masuk?: string
+  pic_no_pol_masuk?: string
   pic_driver_keluar?: string
   pic_no_pol_keluar?: string
-  sinkron: number
-  upload: number
-  manual: number
-  veri_check: number
-  bayar_masuk: number
+  sinkron?: number
+  upload?: number
+  manual?: number
+  veri_check?: number
+  bayar_masuk?: number
   bayar_keluar?: number
   id_pintu_keluar?: string
   id_op_keluar?: string
@@ -34,6 +38,33 @@ export interface ParkingTransaction {
   no_barcode?: string  // Add barcode field for exit gate compatibility
   entry_pic?: string   // Add simplified image fields like entry gate
   exit_pic?: string
+  
+  // Member entry specific fields
+  member_id?: string
+  name?: string
+  card_number?: string
+  plat_nomor?: string // Alternative to no_pol for member entries
+  entry_time?: string // Alternative to waktu_masuk for member entries
+  vehicle?: {
+    type: { label: string; value: string }
+    license_plate: string
+    brand?: string
+    model?: string
+    color?: string
+    year?: string
+  }
+  jenis_kendaraan?: {
+    id: number
+    label: string
+  }
+  membership_type_id?: string
+  created_by?: string
+  lokasi?: string
+  is_member?: boolean
+  tarif?: number
+  payment_status?: string
+  has_image?: boolean
+  
   created_at?: string
   updated_at?: string
 }
@@ -67,6 +98,15 @@ export interface GateSettings {
   gpio_pin?: number
   gpio_active_high?: boolean
   control_mode?: 'serial' | 'gpio' // 'serial' for normal mode, 'gpio' for Raspberry Pi
+  power_gpio_pin?: number // Pin for power control
+  power_gpio_enabled?: boolean // Enable power GPIO
+  busy_gpio_pin?: number // Pin for busy indicator
+  busy_gpio_enabled?: boolean // Enable busy GPIO
+  live_gpio_pin?: number // Pin for live indicator
+  live_gpio_enabled?: boolean // Enable live GPIO  
+  gate_trigger_gpio_pin?: number // Pin for gate trigger
+  gate_trigger_gpio_enabled?: boolean // Enable gate trigger GPIO
+  gpio_pulse_duration?: number // Duration in milliseconds to keep GPIO active
   // Remote sync settings
   sync_config?: SyncConfig
   created_at: string
@@ -156,7 +196,9 @@ class DatabaseService {
         const doc = await this.db.get(`transaction_${barcode}`) as ParkingTransaction
         console.log("🚀 ~ DatabaseService ~ findTransactionByBarcode ~ doc:", doc)
         if (
-          doc && doc.status === 0
+          doc && 
+          doc.status === 0 && 
+          (doc.type === 'parking_transaction' || doc.type === 'member_entry')
         ) {
           return doc
         }
@@ -165,27 +207,30 @@ class DatabaseService {
         // Not found by direct ID, continue
       }
 
-      // Try to get by barcode field (no_barcode) using a query if available
-      // Only if pouchdb-find (map/reduce) is enabled, otherwise skip
-      // if ((this.db as any).find) {
-      //   try {
-      //     const result = await (this.db as any).find({
-      //       selector: {
-      //         _id: `transaction_${barcode}`,
-      //         status: 0,
-      //         type: { $in: ['parking_transaction', 'member_entry'] }
-      //       },
-      //       limit: 1
-      //     })
-      //     if (result.docs && result.docs.length > 0) {
-      //       return result.docs[0] as ParkingTransaction
-      //     }
-      //   } catch (error) {
-      //     // Ignore find errors
-      //   }
-      // }
+      // Try to find by scanning all transactions if direct lookup fails
+      // This handles cases where barcode might be in no_barcode field
+      try {
+        const result = await this.db.allDocs({
+          include_docs: true,
+          startkey: 'transaction_',
+          endkey: 'transaction_\ufff0'
+        })
 
-      // If pouchdb-find is not available, skip scanning all transactions for performance
+        const transaction = result.rows
+          .map(row => row.doc as ParkingTransaction)
+          .find(doc => 
+            doc && 
+            doc.status === 0 && 
+            (doc.type === 'parking_transaction' || doc.type === 'member_entry') &&
+            (doc._id === `transaction_${barcode}` || doc.no_barcode === barcode)
+          )
+
+        return transaction || null
+      } catch (error) {
+        console.log("🚀 ~ DatabaseService ~ findTransactionByBarcode ~ scan error:", error)
+        // Continue to return null
+      }
+
       return null
     } catch (error) {
       console.error('Error finding transaction by barcode:', error)
@@ -205,9 +250,14 @@ class DatabaseService {
       const transaction = result.rows
         .map(row => row.doc as ParkingTransaction)
         .find(doc => 
-          doc?.type === 'parking_transaction' && 
-          doc?.no_pol?.toUpperCase() === plateNumber.toUpperCase() &&
-          doc?.status === 0 // Only find transactions that haven't exited yet
+          doc && 
+          (doc.type === 'parking_transaction' || doc.type === 'member_entry') && 
+          (
+            doc.no_pol?.toUpperCase() === plateNumber.toUpperCase() ||
+            doc.plat_nomor?.toUpperCase() === plateNumber.toUpperCase() ||
+            doc.vehicle?.license_plate?.toUpperCase() === plateNumber.toUpperCase()
+          ) &&
+          doc.status === 0 // Only find transactions that haven't exited yet
         )
 
       return transaction || null
@@ -366,24 +416,48 @@ class DatabaseService {
   // Calculate parking fee based on duration and vehicle type - align with entry gate logic
   async calculateParkingFee(transaction: ParkingTransaction, exitTime: string = new Date().toISOString()): Promise<number> {
     try {
-      const entryTime = new Date(transaction.waktu_masuk)
+      // Get entry time from either waktu_masuk (parking_transaction) or entry_time (member_entry)
+      const entryTimeString = transaction.waktu_masuk || transaction.entry_time
+      if (!entryTimeString) {
+        console.error('No entry time found in transaction')
+        return 0
+      }
+      
+      const entryTime = new Date(entryTimeString)
       const exit = new Date(exitTime)
       
       // Calculate duration in hours (minimum 1 hour)
       const durationMs = exit.getTime() - entryTime.getTime()
       const durationHours = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60)))
       
-      // Get vehicle types for tariff calculation
+      // For member entries, check if tarif is already set (could be 0 for free parking)
+      if (transaction.type === 'member_entry' && transaction.tarif !== undefined) {
+        const totalFee = durationHours * transaction.tarif
+        
+        console.log(`Member parking fee calculation:`, {
+          plateNumber: transaction.plat_nomor || transaction.no_pol,
+          memberName: transaction.name,
+          entryTime: entryTime.toISOString(),
+          exitTime,
+          durationHours,
+          memberRate: transaction.tarif,
+          totalFee
+        })
+        
+        return totalFee
+      }
+      
+      // For regular parking transactions, use vehicle type tariff
       const vehicleTypes = await this.getVehicleTypes()
-      const vehicleType = vehicleTypes.find((vt: VehicleType) => vt.id_kendaraan === transaction.id_kendaraan)
+      const vehicleTypeId = transaction.id_kendaraan || transaction.jenis_kendaraan?.id
+      const vehicleType = vehicleTypes.find((vt: VehicleType) => vt.id_kendaraan === vehicleTypeId)
       const hourlyRate = vehicleType?.tarif || 5000 // Default 5000 IDR per hour
       
       // Basic calculation: hours * hourly rate
-      // This can be enhanced with more complex tariff rules
       const totalFee = durationHours * hourlyRate
       
       console.log(`Parking fee calculation:`, {
-        plateNumber: transaction.no_pol,
+        plateNumber: transaction.no_pol || transaction.plat_nomor,
         entryTime: entryTime.toISOString(),
         exitTime,
         durationHours,
@@ -415,7 +489,7 @@ class DatabaseService {
       const todayExits = result.rows
         .map(row => row.doc as ParkingTransaction)
         .filter(doc => {
-          if (!doc || doc.type !== 'parking_transaction' || doc.status !== 1 || !doc.waktu_keluar) {
+          if (!doc || (doc.type !== 'parking_transaction' && doc.type !== 'member_entry') || doc.status !== 1 || !doc.waktu_keluar) {
             return false
           }
           
@@ -510,7 +584,7 @@ class DatabaseService {
         live: config.continuous,
         retry: true,
         back_off_function: (delay) => Math.min(delay * 2, 10000),
-        filter: (doc) => doc.type === 'parking_transaction'
+        filter: (doc) => doc.type === 'parking_transaction' || doc.type === 'member_entry'
       }
 
       const transactionSync = this.db.sync(this.remoteTransactionsDb, transactionSyncOptions)
@@ -651,7 +725,7 @@ class DatabaseService {
       
       const result = await this.db.sync(this.remoteTransactionsDb, {
         filter: (doc) => {
-          return doc.type === 'parking_transaction'
+          return doc.type === 'parking_transaction' || doc.type === 'member_entry'
         }
       })
       
@@ -796,8 +870,9 @@ class DatabaseService {
       return result.rows
         .map(row => row.doc as ParkingTransaction)
         .filter(doc => 
-          doc?.type === 'parking_transaction' && 
-          doc?.status === 0 // Only active (not exited) transactions
+          doc && 
+          (doc.type === 'parking_transaction' || doc.type === 'member_entry') && 
+          doc.status === 0 // Only active (not exited) transactions
         )
     } catch (error) {
       console.error('Error getting active transactions:', error)
@@ -847,7 +922,7 @@ class DatabaseService {
           success: true,
           transaction: updatedTransaction,
           fee: calculatedFee,
-          message: `Exit processed successfully for ${transaction.no_pol}`
+          message: `Exit processed successfully for ${transaction.no_pol || transaction.plat_nomor || transaction.vehicle?.license_plate}`
         }
       } else {
         return {

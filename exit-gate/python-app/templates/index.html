@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exit Gate System v{{ version }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .status-value {
+            font-weight: bold;
+        }
+
+        .status-good { color: #28a745; }
+        .status-warning { color: #ffc107; }
+        .status-error { color: #dc3545; }
+
+        .scanner-display {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+            min-height: 150px;
+        }
+
+        .scanner-display h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+        }
+
+        .transaction-display {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-warning:hover { background: #e0a800; }
+
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+
+        .test-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.8;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .status-grid,
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚪 Exit Gate System</h1>
+            <p>Version {{ version }} - Raspberry Pi Compatible</p>
+        </div>
+
+        <!-- Current Status -->
+        <div class="status-grid">
+            <div class="card">
+                <h3>🚧 Gate Status</h3>
+                <div class="status-item">
+                    <span>Current Status:</span>
+                    <span class="status-value" id="gate-status">{{ state.gate_status }}</span>
+                </div>
+                <div class="status-item">
+                    <span>Processing:</span>
+                    <span class="status-value" id="processing">{{ 'Yes' if state.processing else 'No' }}</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📊 Today's Statistics</h3>
+                <div class="stats-display">
+                    <div class="stat-card">
+                        <span class="stat-value" id="total-exits">{{ state.stats.total_exits }}</span>
+                        <span>Total Exits</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="total-revenue">{{ '{:,}'.format(state.stats.total_revenue) }}</span>
+                        <span>Revenue (IDR)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🔧 System Status</h3>
+                <div class="status-item">
+                    <span>Database:</span>
+                    <span class="status-value status-good" id="db-status">Connected</span>
+                </div>
+                <div class="status-item">
+                    <span>Scanner:</span>
+                    <span class="status-value status-good" id="scanner-status">Ready</span>
+                </div>
+                <div class="status-item">
+                    <span>Camera:</span>
+                    <span class="status-value status-warning" id="camera-status">Checking...</span>
+                </div>
+                <div class="status-item">
+                    <span>Audio:</span>
+                    <span class="status-value status-good" id="audio-status">Enabled</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scanner Display -->
+        <div class="card">
+            <div class="scanner-display">
+                <h3>📱 Barcode Scanner</h3>
+                <div id="scanner-output">
+                    Ready to scan barcode...
+                    <br>Place barcode in front of scanner or use test input below.
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Transaction -->
+        <div class="card" id="transaction-card" style="display: none;">
+            <h3>🎫 Current Transaction</h3>
+            <div class="transaction-display" id="transaction-display">
+                <!-- Transaction details will be shown here -->
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="card">
+            <h3>🎮 Controls</h3>
+            <div class="controls">
+                <button class="btn btn-success" onclick="openGate()">🔓 Open Gate</button>
+                <button class="btn btn-danger" onclick="closeGate()">🔒 Close Gate</button>
+                <button class="btn btn-warning" onclick="testGate()">🧪 Test Gate</button>
+                <button class="btn" onclick="refreshStatus()">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <!-- Test Scanner -->
+        <div class="card">
+            <h3>🧪 Test Scanner</h3>
+            <input type="text" class="test-input" id="test-barcode" placeholder="Enter barcode to test" maxlength="20">
+            <button class="btn" onclick="simulateScan()">📱 Simulate Scan</button>
+        </div>
+
+        <!-- Camera Test -->
+        <div class="card">
+            <h3>📷 Camera Test</h3>
+            <div class="controls">
+                <button class="btn" onclick="testCamera('plate')">📷 Test Plate Camera</button>
+                <button class="btn" onclick="testCamera('driver')">📷 Test Driver Camera</button>
+                <button class="btn" onclick="captureExit()">📸 Capture Exit Images</button>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="card">
+            <h3>⚙️ Quick Access</h3>
+            <div class="controls">
+                <button class="btn" onclick="window.location.href='/settings'">⚙️ Settings</button>
+                <button class="btn" onclick="window.location.href='/logs'">📝 View Logs</button>
+                <button class="btn" onclick="downloadConfig()">💾 Export Config</button>
+                <button class="btn btn-warning" onclick="playTestSound()">🔊 Test Audio</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Exit Gate System - Designed for Raspberry Pi 3</p>
+            <p>Compatible with Python 2.7 and 3.x</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh status every 5 seconds
+        setInterval(refreshStatus, 5000);
+
+        // Auto-refresh stats every 30 seconds
+        setInterval(refreshStats, 30000);
+
+        // Handle Enter key in test input
+        document.getElementById('test-barcode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                simulateScan();
+            }
+        });
+
+        async function refreshStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateUI(data.data);
+                }
+            } catch (error) {
+                console.error('Error refreshing status:', error);
+            }
+        }
+
+        async function refreshStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('total-exits').textContent = data.data.total_exits;
+                    document.getElementById('total-revenue').textContent = data.data.total_revenue.toLocaleString();
+                }
+            } catch (error) {
+                console.error('Error refreshing stats:', error);
+            }
+        }
+
+        function updateUI(data) {
+            // Update gate status
+            const gateStatus = document.getElementById('gate-status');
+            gateStatus.textContent = data.app_state.gate_status;
+            gateStatus.className = 'status-value ' + 
+                (data.app_state.gate_status === 'OPEN' ? 'status-good' : 
+                 data.app_state.gate_status === 'ERROR' ? 'status-error' : 'status-warning');
+
+            // Update processing status
+            document.getElementById('processing').textContent = data.app_state.processing ? 'Yes' : 'No';
+
+            // Update system status
+            updateSystemStatus(data);
+
+            // Update scanner output if there's a recent scan
+            if (data.app_state.last_scan) {
+                updateScannerOutput(data.app_state.last_scan);
+            }
+
+            // Update current transaction
+            if (data.app_state.current_transaction) {
+                showTransaction(data.app_state.current_transaction);
+            }
+        }
+
+        function updateSystemStatus(data) {
+            // Database status
+            const dbStatus = document.getElementById('db-status');
+            dbStatus.textContent = data.database.connected ? 'Connected' : 'Disconnected';
+            dbStatus.className = 'status-value ' + (data.database.connected ? 'status-good' : 'status-error');
+
+            // Scanner status
+            const scannerStatus = document.getElementById('scanner-status');
+            scannerStatus.textContent = data.scanner.enabled ? 'Ready' : 'Disabled';
+            scannerStatus.className = 'status-value ' + (data.scanner.enabled ? 'status-good' : 'status-warning');
+
+            // Audio status
+            const audioStatus = document.getElementById('audio-status');
+            audioStatus.textContent = data.audio.enabled ? 'Enabled' : 'Disabled';
+            audioStatus.className = 'status-value ' + (data.audio.enabled ? 'status-good' : 'status-warning');
+        }
+
+        function updateScannerOutput(scanData) {
+            const output = document.getElementById('scanner-output');
+            const timestamp = new Date(scanData.timestamp * 1000).toLocaleTimeString();
+            
+            output.innerHTML = `
+                <strong>Last Scan:</strong> ${scanData.code}<br>
+                <strong>Time:</strong> ${timestamp}<br>
+                <strong>Valid:</strong> ${scanData.is_valid ? 'Yes' : 'No'}<br>
+                <span style="color: ${scanData.is_valid ? '#00ff00' : '#ff6666'};">
+                    ${scanData.is_valid ? '✓ Processing...' : '✗ Invalid barcode format'}
+                </span>
+            `;
+        }
+
+        function showTransaction(transaction) {
+            const card = document.getElementById('transaction-card');
+            const display = document.getElementById('transaction-display');
+            
+            if (transaction.success) {
+                const txn = transaction.transaction;
+                display.innerHTML = `
+                    <h4>Transaction: ${txn.id || txn._id}</h4>
+                    <p><strong>Vehicle:</strong> ${txn.no_pol || txn.plat_nomor}</p>
+                    <p><strong>Entry Time:</strong> ${new Date(txn.waktu_masuk || txn.entry_time).toLocaleString()}</p>
+                    <p><strong>Duration:</strong> ${transaction.duration_hours} hours</p>
+                    <p><strong>Fee:</strong> IDR ${transaction.fee.toLocaleString()}</p>
+                    <p style="color: green;"><strong>Status:</strong> ✓ Exit Processed</p>
+                `;
+                card.style.display = 'block';
+                
+                // Hide after 10 seconds
+                setTimeout(() => {
+                    card.style.display = 'none';
+                }, 10000);
+            }
+        }
+
+        async function openGate() {
+            try {
+                const response = await fetch('/api/gate/open', { method: 'POST' });
+                const data = await response.json();
+                alert(data.message);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function closeGate() {
+            try {
+                const response = await fetch('/api/gate/close', { method: 'POST' });
+                const data = await response.json();
+                alert(data.message);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function testGate() {
+            try {
+                const response = await fetch('/api/gate/test', { method: 'POST' });
+                const data = await response.json();
+                alert(data.message);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function simulateScan() {
+            const barcode = document.getElementById('test-barcode').value.trim();
+            if (!barcode) {
+                alert('Please enter a barcode');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ barcode: barcode })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('test-barcode').value = '';
+                    setTimeout(refreshStatus, 1000); // Refresh after 1 second
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function testCamera(cameraName) {
+            try {
+                const response = await fetch(`/api/camera/test/${cameraName}`);
+                const data = await response.json();
+                alert(`Camera ${cameraName}: ${data.message}`);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function captureExit() {
+            try {
+                const response = await fetch('/api/camera/capture/plate');
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Exit images captured successfully');
+                } else {
+                    alert('Error capturing images: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function playTestSound() {
+            try {
+                const response = await fetch('/api/audio/play/success');
+                const data = await response.json();
+                alert(data.message);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function downloadConfig() {
+            window.open('/api/config', '_blank');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStatus();
+            refreshStats();
+        });
+    </script>
+</body>
+</html>

@@ -13,6 +13,7 @@ export interface GpioConfig {
 
 export interface GateResponse {
   success: boolean
+  
   message: string
 }
 
@@ -143,6 +144,78 @@ class GateService {
       return result.success
     } catch (error) {
       console.error('GPIO test failed:', error)
+      return false
+    }
+  }
+
+  // Test sensor GPIO pin
+  async testSensorGpio(config: { pin: number, active_high: boolean, debounce_delay: number }): Promise<boolean> {
+    try {
+      const result = await invoke('gpio_test_sensor', { config }) as GateResponse
+      console.log('Sensor GPIO test result:', result)
+      return result.success
+    } catch (error) {
+      console.error('Sensor GPIO test failed:', error)
+      return false
+    }
+  }
+
+  // Test LED GPIO pin
+  async testLedGpio(config: { pin: number, active_high: boolean, pulse_duration: number }): Promise<boolean> {
+    try {
+      const result = await invoke('gpio_test_led', { config }) as GateResponse
+      console.log('LED GPIO test result:', result)
+      return result.success
+    } catch (error) {
+      console.error('LED GPIO test failed:', error)
+      return false
+    }
+  }
+
+  // Test power GPIO pin
+  async testPowerGpio(config: { pin: number, active_high: boolean, pulse_duration: number }): Promise<boolean> {
+    try {
+      const result = await invoke('gpio_test_power', { config }) as GateResponse
+      console.log('Power GPIO test result:', result)
+      return result.success
+    } catch (error) {
+      console.error('Power GPIO test failed:', error)
+      return false
+    }
+  }
+
+  // Test busy GPIO pin
+  async testBusyGpio(config: { pin: number, active_high: boolean, pulse_duration: number }): Promise<boolean> {
+    try {
+      const result = await invoke('gpio_test_busy', { config }) as GateResponse
+      console.log('Busy GPIO test result:', result)
+      return result.success
+    } catch (error) {
+      console.error('Busy GPIO test failed:', error)
+      return false
+    }
+  }
+
+  // Test live GPIO pin
+  async testLiveGpio(config: { pin: number, active_high: boolean, pulse_duration: number }): Promise<boolean> {
+    try {
+      const result = await invoke('gpio_test_live', { config }) as GateResponse
+      console.log('Live GPIO test result:', result)
+      return result.success
+    } catch (error) {
+      console.error('Live GPIO test failed:', error)
+      return false
+    }
+  }
+
+  // Test gate trigger GPIO pin
+  async testGateTriggerGpio(config: { pin: number, active_high: boolean, pulse_duration: number }): Promise<boolean> {
+    try {
+      const result = await invoke('gpio_test_gate_trigger', { config }) as GateResponse
+      console.log('Gate trigger GPIO test result:', result)
+      return result.success
+    } catch (error) {
+      console.error('Gate trigger GPIO test failed:', error)
       return false
     }
   }

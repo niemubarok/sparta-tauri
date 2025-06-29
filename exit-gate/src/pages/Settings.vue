@@ -65,7 +65,8 @@
         </q-card>
 
         <!-- GPIO Settings (Raspberry Pi) -->
-        <q-card class="q-mb-lg" v-if="gpioAvailable">
+         <!-- v-if="gpioAvailable" -->
+        <q-card class="q-mb-lg" >
           <q-card-section>
             <div class="text-h6 q-mb-md">
               <q-icon name="memory" class="q-mr-sm" />
@@ -86,48 +87,285 @@
             </div>
 
             <div v-if="settings.control_mode === 'gpio'" class="q-mt-md">
-              <div class="row q-gutter-md">
-                <div class="col">
-                  <q-input
-                    v-model.number="settings.gpio_pin"
-                    type="number"
-                    label="GPIO Pin Number"
-                    outlined
-                    min="1"
-                    max="40"
-                    hint="Physical pin number on Raspberry Pi"
-                    @focus="disableScanner"
-                    @blur="enableScanner"
-                  />
-                </div>
-                <div class="col">
-                  <q-toggle
-                    v-model="settings.gpio_active_high"
-                    label="Active High"
-                    left-label
-                  />
-                  <div class="text-caption text-grey-6 q-mt-xs">
-                    Check if relay activates on HIGH signal
-                  </div>
-                </div>
+              <div class="text-subtitle2 q-mb-md">
+                <q-icon name="memory" class="q-mr-sm" />
+                GPIO Pin Configuration
               </div>
+              
+              <!-- Power GPIO -->
+              <q-card flat bordered class="q-mb-md">
+                <q-card-section>
+                  <div class="text-subtitle2 text-primary q-mb-sm">
+                    <q-icon name="power" class="q-mr-sm" />
+                    Power GPIO
+                  </div>
+                  <div class="row q-gutter-md">
+                    <div class="col">
+                      <q-input
+                        v-model.number="settings.power_gpio_pin"
+                        type="number"
+                        label="Power GPIO Pin"
+                        outlined
+                        min="1"
+                        max="40"
+                        hint="Pin untuk kontrol power sistem"
+                        @focus="disableScanner"
+                        @blur="enableScanner"
+                      />
+                    </div>
+                    <div class="col">
+                      <q-toggle
+                        v-model="settings.power_gpio_enabled"
+                        label="Enable Power GPIO"
+                        left-label
+                      />
+                    </div>
+                  </div>
+                  <div class="q-mt-sm">
+                    <q-btn
+                      :loading="testing"
+                      @click="testPowerGpio"
+                      color="red"
+                      outline
+                      icon="power"
+                      label="Test Power GPIO"
+                      size="sm"
+                      :disable="!settings.power_gpio_enabled || !settings.power_gpio_pin"
+                    />
+                  </div>
+                </q-card-section>
+              </q-card>
 
-              <div class="row q-gutter-sm q-mt-md">
-                <q-btn
-                  :loading="testing"
-                  @click="testGpio"
-                  color="orange"
-                  outline
-                  icon="play_arrow"
-                  label="Test GPIO"
-                />
-                <q-btn
-                  @click="checkGpioStatus"
-                  color="info"
-                  outline
-                  icon="info"
-                  label="Check GPIO Status"
-                />
+              <!-- Busy GPIO -->
+              <q-card flat bordered class="q-mb-md">
+                <q-card-section>
+                  <div class="text-subtitle2 text-orange q-mb-sm">
+                    <q-icon name="hourglass_empty" class="q-mr-sm" />
+                    Busy GPIO
+                  </div>
+                  <div class="row q-gutter-md">
+                    <div class="col">
+                      <q-input
+                        v-model.number="settings.busy_gpio_pin"
+                        type="number"
+                        label="Busy GPIO Pin"
+                        outlined
+                        min="1"
+                        max="40"
+                        hint="Pin untuk indikator busy/sibuk"
+                        @focus="disableScanner"
+                        @blur="enableScanner"
+                      />
+                    </div>
+                    <div class="col">
+                      <q-toggle
+                        v-model="settings.busy_gpio_enabled"
+                        label="Enable Busy GPIO"
+                        left-label
+                      />
+                    </div>
+                  </div>
+                  <div class="q-mt-sm">
+                    <q-btn
+                      :loading="testing"
+                      @click="testBusyGpio"
+                      color="orange"
+                      outline
+                      icon="hourglass_empty"
+                      label="Test Busy GPIO"
+                      size="sm"
+                      :disable="!settings.busy_gpio_enabled || !settings.busy_gpio_pin"
+                    />
+                  </div>
+                </q-card-section>
+              </q-card>
+
+              <!-- Live GPIO -->
+              <q-card flat bordered class="q-mb-md">
+                <q-card-section>
+                  <div class="text-subtitle2 text-green q-mb-sm">
+                    <q-icon name="radio_button_checked" class="q-mr-sm" />
+                    Live GPIO
+                  </div>
+                  <div class="row q-gutter-md">
+                    <div class="col">
+                      <q-input
+                        v-model.number="settings.live_gpio_pin"
+                        type="number"
+                        label="Live GPIO Pin"
+                        outlined
+                        min="1"
+                        max="40"
+                        hint="Pin untuk indikator sistem live/aktif"
+                        @focus="disableScanner"
+                        @blur="enableScanner"
+                      />
+                    </div>
+                    <div class="col">
+                      <q-toggle
+                        v-model="settings.live_gpio_enabled"
+                        label="Enable Live GPIO"
+                        left-label
+                      />
+                    </div>
+                  </div>
+                  <div class="q-mt-sm">
+                    <q-btn
+                      :loading="testing"
+                      @click="testLiveGpio"
+                      color="green"
+                      outline
+                      icon="radio_button_checked"
+                      label="Test Live GPIO"
+                      size="sm"
+                      :disable="!settings.live_gpio_enabled || !settings.live_gpio_pin"
+                    />
+                  </div>
+                </q-card-section>
+              </q-card>
+
+              <!-- Gate Trigger GPIO -->
+              <q-card flat bordered class="q-mb-md">
+                <q-card-section>
+                  <div class="text-subtitle2 text-primary q-mb-sm">
+                    <q-icon name="input" class="q-mr-sm" />
+                    Gate Trigger GPIO
+                  </div>
+                  <div class="row q-gutter-md">
+                    <div class="col">
+                      <q-input
+                        v-model.number="settings.gate_trigger_gpio_pin"
+                        type="number"
+                        label="Gate Trigger GPIO Pin"
+                        outlined
+                        min="1"
+                        max="40"
+                        hint="Pin untuk trigger buka/tutup gate"
+                        @focus="disableScanner"
+                        @blur="enableScanner"
+                      />
+                    </div>
+                    <div class="col">
+                      <q-toggle
+                        v-model="settings.gate_trigger_gpio_enabled"
+                        label="Enable Gate Trigger"
+                        left-label
+                      />
+                    </div>
+                  </div>
+                  <div class="row q-gutter-md q-mt-sm">
+                    <div class="col">
+                      <q-toggle
+                        v-model="settings.gpio_active_high"
+                        label="Active High"
+                        left-label
+                      />
+                      <div class="text-caption text-grey-6 q-mt-xs">
+                        Check if relay activates on HIGH signal
+                      </div>
+                    </div>
+                    <div class="col">
+                      <q-input
+                        v-model.number="settings.gpio_pulse_duration"
+                        type="number"
+                        label="Pulse Duration (ms)"
+                        outlined
+                        min="100"
+                        max="5000"
+                        hint="Durasi aktif GPIO trigger"
+                        @focus="disableScanner"
+                        @blur="enableScanner"
+                      />
+                    </div>
+                  </div>
+                  <div class="q-mt-sm">
+                    <q-btn
+                      :loading="testing"
+                      @click="testGateTriggerGpio"
+                      color="primary"
+                      outline
+                      icon="input"
+                      label="Test Gate Trigger"
+                      size="sm"
+                      :disable="!settings.gate_trigger_gpio_enabled || !settings.gate_trigger_gpio_pin"
+                    />
+                  </div>
+                </q-card-section>
+              </q-card>
+
+              <!-- GPIO Control Actions -->
+              <q-card flat bordered class="q-mb-md">
+                <q-card-section>
+                  <div class="text-subtitle2 q-mb-md">
+                    <q-icon name="settings" class="q-mr-sm" />
+                    GPIO Control Actions
+                  </div>
+                  
+                  <div class="row q-gutter-sm">
+                    <q-btn
+                      @click="checkGpioStatus"
+                      color="info"
+                      outline
+                      icon="info"
+                      label="Check GPIO Status"
+                    />
+                    <q-btn
+                      :loading="testing"
+                      @click="testAllGpio"
+                      color="purple"
+                      outline
+                      icon="play_circle"
+                      label="Test All GPIO"
+                    />
+                    <q-btn
+                      @click="resetGpioConfig"
+                      color="grey"
+                      outline
+                      icon="refresh"
+                      label="Reset GPIO Config"
+                    />
+                  </div>
+                </q-card-section>
+              </q-card>
+
+              <!-- GPIO Pin Reference -->
+              <div class="q-mt-lg">
+                <q-expansion-item
+                  icon="pin_drop"
+                  label="Raspberry Pi GPIO Pin Reference"
+                  header-class="text-primary"
+                >
+                  <div class="q-pa-md">
+                    <div class="text-subtitle2 q-mb-md">Recommended GPIO Pins for Exit Gate:</div>
+                    <div class="row q-gutter-md">
+                      <div class="col">
+                        <q-list dense>
+                          <q-item>
+                            <q-item-section>
+                              <q-item-label caption>Recommended Configuration:</q-item-label>
+                              <q-item-label>GPIO 18 (Pin 12) - Gate Trigger</q-item-label>
+                              <q-item-label>GPIO 24 (Pin 18) - Power GPIO</q-item-label>
+                              <q-item-label>GPIO 23 (Pin 16) - Busy GPIO</q-item-label>
+                              <q-item-label>GPIO 25 (Pin 22) - Live GPIO</q-item-label>
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+                      </div>
+                      <div class="col">
+                        <q-list dense>
+                          <q-item>
+                            <q-item-section>
+                              <q-item-label caption>Avoid these pins:</q-item-label>
+                              <q-item-label>GPIO 2,3 (I2C)</q-item-label>
+                              <q-item-label>GPIO 10,11 (SPI)</q-item-label>
+                              <q-item-label>GPIO 14,15 (UART)</q-item-label>
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+                      </div>
+                    </div>
+                  </div>
+                </q-expansion-item>
               </div>
             </div>
           </q-card-section>
@@ -598,6 +836,15 @@ const settings = ref<GateSettings>({
   gpio_pin: 18,
   gpio_active_high: true,
   control_mode: 'serial',
+  power_gpio_pin: 24,
+  power_gpio_enabled: false,
+  busy_gpio_pin: 23,
+  busy_gpio_enabled: false,
+  live_gpio_pin: 25,
+  live_gpio_enabled: false,
+  gate_trigger_gpio_pin: 18,
+  gate_trigger_gpio_enabled: false,
+  gpio_pulse_duration: 500,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString()
 })
@@ -749,6 +996,15 @@ async function resetSettings() {
       gpio_pin: 18,
       gpio_active_high: true,
       control_mode: 'serial',
+      power_gpio_pin: 24,
+      power_gpio_enabled: false,
+      busy_gpio_pin: 23,
+      busy_gpio_enabled: false,
+      live_gpio_pin: 25,
+      live_gpio_enabled: false,
+      gate_trigger_gpio_pin: 18,
+      gate_trigger_gpio_enabled: false,
+      gpio_pulse_duration: 500,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
@@ -1095,6 +1351,249 @@ async function testGpio() {
   } finally {
     testing.value = false
   }
+}
+
+// Test sensor GPIO
+async function testPowerGpio() {
+  testing.value = true
+  try {
+    if (!settings.value.power_gpio_pin) {
+      throw new Error('Power GPIO pin must be configured')
+    }
+    
+    const result = await gateService.testPowerGpio({
+      pin: settings.value.power_gpio_pin,
+      active_high: settings.value.gpio_active_high ?? true,
+      pulse_duration: settings.value.gpio_pulse_duration || 500
+    })
+    
+    if (result) {
+      $q.notify({
+        type: 'positive',
+        message: `Power GPIO test successful on pin ${settings.value.power_gpio_pin}`,
+        icon: 'check'
+      })
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Power GPIO test failed. Please check the configuration.',
+        icon: 'error'
+      })
+    }
+  } catch (error) {
+    console.error('Power GPIO test error:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Power GPIO test failed: ' + error,
+      icon: 'error'
+    })
+  } finally {
+    testing.value = false
+  }
+}
+
+// Test busy GPIO
+async function testBusyGpio() {
+  testing.value = true
+  try {
+    if (!settings.value.busy_gpio_pin) {
+      throw new Error('Busy GPIO pin must be configured')
+    }
+    
+    const result = await gateService.testBusyGpio({
+      pin: settings.value.busy_gpio_pin,
+      active_high: settings.value.gpio_active_high ?? true,
+      pulse_duration: settings.value.gpio_pulse_duration || 500
+    })
+    
+    if (result) {
+      $q.notify({
+        type: 'positive',
+        message: `Busy GPIO test successful on pin ${settings.value.busy_gpio_pin}`,
+        icon: 'check'
+      })
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Busy GPIO test failed. Please check the configuration.',
+        icon: 'error'
+      })
+    }
+  } catch (error) {
+    console.error('Busy GPIO test error:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Busy GPIO test failed: ' + error,
+      icon: 'error'
+    })
+  } finally {
+    testing.value = false
+  }
+}
+
+// Test live GPIO
+async function testLiveGpio() {
+  testing.value = true
+  try {
+    if (!settings.value.live_gpio_pin) {
+      throw new Error('Live GPIO pin must be configured')
+    }
+    
+    const result = await gateService.testLiveGpio({
+      pin: settings.value.live_gpio_pin,
+      active_high: settings.value.gpio_active_high ?? true,
+      pulse_duration: settings.value.gpio_pulse_duration || 500
+    })
+    
+    if (result) {
+      $q.notify({
+        type: 'positive',
+        message: `Live GPIO test successful on pin ${settings.value.live_gpio_pin}`,
+        icon: 'check'
+      })
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Live GPIO test failed. Please check the configuration.',
+        icon: 'error'
+      })
+    }
+  } catch (error) {
+    console.error('Live GPIO test error:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Live GPIO test failed: ' + error,
+      icon: 'error'
+    })
+  } finally {
+    testing.value = false
+  }
+}
+
+// Test gate trigger GPIO
+async function testGateTriggerGpio() {
+  testing.value = true
+  try {
+    if (!settings.value.gate_trigger_gpio_pin) {
+      throw new Error('Gate trigger GPIO pin must be configured')
+    }
+    
+    const result = await gateService.testGateTriggerGpio({
+      pin: settings.value.gate_trigger_gpio_pin,
+      active_high: settings.value.gpio_active_high ?? true,
+      pulse_duration: settings.value.gpio_pulse_duration || 500
+    })
+    
+    if (result) {
+      $q.notify({
+        type: 'positive',
+        message: `Gate trigger GPIO test successful on pin ${settings.value.gate_trigger_gpio_pin}`,
+        icon: 'check'
+      })
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Gate trigger GPIO test failed. Please check the configuration.',
+        icon: 'error'
+      })
+    }
+  } catch (error) {
+    console.error('Gate trigger GPIO test error:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gate trigger GPIO test failed: ' + error,
+      icon: 'error'
+    })
+  } finally {
+    testing.value = false
+  }
+}
+
+// Test all GPIO pins
+async function testAllGpio() {
+  testing.value = true
+  
+  try {
+    const tests = []
+    
+    if (settings.value.power_gpio_enabled && settings.value.power_gpio_pin) {
+      tests.push({ name: 'Power', test: () => testPowerGpio() })
+    }
+    
+    if (settings.value.busy_gpio_enabled && settings.value.busy_gpio_pin) {
+      tests.push({ name: 'Busy', test: () => testBusyGpio() })
+    }
+    
+    if (settings.value.live_gpio_enabled && settings.value.live_gpio_pin) {
+      tests.push({ name: 'Live', test: () => testLiveGpio() })
+    }
+    
+    if (settings.value.gate_trigger_gpio_enabled && settings.value.gate_trigger_gpio_pin) {
+      tests.push({ name: 'Gate Trigger', test: () => testGateTriggerGpio() })
+    }
+    
+    if (tests.length === 0) {
+      $q.notify({
+        type: 'warning',
+        message: 'No GPIO pins enabled for testing',
+        icon: 'warning'
+      })
+      return
+    }
+    
+    for (const { name, test } of tests) {
+      $q.notify({
+        type: 'info',
+        message: `Testing ${name} GPIO...`,
+        icon: 'play_arrow'
+      })
+      await test()
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second between tests
+    }
+    
+    $q.notify({
+      type: 'positive',
+      message: `All GPIO tests completed (${tests.length} pins tested)`,
+      icon: 'check_circle'
+    })
+    
+  } catch (error) {
+    console.error('All GPIO test error:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'GPIO test sequence failed: ' + error,
+      icon: 'error'
+    })
+  } finally {
+    testing.value = false
+  }
+}
+
+// Reset GPIO configuration to defaults
+function resetGpioConfig() {
+  $q.dialog({
+    title: 'Reset GPIO Configuration',
+    message: 'Are you sure you want to reset all GPIO settings to default values?',
+    cancel: true,
+    persistent: true
+  }).onOk(() => {
+    settings.value.power_gpio_pin = 24
+    settings.value.power_gpio_enabled = false
+    settings.value.busy_gpio_pin = 23
+    settings.value.busy_gpio_enabled = false
+    settings.value.live_gpio_pin = 25
+    settings.value.live_gpio_enabled = false
+    settings.value.gate_trigger_gpio_pin = 18
+    settings.value.gate_trigger_gpio_enabled = false
+    settings.value.gpio_active_high = true
+    settings.value.gpio_pulse_duration = 500
+    
+    $q.notify({
+      type: 'positive',
+      message: 'GPIO configuration reset to defaults',
+      icon: 'refresh'
+    })
+  })
 }
 
 // Check GPIO status

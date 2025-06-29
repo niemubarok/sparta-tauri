@@ -47,14 +47,14 @@
           
         </q-btn> 
         /> -->
-      <q-btn
+      <!-- <q-btn
         push
         style="width: 300px; height: 100px"
         color="primary"
         icon="directions_car"
         label="Post Masuk"
         @click="onClickEntryGate()"
-      >
+      > -->
         <!-- <q-btn
           push
           class="q-ma-md"
@@ -62,7 +62,7 @@
           text-color="primary"
           
         /> -->
-      </q-btn>
+      <!-- </q-btn> -->
       <q-btn
         push
         style="width: 300px; height: 100px"
@@ -74,7 +74,7 @@
         <!-- <q-btn
           push
           class="q-ma-md"
-          color="white"
+          color="white"manual
           text-color="primary"
           
         /> -->
@@ -157,9 +157,11 @@ import { useSettingsService } from "src/stores/settings-service"; // Diubah
 import ls from "localstorage-slim";
 import { useRouter } from "vue-router";
 import { useGateStore } from "src/stores/gate-store";
+import {useComponentStore} from "src/stores/component-store"
 
 const $q = useQuasar();
 const router = useRouter();
+const componentStore = useComponentStore()
 const gateStore = useGateStore();
 const isManlessMode = ls.get("manlessMode") || true;
 
@@ -214,6 +216,7 @@ const onClickManualEntryGate = () => {
   console.log("🚀 ~ onClickManualEntryGate ~ gateSettings.value?.gateType:", gateSettings.gateType)
   if (gateSettings.gateType.toLowerCase() === 'entry') { // Diubah
     router.push({ path: "/manual-gate" });
+    componentStore.startingApp = false
   } else {
     $q.notify({
       type: "warning",
@@ -270,6 +273,7 @@ const handleKeyDown = (event) => {
   }
 };
 
+
 onMounted(async () => {
   // Clear any gate-related states when entering home page
   ls.remove('gateMode');
@@ -285,11 +289,9 @@ onMounted(async () => {
   // Navigasi otomatis berdasarkan gateType dari settingsStore akan dihapus dari sini
   // karena pengguna harus secara eksplisit memilih gerbang dari halaman Index.
   // Jika ingin navigasi otomatis, logika berikut bisa diaktifkan kembali:
-  // if (gateSettings.value?.gateType === "entry") { // Diubah
-  //    router.push({ path: "/entry-gate" });
-  // } else if(gateSettings.value?.gateType === "exit") { // Diubah
-  //    router.push({ path: "/exit-gate" });
-  // }
+  if (componentStore.startingApp) { // Diubah
+     router.push({ path: "/manual-gate" });
+  } 
 
   loadGateSettings()
 

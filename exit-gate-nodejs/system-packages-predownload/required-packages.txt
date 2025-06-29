@@ -1,0 +1,12 @@
+build-essential
+python3-dev
+libasound2-dev
+git
+curl
+wget
+unzip
+gcc
+g++
+make
+libc6-dev
+pkg-config

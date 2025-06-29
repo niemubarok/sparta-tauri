@@ -61,21 +61,22 @@ export const userStore = defineStore("user", {
       }
     },
     async logout() {
-      const nomer = ls.get("pegawai")?.id_pegawai;
-      const id_shift = ls.get("shift");
-      const pos = ls.get("lokasiPos")?.value;
-      const time_login = ls.get("timeLogin");
-      const tanggal = ls.get("tanggal");
+      ls.clear();
+      // const nomer = ls.get("pegawai")?.id_pegawai;
+      // const id_shift = ls.get("shift");
+      // const pos = ls.get("lokasiPos")?.value;
+      // const time_login = ls.get("timeLogin");
+      // const tanggal = ls.get("tanggal");
 
-      try {
-        const res = await axios.post(this.API_URL + "petugas/logout", {
-          nomer,
-          id_shift,
-          pos,
-          time_login,
-          tanggal,
-        });
-      } catch (error) {}
+      // try {
+      //   const res = await axios.post(this.API_URL + "petugas/logout", {
+      //     nomer,
+      //     id_shift,
+      //     pos,
+      //     time_login,
+      //     tanggal,
+      //   });
+      // } catch (error) {}
     },
 
     async deleteMasterPetugasFromDB(id) {

@@ -134,13 +134,13 @@
           </div>
           <div class="col">
             <div class="text-caption text-grey-6">Entry Time</div>
-            <div class="text-subtitle1">{{ formatDateTime(currentTransaction.waktu_masuk) }}</div>
+            <div class="text-subtitle1">{{ formatDateTime(currentTransaction.waktu_masuk || '') }}</div>
           </div>
         </div>
         <div class="row q-gutter-md q-mt-sm">
           <div class="col">
             <div class="text-caption text-grey-6">Vehicle Type</div>
-            <div class="text-subtitle1">{{ getVehicleTypeName(currentTransaction.id_kendaraan) }}</div>
+            <div class="text-subtitle1">{{ getVehicleTypeName(currentTransaction.id_kendaraan ?? 0) }}</div>
           </div>
           <div class="col">
             <div class="text-caption text-grey-6">Exit Fee</div>
@@ -480,7 +480,7 @@ async function processExit() {
   try {
     // Use the new enhanced exit processing method
     const result = await databaseService.processVehicleExit(
-      currentTransaction.value.no_pol,
+      currentTransaction.value.no_pol || '',
       'SYSTEM', // Operator ID
       'EXIT_GATE_01' // Gate ID
     )

@@ -1,8 +1,6 @@
 <template>
 
-  <div v-if="settingsService.isManlessMode">
-      <EntryGatePage class="full-width q-pa-md" />
-  </div>
+ 
   <div v-if="$q.screen.lt.md" class="text-h2">
     <q-card class="fixed-center glass">
       <img src="~assets/logo.png" />
@@ -56,7 +54,6 @@
             :key="componentStore.vehicleOutKey"
             class="bg-grey-8 q-mx-md"
             title="Kendaraan Keluar"
-            shortkey="F4"
             :jumlah="transaksiStore.totalVehicleOut"
           />
           <ShinyCard
@@ -95,7 +92,7 @@
         text-color="grey-3"
         :label="ls.get('shift')"
       />
-      <q-chip
+      <!-- <q-chip
       text-color="grey-3"
         class="bg-transparent"
         icon="place"
@@ -105,7 +102,7 @@
           ') ' +
           transaksiStore.lokasiPos.label
         "
-      />
+      /> -->
       <Clock />
     </div>
 
@@ -188,10 +185,10 @@
           v-show="
             !componentStore.hideInputPlatNomor && !transaksiStore.isCheckedIn
           "
-          input-class="input-box  text-white text-weight-bolder"
+          input-class="input-box  text-black text-weight-bolder"
           class="input-box rounded-corner relative text-uppercase q-pa-md q-mb-xl bg-grey-2"
           input-style="height:90px;border:0"
-          label-color="grey-2 text-body1 q-pb-sm"
+          label-color="black"
           
           item-aligned
           borderless
@@ -239,7 +236,9 @@
           >
         </div>
         <div class="q-gutter-sm">
-          <q-btn color="grey-8" size="sm" label="Dashboard" to="/">
+          <q-btn 
+          v-if="isAdmin"
+          color="grey-8" size="sm" label="Dashboard" to="/">
             <q-badge
               color="primary"
               text-color="white"
@@ -254,11 +253,13 @@
               text-color="white"
               label="F5"
               class="q-mx-xs"
+              @click="onClickLogout"
             />
             <q-tooltip content-class="bg-primary">Log out</q-tooltip>
           </q-btn>
 
           <q-btn
+          v-if="isAdmin"
             color="grey-6"
             size="sm"
             @click="onClickSettings()"
@@ -288,33 +289,33 @@
               class="q-ml-xs"
             />
           </q-btn>
-          <q-btn
+          <!-- <q-btn
             color="red-9 "
             size="sm"
             @click="onClickEmergency()"
             label="Emergency"
-          >
+          > -->
             <!-- icon="settings" -->
-            <q-badge
+            <!-- <q-badge
               color="primary"
               text-color="white"
               label="F12"
               class="q-ml-xs"
             />
-          </q-btn>
+          </q-btn> -->
 
           <!-- Test button untuk melihat gambar CCTV -->
-          <ViewImagesButton
+          <!-- <ViewImagesButton
             v-if="transaksiStore.currentTransaction?.id"
             :transactionId="transaksiStore.currentTransaction.id"
             color="info"
             label="Lihat CCTV"
             icon="camera_alt"
             tooltip="Lihat gambar CCTV dari transaksi saat ini"
-          />
+          /> -->
 
           <!-- Test button untuk capture manual -->
-          <q-btn
+          <!-- <q-btn
             v-if="isAdmin"
             color="orange"
             size="sm"
@@ -323,10 +324,10 @@
             icon="camera"
           >
             <q-tooltip>Test capture gambar dari kedua kamera</q-tooltip>
-          </q-btn>
+          </q-btn> -->
 
           <!-- Test button untuk koneksi kamera -->
-          <q-btn
+          <!-- <q-btn
             v-if="isAdmin"
             color="purple"
             size="sm"
@@ -335,10 +336,10 @@
             icon="wifi"
           >
             <q-tooltip>Test koneksi ke kamera CCTV</q-tooltip>
-          </q-btn>
+          </q-btn> -->
 
           <!-- Test button untuk member card -->
-          <q-btn
+          <!-- <q-btn
             v-if="isAdmin"
             color="green"
             size="sm"
@@ -347,10 +348,10 @@
             icon="credit_card"
           >
             <q-tooltip>Test kartu member</q-tooltip>
-          </q-btn>
+          </q-btn> -->
 
           <!-- Reload camera config button -->
-          <q-btn
+          <!-- <q-btn
             v-if="isAdmin"
             color="blue"
             size="sm"
@@ -359,13 +360,13 @@
             icon="refresh"
           >
             <q-tooltip>Muat ulang konfigurasi kamera dari settings</q-tooltip>
-          </q-btn>
+          </q-btn> -->
 
           <!-- Dark Mode Toggle Button -->
          
           <!-- Status Debug Panel (only for admin) -->
+          <!-- v-if="isAdmin" -->
           <q-btn
-            v-if="isAdmin"
             color="teal"
             size="sm"
             @click="showSystemStatus"
@@ -386,14 +387,14 @@
     <!-- <PaymentCard v-if="transaksiStore.isCheckedIn" @payment-completed="onPaymentCompleted"/> -->
     
     <!-- Camera Debugger (only for admin) -->
-    <CameraDebugger
+    <!-- <CameraDebugger
       :plateCameraType="plateCameraType"
       :driverCameraType="driverCameraType"
       :plateCameraCredentials="plateCameraCredentials"
       :driverCameraCredentials="driverCameraCredentials"
       :plateCameraRef="entryCameraRef"
       :driverCameraRef="exitCameraRef"
-    />
+    /> -->
   </div>
 </template>
 
@@ -409,9 +410,10 @@ import { useGateStore } from "src/stores/gate-store";
 import { userStore } from "src/stores/user-store";
 import { useMembershipStore } from "src/stores/membership-store";
 import LoginDialog from "src/components/LoginDialog.vue";
-import ApiUrlDialog from "src/components/ApiUrlDialog.vue";
 import { getTime, checkSubscriptionExpiration } from "src/utils/time-util";
 import ls from "localstorage-slim";
+
+
 
 //Components
 import Clock from "../components/Clock.vue";
@@ -421,7 +423,6 @@ import ShinyCard from "src/components/ShinyCard.vue";
 import Camera from "src/components/Camera.vue";
 import CompanyName from "src/components/CompanyName.vue";
 import SettingsDialog from "src/components/SettingsDialog.vue";
-import EntryGatePage from "src/pages/Gate.vue";
 import ViewImagesButton from "src/components/ViewImagesButton.vue";
 import CameraDebugger from "src/components/CameraDebugger.vue";
 
@@ -741,10 +742,67 @@ const handleMemberCardTap = async (cardNumber) => {
     // Buka gate otomatis
     gateStore.writeToPort('entry', '*OPEN#');
     
+    // Cetak tiket untuk member
+    try {
+      // Notifikasi bahwa proses cetak dimulai
+      $q.notify({
+        type: 'info',
+        message: `Mencetak tiket untuk ${member.name}...`,
+        position: 'top',
+        timeout: 2000,
+        icon: 'print',
+        spinner: true
+      });
+      
+      await printMemberTicket(member);
+      console.log('✅ Member ticket printed successfully');
+      
+      $q.notify({
+        type: 'positive',
+        message: `Tiket member berhasil dicetak untuk ${member.name}`,
+        position: 'top',
+        timeout: 3000,
+        icon: 'check_circle'
+      });
+    } catch (printError) {
+      console.error('❌ Error printing member ticket:', printError);
+      // Don't stop the process if printing fails
+      $q.notify({
+        type: 'warning',
+        message: `Gate terbuka untuk ${member.name}, tapi gagal cetak tiket: ${printError.message}`,
+        position: 'top',
+        timeout: 5000,
+        actions: [
+          {
+            label: 'Coba Lagi',
+            color: 'white',
+            handler: async () => {
+              try {
+                await printMemberTicket(member);
+                $q.notify({
+                  type: 'positive',
+                  message: 'Tiket berhasil dicetak ulang',
+                  position: 'top'
+                });
+              } catch (retryError) {
+                $q.notify({
+                  type: 'negative', 
+                  message: 'Gagal cetak ulang tiket',
+                  position: 'top'
+                });
+              }
+            }
+          }
+        ]
+      });
+    }
+    
     $q.notify({
       type: 'positive',
       message: `Selamat datang, ${member.name}! Gate terbuka otomatis.`,
       position: 'top',
+      timeout: 3000,
+      icon: 'waving_hand'
     });
     
     // Reset form setelah small delay untuk memastikan semua proses selesai
@@ -799,7 +857,8 @@ const saveMemberTransaction = async (member) => {
       is_member: true,
       tarif: 0, // Member tidak dikenakan tarif
       payment_status: 'paid', // Member sudah bayar melalui membership
-      has_image: !!transaksiStore.entry_pic // Flag untuk menandai apakah ada gambar
+      has_image: !!transaksiStore.entry_pic, // Flag untuk menandai apakah ada gambar
+      ticket_printed: false // Flag untuk tracking status cetak tiket
     };
     
     // Debug: Check transaction object before saving
@@ -814,6 +873,9 @@ const saveMemberTransaction = async (member) => {
     // 1. Simpan transaksi dulu
     const response = await addTransaction(trx);
     console.log('✅ Member transaction saved successfully:', response);
+    
+    // Simpan transaction ID untuk keperluan print tiket
+    transaksiStore.currentTransactionId = response.id;
     
     // Debug: Check what ID was actually saved
     console.log('🆔 Transaction ID comparison:', {
@@ -876,9 +938,133 @@ const saveMemberTransaction = async (member) => {
       console.log('📝 No entry image to save as attachment - transaction saved without image');
     }
     
+    return response;
+    
   } catch (err) {
     console.error('Gagal simpan transaksi member:', err);
     throw err;
+  }
+};
+
+// Fungsi untuk mencetak tiket member
+const printMemberTicket = async (member) => {
+  try {
+    console.log('🖨️ Starting member ticket printing process...');
+    
+    // Pastikan ada transaksi ID
+    if (!transaksiStore.currentTransactionId) {
+      throw new Error('Transaction ID tidak tersedia untuk cetak tiket');
+    }
+    
+    // Generate ticket number seperti di TicketPrintDialog
+    const now = new Date();
+    const time = now.toTimeString().slice(0, 8).replace(/:/g, '');
+    const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+    const ticketNumber = `${time}${sequence}`;
+    
+    // Generate barcode data
+    const barcodeData = ticketNumber;
+    
+    // Persiapkan data untuk thermal printer sesuai format TicketPrintDialog
+    const ticketData = {
+      // Format field sesuai dengan TicketPrintDialog (camelCase untuk serde)
+      ticketNumber: ticketNumber,
+      platNomor: transaksiStore.platNomor,
+      jenisKendaraan: transaksiStore.selectedJenisKendaraan?.label || 'Motor',
+      waktuMasuk: new Date().toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+      }),
+      tarif: 0, // Member tidak dikenakan tarif
+      companyName: ls.get('companyName') || 'SISTEM PARKIR SPARTA',
+      gateLocation: transaksiStore.lokasiPos?.label ? `${transaksiStore.lokasiPos.label} - PINTU MASUK` : 'PINTU MASUK',
+      operatorName: pegawai || 'OPERATOR',
+      isPaid: true, // Member sudah bayar melalui membership
+      barcodeData: barcodeData,
+      
+      // Data tambahan untuk member
+      memberName: member.name,
+      memberId: member.member_id,
+      cardNumber: member.card_number,
+      membershipType: member.membership_type_name || 'Member',
+      isMember: true,
+      
+      // Data masa berlaku membership untuk ditampilkan di tiket
+      memberStartDate: member.start_date,
+      memberEndDate: member.end_date,
+      memberExpiry: member.end_date ? new Date(member.end_date).toLocaleDateString('id-ID') : 'Tidak terbatas'
+    };
+    
+    console.log('🎫 Thermal ticket data prepared:', ticketData);
+    
+    // Panggil fungsi print thermal ticket seperti di TicketPrintDialog
+    await printThermalTicketMember(ticketData);
+    
+    // Update status cetak tiket di database
+    try {
+      const doc = await localDbs.transactions.get(transaksiStore.currentTransactionId);
+      doc.ticket_printed = true;
+      doc.ticket_print_time = new Date().toISOString();
+      doc.ticket_number = ticketNumber;
+      doc.barcode_data = barcodeData;
+      await localDbs.transactions.put(doc);
+      console.log('✅ Ticket print status updated in database');
+    } catch (updateError) {
+      console.error('❌ Error updating ticket print status:', updateError);
+      // Don't throw error, ticket sudah berhasil dicetak
+    }
+    
+    console.log('✅ Member ticket printed successfully');
+    
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Error printing member ticket:', error);
+    throw error;
+  }
+};
+
+// Fungsi print thermal ticket untuk member (adaptasi dari TicketPrintDialog)
+const printThermalTicketMember = async (ticketData) => {
+  try {
+    // Import invoke dari Tauri API
+    const { invoke } = await import('@tauri-apps/api/core');
+    
+    console.log('🖨️ Printing thermal ticket for member with data:', ticketData);
+
+    // Coba dapatkan printer default
+    let currentPrinter = '';
+    try {
+      currentPrinter = await invoke('get_default_printer');
+      console.log('📄 Using printer:', currentPrinter);
+    } catch (printerError) {
+      console.warn('⚠️ Could not get default printer:', printerError);
+      // Lanjutkan tanpa printer name
+    }
+
+    // Print ke thermal printer (EPSON TM-T82X) menggunakan Tauri command
+    const result = await invoke('print_thermal_ticket', { 
+      ticketData,
+      printerName: currentPrinter || null
+    });
+    
+    console.log('✅ Thermal print result:', result);
+    
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Error printing to thermal printer:', error);
+    
+    // Fallback: gunakan fungsi printTicket dari transaksi store
+    console.log('🔄 Falling back to transaksi store printTicket...');
+    try {
+      await transaksiStore.printTicket(ticketData);
+      console.log('✅ Fallback print successful');
+    } catch (fallbackError) {
+      console.error('❌ Fallback print also failed:', fallbackError);
+      throw new Error('Semua metode print gagal');
+    }
   }
 };
 
@@ -906,33 +1092,33 @@ const gateSettings = computed(() => settingsService.gateSettings);
 const $q = useQuasar();
 
 // Initialize dark mode from localStorage with proper default
-const darkMode = ref(false);
+// const darkMode = ref(false);
 
 // Initialize dark mode immediately when script loads
-const initializeDarkMode = () => {
-  const savedDarkMode = ls.get("darkMode");
-  if (savedDarkMode !== null && savedDarkMode !== undefined) {
-    darkMode.value = savedDarkMode;
-  } else {
-    // Default to system preference if available
-    darkMode.value = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
-    ls.set("darkMode", darkMode.value);
-  }
+// const initializeDarkMode = () => {
+//   const savedDarkMode = ls.get("darkMode");
+//   if (savedDarkMode !== null && savedDarkMode !== undefined) {
+//     darkMode.value = savedDarkMode;
+//   } else {
+//     // Default to system preference if available
+//     darkMode.value = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+//     ls.set("darkMode", darkMode.value);
+//   }
   
-  // Apply immediately to prevent flash
-  $q.dark.set(darkMode.value);
-  console.log('🌙 Dark mode initialized:', darkMode.value);
-};
+//   // Apply immediately to prevent flash
+//   $q.dark.set(darkMode.value);
+//   console.log('🌙 Dark mode initialized:', darkMode.value);
+// };
 
-const darkModeToggle = () => {
-  darkMode.value = !darkMode.value;
-  ls.set("darkMode", darkMode.value);
-  $q.dark.set(darkMode.value);
-  console.log('🌙 Dark mode toggled to:', darkMode.value);
-};
+// const darkModeToggle = () => {
+//   darkMode.value = !darkMode.value;
+//   ls.set("darkMode", darkMode.value);
+//   $q.dark.set(darkMode.value);
+//   console.log('🌙 Dark mode toggled to:', darkMode.value);
+// };
 
 // Initialize dark mode immediately
-initializeDarkMode();
+// initializeDarkMode();
 
 const entryCameraRef = ref(null);
 const exitCameraRef = ref(null);
@@ -1109,6 +1295,7 @@ const captureExitImages = async () => {
 // Reset form and focus back to input
 const resetFormState = () => {
   transaksiStore.resetTransactionState();
+  transaksiStore.currentTransactionId = ''; // Reset transaction ID
   componentStore.hideInputPlatNomor = false;
   
   setTimeout(() => {
@@ -1448,7 +1635,7 @@ const logout = async () => {
     petugasStore.logout();
     
     // Also try to logout from user store if needed
-    await userStore().logout();
+    // await userStore().logout();
     
     // Clear all login related data
     ls.remove("pegawai");
@@ -1475,9 +1662,9 @@ const handleKeyDown = (event) => {
     if (event.key === "F1") {
       event.preventDefault();
       inputPlatNomorRef.value.focus();
-    } else if (event.key === "F4") {
-      event.preventDefault();
-      onClickKendaraanKeluar();
+    // } else if (event.key === "F4") {
+    //   event.preventDefault();
+    //   onClickKendaraanKeluar();
     } else if (event.key === "F2") {
       event.preventDefault();
       if (isAdmin) {
@@ -1497,15 +1684,16 @@ const handleKeyDown = (event) => {
       event.preventDefault();
       logout();
       window.location.replace("/");
-    } else if (event.shiftKey === true && event.key === "D") {
-      event.preventDefault();
-      darkModeToggle();
+    // } 
+    // else if (event.shiftKey === true && event.key === "D") {
+    //   event.preventDefault();
+    //   darkModeToggle();
     } else if (event.key === "F8") {
       event.preventDefault();
       onClickBukaManual();
-    } else if (event.key === "F12") {
-      event.preventDefault();
-      onClickEmergency();
+    // } else if (event.key === "F12") {
+    //   event.preventDefault();
+    //   onClickEmergency();
     } else if (event.key === "F7") {
       event.preventDefault();
       if (isAdmin) {
@@ -1904,8 +2092,9 @@ const initializeSerialPort = async (retryCount = 0) => {
   try {
     console.log(`� Initializing serial port (attempt ${retryCount + 1}/${maxRetries + 1})...`);
     
+    // Ambil portName dari settings
     const portConfig = {
-      portName: "COM10",
+      portName: settingsService.SERIAL_PORT || "COM1",
       type: 'entry'
     };
     
@@ -2001,6 +2190,8 @@ onMounted(async () => {
   
   // Set current page first
   componentStore.currentPage = "outgate";
+  componentStore.startingApp = false;
+
   console.log('✅ Current page set to outgate');
   
   // Initialize settings service first
@@ -2063,14 +2254,14 @@ onMounted(async () => {
 
   // Dark mode is already initialized before onMounted
   // Just ensure it's applied correctly
-  $q.dark.set(darkMode.value);
+  // $q.dark.set(darkMode.value);
   
   // Watch for dark mode changes
-  watch(darkMode, (newValue) => {
-    $q.dark.set(newValue);
-    ls.set("darkMode", newValue);
-    console.log('🌙 Dark mode watcher triggered:', newValue);
-  }, { immediate: false }); // Don't trigger immediately since already initialized
+  // watch(darkMode, (newValue) => {
+  //   $q.dark.set(newValue);
+  //   ls.set("darkMode", newValue);
+  //   console.log('🌙 Dark mode watcher triggered:', newValue);
+  // }, { immediate: false }); // Don't trigger immediately since already initialized
 
   // Watch for camera configuration changes
   watch([plateCameraCredentials, driverCameraCredentials], ([newPlateCredentials, newDriverCredentials], [oldPlateCredentials, oldDriverCredentials]) => {
@@ -2210,7 +2401,7 @@ onUnmounted(() => {
 // Function untuk menampilkan status sistem
 const showSystemStatus = () => {
   const status = {
-    darkMode: darkMode.value,
+    // darkMode: darkMode.value,
     cardReader: cardReaderStatus.value,
     serialPort: serialPortStatus.value,
     membershipStore: {
@@ -2349,60 +2540,5 @@ html, body {
   padding-left: 1rem;
 }
 
-/* Dark mode styles */
-.dark-mode {
-  background-color: var(--q-dark) !important;
-  color: var(--q-dark-page) !important;
-}
 
-.light-mode {
-  background-color: var(--q-primary) !important;
-  color: var(--q-primary-page) !important;
-}
-
-/* Dark mode specific overrides */
-body.body--dark {
-  background-color: #1d1d1d !important;
-}
-
-body.body--dark .bg-primary {
-  background-color: #1976d2 !important;
-}
-
-body.body--dark .bg-grey-5 {
-  background-color: #424242 !important;
-}
-
-body.body--dark .text-dark {
-  color: #ffffff !important;
-}
-
-body.body--dark .bg-dark {
-  background-color: #121212 !important;
-}
-
-body.body--dark .bg-grey-2 {
-  background-color: #303030 !important;
-}
-
-body.body--dark .bg-grey-3 {
-  background-color: #424242 !important;
-}
-
-body.body--dark .bg-secondary {
-  background-color: #424242 !important;
-}
-
-/* Light mode overrides */
-body.body--light .bg-primary {
-  background-color: #1976d2 !important;
-}
-
-body.body--light .bg-grey-5 {
-  background-color: #f5f5f5 !important;
-}
-
-body.body--light .text-dark {
-  color: #000000 !important;
-}
 </style>

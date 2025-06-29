@@ -142,6 +142,12 @@ pub fn run() {
             gpio_handler::gpio_open_gate,
             gpio_handler::gpio_close_gate,
             gpio_handler::gpio_test_pin,
+            gpio_handler::gpio_test_sensor,
+            gpio_handler::gpio_test_led,
+            gpio_handler::gpio_test_power,
+            gpio_handler::gpio_test_busy,
+            gpio_handler::gpio_test_live,
+            gpio_handler::gpio_test_gate_trigger,
             gpio_handler::check_gpio_availability,
             camera_handler::capture_cctv_image
         ])

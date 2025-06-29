@@ -110,7 +110,7 @@
         <thead class="thead-sticky">
           <tr class="text-left bg-grey-8">
             <th
-              class="text-h4 text-weight-bolder text-white"
+              class="text-h4 text-weight-bolder text-black"
               v-for="col in columns"
               :key="'1--' + col.name"
               :align="col.align"

@@ -18,25 +18,25 @@ const routes = setupLayouts(generatedRoutes)
 // Add meta to specific routes
 routes.forEach(route => {
     if (route.path === '/') {
-        route.meta = {
-            isSidebar: window && window.__TAURI__ ? false : true,
-            isHeader: window && window.__TAURI__ ? false : true,
-            requiresAuth: true,
+        // Untuk aplikasi Tauri, redirect langsung ke manual-gate
+        if (window && window.__TAURI__) {
+            route.redirect = '/manual-gate';
+        } else {
+            route.meta = {
+                isSidebar: true,
+                isHeader: true,
+                requiresAuth: true,
+            }
         }
+    }
 
-    // route.name = 'outgate'
-    // route.component = async () => {
-    //     // Logika pemilihan komponen berdasarkan gateType akan ditangani di App.vue atau komponen layout utama
-    //     // if (window && window.__TAURI__) {
-    //     //     // Contoh: const settings = await getGateSettings();
-    //     //     // if (settings.gateType === 'exit') {
-    //     //     //     return import("../pages/ExitGatePage.vue")
-    //     //     // }
-    //     //     // return import("../pages/EntryGate.vue")
-    //     // } else {
-    //     //     return import("../pages/LaporanTransaksiPerHari.vue")
-    //     // }
-    // }
+    if (route.path === '/manual-gate') {
+        route.meta = {
+            isSidebar: false,
+            isHeader: false,
+            requiresAuth: false,
+        }
+        route.name = 'manualGate'
     }
 
     if (route.path === '/dashboard') {
@@ -137,9 +137,24 @@ routes.forEach(route => {
     // }
 })
 
+// Tambahkan route eksplisit untuk manual-gate jika belum ada
+const hasManualGateRoute = routes.some(route => route.path === '/manual-gate');
+if (!hasManualGateRoute) {
+    routes.push({
+        path: '/manual-gate',
+        name: 'manual-gate',
+        component: () => import('../pages/manual-gate.vue'),
+        meta: {
+            isSidebar: false,
+            isHeader: false,
+            requiresAuth: false,
+        }
+    });
+}
+
 routes.push({
     path: '/:catchAll(.*)*',
-    redirect: '/',
+    redirect: window && window.__TAURI__ ? '/manual-gate' : '/',
 })
 
 export default route(function(/* { store, ssrContext } */) {
@@ -149,9 +164,26 @@ export default route(function(/* { store, ssrContext } */) {
         : createWebHashHistory
     const createHistory = routerMode
 
-    return createRouter({
+    const router = createRouter({
         scrollBehavior: () => ({ left: 0, top: 0 }),
         routes,
         history: createHistory(process.env.VUE_ROUTER_BASE),
     })
+
+    // Router guard untuk aplikasi Tauri - langsung ke manual-gate
+    router.beforeEach((to, from, next) => {
+        // Jika ini adalah aplikasi Tauri
+        if (window && window.__TAURI__) {
+            // Jika route adalah root atau halaman lain yang tidak diperlukan, redirect ke manual-gate
+            if (to.path === '/' || to.path === '/dashboard' || to.path === '/login') {
+                next('/manual-gate')
+            } else {
+                next()
+            }
+        } else {
+            next()
+        }
+    })
+
+    return router
 })

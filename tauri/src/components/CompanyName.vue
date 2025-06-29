@@ -3,8 +3,8 @@
     <!-- v-if="$q.screen.gt.sm" -->
     <q-chip
       flat
-      class="text-h4 text-weight-bolder bg-transparent text-grey-3"
-      :label="companyName"
+      class="text-h4 text-weight-bolder bg-yellow-5 text-blue-5"
+      label="UHAMKA"
     />
   </div>
 </template>

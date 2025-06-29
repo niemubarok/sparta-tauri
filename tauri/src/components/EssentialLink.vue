@@ -11,7 +11,7 @@
         {{ title }}
         <q-tooltip v-if="componentStore.miniMode">{{ title }}</q-tooltip>
       </q-item-label>
-      <q-item-label caption>
+      <q-item-label caption class="text-grey-4">
         {{ caption }}
         <q-tooltip v-if="componentStore.miniMode">{{ caption }}</q-tooltip>
       </q-item-label>

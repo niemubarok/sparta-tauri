@@ -25,12 +25,12 @@ const essentialLinks = [
         icon: 'person',
         link: '/petugas',
     },
-    {
-        title: 'Kendaraan',
-        caption: 'Kelola jenis kendaraan & blacklist',
-        icon: 'directions_car',
-        link: '/kendaraan',
-    },
+    // {
+    //     title: 'Kendaraan',
+    //     caption: 'Kelola jenis kendaraan & blacklist',
+    //     icon: 'directions_car',
+    //     link: '/kendaraan',
+    // },
     {
         title: 'Tarif',
         caption: 'Kelola tarif parkir',
@@ -43,12 +43,12 @@ const essentialLinks = [
         icon: 'admin_panel_settings',
         link: '/admin',
     },
-    {
-        title: 'ALPR Manager',
-        caption: 'Kelola CCTV & ALPR',
-        icon: 'videocam',
-        link: '/alpr-manager',
-    },
+    // {
+    //     title: 'ALPR Manager',
+    //     caption: 'Kelola CCTV & ALPR',
+    //     icon: 'videocam',
+    //     link: '/alpr-manager',
+    // },
 
     // {
     //   title: "Ticketing",
@@ -162,6 +162,7 @@ onMounted(() => {
       show-if-above
       :mini="componentStore.miniMode"
       bordered
+      class="bg-grey-10 text-white"
     >
       <q-list>
         <q-item-label header>

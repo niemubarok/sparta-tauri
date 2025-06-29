@@ -41,6 +41,9 @@ pub struct CaptureCctvImageArgs {
     rtsp_stream_path: String,
 }
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
 #[tauri::command]
 pub async fn capture_cctv_image(args: CaptureCctvImageArgs) -> Result<CctvResponse, String> {
     println!("📸 Capture CCTV Image called with args: ip={}, user={}, rtsp_path={}", 
@@ -82,16 +85,20 @@ pub async fn capture_cctv_image(args: CaptureCctvImageArgs) -> Result<CctvRespon
     let ffmpeg_path = get_ffmpeg_path();
     println!("🎬 Using FFmpeg at: {}", ffmpeg_path);
 
-    let output = Command::new(ffmpeg_path)
-        .args(&[
-            "-rtsp_transport", "tcp",
-            "-i", &rtsp_url,
-            "-frames:v", "1",
-            "-f", "image2",
-            "-y", 
-            temp_path
-        ])
-        .output()
+    let mut command = Command::new(ffmpeg_path);
+    command.args(&[
+        "-rtsp_transport", "tcp",
+        "-i", &rtsp_url,
+        "-frames:v", "1",
+        "-f", "image2",
+        "-y", 
+        temp_path
+    ]);
+    
+    #[cfg(windows)]
+    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    
+    let output = command.output()
         .map_err(|e| format!("Failed to execute FFmpeg: {}", e))?;
 
     if !output.status.success() {
@@ -192,17 +199,21 @@ pub async fn start_rtsp_live_stream<R: Runtime>(
         "-rtsp_transport", "tcp",
         "-i", &rtsp_url,
         "-c:v", "mjpeg",
-        "-vf", "fps=5",  // Set framerate to 5
-        "-q:v", "7",     // JPEG quality (2-31, lower is better)
-        "-an",           // No audio
-        "-f", "mjpeg",   // Force MJPEG output format
-        "-fps_mode", "cfr",  // Constant frame rate
-        "pipe:1"         // Output to stdout
+        "-vf", "fps=5",
+        "-q:v", "7",
+        "-an",
+        "-f", "mjpeg",
+        "-fps_mode", "cfr",
+        "pipe:1"
     ]);
-    cmd.kill_on_drop(true);  // Ensure process is killed when dropped
+    
+    #[cfg(windows)]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    
+    cmd.kill_on_drop(true);
     cmd.stdout(Stdio::piped());
-    cmd.stderr(Stdio::piped()); // Capture stderr for debugging
-
+    cmd.stderr(Stdio::piped());
+    
     let mut child = match cmd.spawn() {
         Ok(c) => c,
         Err(e) => return Ok(StreamResponse { is_success: false, message: Some(format!("Failed to spawn FFmpeg: {}", e)) }),

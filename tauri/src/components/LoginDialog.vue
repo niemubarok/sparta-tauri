@@ -94,6 +94,7 @@ const onSubmit = async () => {
     await petugasStore.loadFromLocal();
     
     // If no petugas data exists, seed it
+    console.log("🚀 ~ onSubmit ~ petugasStore.daftarPetugas:", petugasStore.daftarPetugas)
     if (petugasStore.daftarPetugas.length === 0) {
       console.log('No petugas data found, seeding...');
       await petugasStore.seedPetugasData();
@@ -127,7 +128,7 @@ const onSubmit = async () => {
       ls.set("isAdmin", isAdmin);
       
       // Set transaksi store admin status
-      transaksiStore.isAdmin = isAdmin;
+      // transaksiStore.isAdmin = isAdmin;
       
       if (props.type == "login") {
         $q.notify({

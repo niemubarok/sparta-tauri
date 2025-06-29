@@ -24,12 +24,18 @@ tokio = { version = "1.0", features = ["full"] }
 log = "0.4"
 base64 = "0.21"
 chrono = "0.4"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
 
-# Optional: Uncomment if you want to use rppal for GPIO instead of sysfs
-# rppal = { version = "0.14", optional = true }
+# GPIO dependencies for Raspberry Pi
+rppal = { version = "0.14", optional = true }
+# Alternative: use sysfs_gpio for older systems
+sysfs_gpio = { version = "0.6", optional = true }
 
 [features]
-default = []
-# gpio-rppal = ["rppal"]
+default = ["gpio-rppal"]
+gpio-rppal = ["rppal"]
+gpio-sysfs = ["sysfs_gpio"]
 
+
+[target.armv7-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"

@@ -45,14 +45,13 @@
         <!-- <member-card v-if="transaksiStore.isMember" /> -->
         <!-- <plat-nomor class="q-ma-lg" />
       </div> -->
-
       <div
         v-for="jenisKendaraan in jenisKendaraanOptions"
         :key="jenisKendaraan.id"
       >
         <q-item
           :class="
-            defaultShortcut === jenisKendaraan.shortcut && 'bg-yellow text-dark'
+            defaultShortcut === jenisKendaraan?.shortcut && 'bg-yellow text-dark'
           "
           class="glass q-ma-md rounded-corner"
         >
@@ -221,6 +220,7 @@ const handleKeydownOnJenisKendaraan = (event) => {
   if (key === "ENTER" && !ticketDialogOpened.value) {
     ticketDialogOpened.value = true;
     // Gunakan default option
+    console.log("🚀 ~ handleKeydownOnJenisKendaraan ~ matchingDefaultOption.value:", matchingDefaultOption.value)
     if (matchingDefaultOption.value) {
       jenisKendaraanModel.value = matchingDefaultOption.value.id;
       transaksiStore.selectedJenisKendaraan = matchingDefaultOption.value;
@@ -262,17 +262,17 @@ onMounted(async () => {
   const savedDefault = ls.get("defaultJenisKendaraan");
   if (savedDefault && savedDefault.shortcut) {
     matchingDefaultOption.value = jenisKendaraanOptions.value.find(
-      (option) => option.shortcut === savedDefault.shortcut
+      (option) => option.shortcut === "C"
     );
-    if (matchingDefaultOption.value) {
-      defaultShortcut.value = matchingDefaultOption.value.shortcut;
-    }
+    // if (matchingDefaultOption.value) {
+    //   defaultShortcut.value = matchingDefaultOption.value.shortcut;
+    // }
   }
   
   // Jika tidak ada default yang tersimpan, gunakan yang pertama
   if (!matchingDefaultOption.value && jenisKendaraanOptions.value.length > 0) {
-    matchingDefaultOption.value = jenisKendaraanOptions.value[0];
-    defaultShortcut.value = matchingDefaultOption.value.shortcut;
+    matchingDefaultOption.value = jenisKendaraanOptions.value[1];
+    defaultShortcut.value = "C";
   }
 
   // console.log(transaksiStore.jenisKendaraan);

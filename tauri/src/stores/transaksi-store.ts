@@ -122,6 +122,12 @@ export const useTransaksiStore = defineStore('transaksi', () => {
   const entry_pic = ref<string>('');
   const exit_pic = ref<string>('');
   
+  // Current transaction ID for printing tickets
+  const currentTransactionId = ref<string>('');
+  
+  // Processing state to prevent double processing
+  const isProcessing = ref<boolean>(false);
+  
   // Statistics
   const vehicleInToday = ref(0);
   const totalVehicleOut = ref(0);
@@ -525,6 +531,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     currentTransaction.value = null;
     entry_pic.value = '';
     exit_pic.value = '';
+    currentTransactionId.value = '';
+    isProcessing.value = false;
   };
 
   // Statistics methods
@@ -1807,6 +1815,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     transactionHistory,
     entry_pic,
     exit_pic,
+    currentTransactionId,
+    isProcessing,
     vehicleInToday,
     totalVehicleOut,
     totalVehicleInside,
