@@ -2,6 +2,8 @@
 Description=Exit Gate GUI System
 After=graphical-session.target
 Wants=graphical-session.target
+After=network.target
+After=multi-user.target
 
 [Service]
 Type=simple
@@ -9,12 +11,18 @@ User=pi
 Group=pi
 Environment=DISPLAY=:0.0
 Environment=HOME=/home/pi
+Environment=USER=pi
+Environment=XDG_RUNTIME_DIR=/run/user/1000
 WorkingDirectory=/home/pi/exit-gate/python-app
+ExecStartPre=/bin/sleep 10
 ExecStart=/bin/bash /home/pi/exit-gate/python-app/start_gui.sh
 Restart=always
-RestartSec=10
+RestartSec=15
 StandardOutput=journal
 StandardError=journal
+KillMode=mixed
+TimeoutStopSec=30
 
 [Install]
 WantedBy=graphical-session.target
+WantedBy=multi-user.target
