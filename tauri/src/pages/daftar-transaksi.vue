@@ -153,6 +153,28 @@
         </q-card>
       </div>
       <div class="col">
+        <q-card class="bg-purple-1">
+          <q-card-section class="text-center">
+            <div class="text-h4 text-purple">
+              <q-skeleton v-if="statsLoading" type="text" width="60px" />
+              <span v-else>{{ displayStatistics.transaksiMember || 0 }}</span>
+            </div>
+            <div class="text-caption text-purple-8">Transaksi Member</div>
+          </q-card-section>
+        </q-card>
+      </div>
+      <div class="col">
+        <q-card class="bg-indigo-1">
+          <q-card-section class="text-center">
+            <div class="text-h4 text-indigo">
+              <q-skeleton v-if="statsLoading" type="text" width="60px" />
+              <span v-else>{{ displayStatistics.transaksiUmum || 0 }}</span>
+            </div>
+            <div class="text-caption text-indigo-8">Transaksi Umum</div>
+          </q-card-section>
+        </q-card>
+      </div>
+      <div class="col">
         <q-card class="bg-green-1">
           <q-card-section class="text-center">
             <div class="text-h4 text-green">
@@ -175,13 +197,13 @@
         </q-card>
       </div>
       <div class="col">
-        <q-card class="bg-purple-1">
+        <q-card class="bg-teal-1">
           <q-card-section class="text-center">
-            <div class="text-h4 text-purple">
+            <div class="text-h4 text-teal">
               <q-skeleton v-if="statsLoading" type="text" width="80px" />
               <span v-else>{{ formatCurrency(displayStatistics.totalPendapatan || 0) }}</span>
             </div>
-            <div class="text-caption text-purple-8">Total Pendapatan</div>
+            <div class="text-caption text-teal-8">Total Pendapatan</div>
           </q-card-section>
         </q-card>
       </div>
@@ -292,7 +314,7 @@
             flat
             round
           >
-            <q-tooltip>Proses Keluar</q-tooltip>
+            <q-tooltip>Proses Keluar {{ props.row.type === 'member_entry' ? 'Member' : 'Parkir' }}</q-tooltip>
           </q-btn>
           <q-btn
             size="sm"
@@ -348,13 +370,25 @@
                 <q-item>
                   <q-item-section>
                     <q-item-label caption>Plat Nomor</q-item-label>
-                    <q-item-label class="text-h6 text-primary">{{ selectedTransaction.plat_nomor }}</q-item-label>
+                    <q-item-label class="text-h6 text-primary">{{ getPlateNumber(selectedTransaction) }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item v-if="selectedTransaction?.type === 'member_entry'">
+                  <q-item-section>
+                    <q-item-label caption>Nama Member</q-item-label>
+                    <q-item-label>{{ selectedTransaction.name || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item v-if="selectedTransaction?.type === 'member_entry'">
+                  <q-item-section>
+                    <q-item-label caption>Card Number</q-item-label>
+                    <q-item-label>{{ selectedTransaction.card_number || '-' }}</q-item-label>
                   </q-item-section>
                 </q-item>
                 <q-item>
                   <q-item-section>
                     <q-item-label caption>Jenis Kendaraan</q-item-label>
-                    <q-item-label>{{ selectedTransaction.jenis_kendaraan }}</q-item-label>
+                    <q-item-label>{{ getVehicleType(selectedTransaction) }}</q-item-label>
                   </q-item-section>
                 </q-item>
                 <q-item>
@@ -371,7 +405,7 @@
                 <q-item>
                   <q-item-section>
                     <q-item-label caption>Petugas</q-item-label>
-                    <q-item-label>{{ selectedTransaction.petugas || '-' }}</q-item-label>
+                    <q-item-label>{{ selectedTransaction.petugas || selectedTransaction.created_by || '-' }}</q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -381,19 +415,19 @@
                 <q-item>
                   <q-item-section>
                     <q-item-label caption>Waktu Masuk</q-item-label>
-                    <q-item-label>{{ formatDateTime(selectedTransaction.waktu_masuk) }}</q-item-label>
+                    <q-item-label>{{ formatDateTime(getEntryTime(selectedTransaction)) }}</q-item-label>
                   </q-item-section>
                 </q-item>
                 <q-item>
                   <q-item-section>
                     <q-item-label caption>Waktu Keluar</q-item-label>
-                    <q-item-label>{{ selectedTransaction.waktu_keluar ? formatDateTime(selectedTransaction.waktu_keluar) : '-' }}</q-item-label>
+                    <q-item-label>{{ getExitTime(selectedTransaction) ? formatDateTime(getExitTime(selectedTransaction)) : '-' }}</q-item-label>
                   </q-item-section>
                 </q-item>
                 <q-item>
                   <q-item-section>
                     <q-item-label caption>Durasi</q-item-label>
-                    <q-item-label>{{ calculateDuration(selectedTransaction.waktu_masuk, selectedTransaction.waktu_keluar) }}</q-item-label>
+                    <q-item-label>{{ calculateDuration(getEntryTime(selectedTransaction), getExitTime(selectedTransaction)) }}</q-item-label>
                   </q-item-section>
                 </q-item>
                 <q-item>
@@ -612,8 +646,8 @@
                 {{ getCurrentImageInfo() }}
               </div>
               <div class="text-caption text-grey-4">
-                Plat Nomor: {{ selectedTransaction?.plat_nomor }} | 
-                {{ selectedTransaction?.waktu_masuk ? formatDateTime(selectedTransaction.waktu_masuk) : '' }}
+                Plat Nomor: {{ getPlateNumber(selectedTransaction) }} | 
+                {{ getEntryTime(selectedTransaction) ? formatDateTime(getEntryTime(selectedTransaction)) : '' }}
               </div>
             </div>
             
@@ -671,7 +705,7 @@
       <q-card style="min-width: 400px">
         <q-card-section class="row items-center">
           <q-avatar icon="exit_to_app" color="green" text-color="white" />
-          <span class="q-ml-sm">Proses kendaraan keluar untuk plat nomor <strong>{{ exitTransaction?.plat_nomor }}</strong>?</span>
+          <span class="q-ml-sm">Proses kendaraan keluar untuk plat nomor <strong>{{ getPlateNumber(exitTransaction) }}</strong>?</span>
         </q-card-section>
 
         <q-card-actions align="right">
@@ -741,7 +775,13 @@ const computedStatistics = computed(() => {
       totalTransaksi: 0,
       transaksiSelesai: 0,
       transaksiAktif: 0,
-      totalPendapatan: 0
+      totalPendapatan: 0,
+      transaksiMember: 0,
+      memberSelesai: 0,
+      memberAktif: 0,
+      transaksiUmum: 0,
+      umumSelesai: 0,
+      umumAktif: 0
     }
   }
 
@@ -752,11 +792,27 @@ const computedStatistics = computed(() => {
     .filter(t => t.status === 1)
     .reduce((total, t) => total + (t.tarif || 0), 0)
 
+  // Separate member and regular transactions
+  const memberTransactions = transaksiList.value.filter(t => t.type === 'member_entry' || t.is_member === true)
+  const regularTransactions = transaksiList.value.filter(t => t.type === 'parking_transaction' && !t.is_member)
+  
+  const memberSelesai = memberTransactions.filter(t => t.status === 1 || t.status === 'out').length
+  const memberAktif = memberTransactions.filter(t => t.status === 0 || t.status === 'in').length
+  
+  const umumSelesai = regularTransactions.filter(t => t.status === 1).length
+  const umumAktif = regularTransactions.filter(t => t.status === 0).length
+
   return {
     totalTransaksi,
     transaksiSelesai: selesai,
     transaksiAktif: aktif,
-    totalPendapatan: pendapatan
+    totalPendapatan: pendapatan,
+    transaksiMember: memberTransactions.length,
+    memberSelesai,
+    memberAktif,
+    transaksiUmum: regularTransactions.length,
+    umumSelesai,
+    umumAktif
   }
 })
 
@@ -784,7 +840,13 @@ const statistics = ref({
   totalTransaksi: 0,
   transaksiSelesai: 0,
   transaksiAktif: 0,
-  totalPendapatan: 0
+  totalPendapatan: 0,
+  transaksiMember: 0,
+  memberSelesai: 0,
+  memberAktif: 0,
+  transaksiUmum: 0,
+  umumSelesai: 0,
+  umumAktif: 0
 })
 
 // Options
@@ -924,6 +986,7 @@ const loadTransaksi = async (props = {}) => {
 
     console.log('🔍 Loading transaksi with filterParams:', filterParams)
     console.log('🔍 Current filters.value:', filters.value)
+    console.log('🔍 Member filter (isMember):', filters.value.isMember)
 
     const result = await transaksiStore.getAllTransaksi(filterParams)
     
@@ -964,6 +1027,8 @@ const loadStatistics = async () => {
     }
     
     console.log('📊 Loading statistics with filters:', statsParams)
+    console.log('📊 Member filter in stats:', statsParams.isMember)
+    console.log('📊 Member filter type:', typeof statsParams.isMember, 'value:', statsParams.isMember)
     const stats = await transaksiStore.getTransaksiStatistics(statsParams)
     console.log('📊 Loaded statistics:', stats)
     statistics.value = stats
@@ -974,7 +1039,13 @@ const loadStatistics = async () => {
       totalTransaksi: 0,
       transaksiSelesai: 0,
       transaksiAktif: 0,
-      totalPendapatan: 0
+      totalPendapatan: 0,
+      transaksiMember: 0,
+      memberSelesai: 0,
+      memberAktif: 0,
+      transaksiUmum: 0,
+      umumSelesai: 0,
+      umumAktif: 0
     }
   } finally {
     statsLoading.value = false
@@ -1248,7 +1319,21 @@ const processExit = (transaction) => {
 const confirmExit = async () => {
   processing.value = true
   try {
-    await transaksiStore.processManualExit(exitTransaction.value.id)
+    // Handle both parking and member transactions
+    const transactionId = exitTransaction.value.id || exitTransaction.value._id
+    
+    if (exitTransaction.value.type === 'member_entry') {
+      // For member transactions, use different method if available
+      if (transaksiStore.processManualExitMember) {
+        await transaksiStore.processManualExitMember(transactionId)
+      } else {
+        await transaksiStore.processManualExit(transactionId)
+      }
+    } else {
+      // For parking transactions
+      await transaksiStore.processManualExit(transactionId)
+    }
+    
     $q.notify({
       type: 'positive',
       message: 'Kendaraan berhasil diproses keluar',
@@ -1657,7 +1742,9 @@ const displayStatistics = computed(() => {
   if (statistics.value.totalTransaksi > 0 || 
       statistics.value.transaksiSelesai > 0 || 
       statistics.value.transaksiAktif > 0 || 
-      statistics.value.totalPendapatan > 0) {
+      statistics.value.totalPendapatan > 0 ||
+      statistics.value.transaksiMember > 0 ||
+      statistics.value.transaksiUmum > 0) {
     return statistics.value
   }
   

@@ -869,7 +869,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       status: params.status !== null && params.status !== undefined && params.status !== '' ? parseInt(params.status) : null,
       tanggalMulai: params.tanggalMulai?.toString().trim() || '',
       tanggalAkhir: params.tanggalAkhir?.toString().trim() || '',
-      jenisKendaraan: params.jenisKendaraan?.toString().trim() || ''
+      jenisKendaraan: params.jenisKendaraan?.toString().trim() || '',
+      isMember: params.isMember !== null && params.isMember !== undefined ? Boolean(params.isMember) : null
     };
 
     // Validate date format if provided
@@ -894,12 +895,22 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
   // Reusable filter function
   const applyTransactionFilters = (docs: any[], filterParams: any, jenisKendaraanData: any[]) => {
-    const { platNomor, status, tanggalMulai, tanggalAkhir, jenisKendaraan } = filterParams;
+    const { platNomor, status, tanggalMulai, tanggalAkhir, jenisKendaraan, isMember } = filterParams;
     
     return docs.filter((doc: any) => {
       // Must be a parking transaction or member entry
       if (!doc || (doc.type !== 'parking_transaction' && doc.type !== 'member_entry')) {
         return false;
+      }
+
+      // Filter by member status
+      if (isMember !== null && isMember !== undefined) {
+        const docIsMember = doc.type === 'member_entry' || doc.is_member === true;
+        console.log(`🔍 Checking member filter: doc.type=${doc.type}, doc.is_member=${doc.is_member}, docIsMember=${docIsMember}, filterValue=${isMember}`);
+        if (docIsMember !== isMember) {
+          console.log(`🔍 Filtered out due to member mismatch: ${doc._id}`);
+          return false;
+        }
       }
 
       // Filter by plate number (case insensitive)
@@ -993,7 +1004,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         status,
         tanggalMulai,
         tanggalAkhir,
-        jenisKendaraan
+        jenisKendaraan,
+        isMember
       } = validateFilterParams(filterParams);
 
       console.log('🔍 getAllTransaksi called with:', filterParams);
@@ -1037,7 +1049,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       // Apply filters using the reusable function
       let filteredDocs = applyTransactionFilters(
         result.rows.map(row => row.doc),
-        { platNomor, status, tanggalMulai, tanggalAkhir, jenisKendaraan },
+        { platNomor, status, tanggalMulai, tanggalAkhir, jenisKendaraan, isMember },
         jenisKendaraanData
       );
 
@@ -1171,7 +1183,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         status,
         tanggalMulai,
         tanggalAkhir,
-        jenisKendaraan
+        jenisKendaraan,
+        isMember
       } = validateFilterParams(filterParams);
 
       console.log('📊 getTransaksiStatistics called with:', filterParams);
@@ -1187,17 +1200,56 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       const jenisKendaraanData = await getJenisKendaraan();
 
       // Apply filters using the reusable function
-      const filteredDocs = result.rows.map(row => row.doc);
+      const filteredDocs = applyTransactionFilters(
+        result.rows.map(row => row.doc),
+        { platNomor, status, tanggalMulai, tanggalAkhir, jenisKendaraan, isMember },
+        jenisKendaraanData
+      );
 
       console.log('📊 Found transactions:', filteredDocs.length);
 
-      // Debug pendapatan calculation
+      // Separate member and regular transactions
+      const memberTransactions = filteredDocs.filter((t: any) => t.type === 'member_entry' || t.is_member === true);
+      const regularTransactions = filteredDocs.filter((t: any) => t.type === 'parking_transaction' && !t.is_member);
+
+      // Calculate statistics for all transactions
+      const totalTransaksi = filteredDocs.length;
+      
+      // Calculate completed transactions
       const completedTransactions = filteredDocs.filter((t: any) => {
         if (t.type === 'member_entry') {
           return t.status === 'out'; // Member transactions use 'out' for completed
         }
         return t.status === 1; // Parking transactions use numeric 1 for completed
       });
+      
+      // Calculate active transactions
+      const activeTransactions = filteredDocs.filter((t: any) => {
+        if (t.type === 'member_entry') {
+          return t.status === 'in'; // Member transactions use 'in' for active
+        }
+        return t.status === 0; // Parking transactions use numeric 0 for active
+      });
+
+      // Member statistics
+      const memberCompleted = memberTransactions.filter((t: any) => {
+        if (t.type === 'member_entry') {
+          return t.status === 'out';
+        }
+        return t.status === 1;
+      });
+      
+      const memberActive = memberTransactions.filter((t: any) => {
+        if (t.type === 'member_entry') {
+          return t.status === 'in';
+        }
+        return t.status === 0;
+      });
+
+      // Regular transactions statistics
+      const regularCompleted = regularTransactions.filter((t: any) => t.status === 1);
+      const regularActive = regularTransactions.filter((t: any) => t.status === 0);
+
       console.log('📊 Completed transactions for revenue:', completedTransactions.length);
       
       // Debug: Show all documents first
@@ -1227,13 +1279,13 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       }, 0);
       
       // Count revenue from active prepaid transactions (status 0 with bayar_masuk)
-      const activeTransactions = filteredDocs.filter((t: any) => {
+      const activePrepaidTransactions = filteredDocs.filter((t: any) => {
         if (t.type === 'member_entry') {
           return t.status === 'in'; // Member transactions use 'in' for active
         }
         return t.status === 0; // Parking transactions use numeric 0 for active
       });
-      const prepaidRevenue = activeTransactions.reduce((total, t: any) => {
+      const prepaidRevenue = activePrepaidTransactions.reduce((total, t: any) => {
         const revenue = t.bayar_masuk || 0;
         if (revenue > 0) {
           console.log(`📊 Adding prepaid revenue: ${revenue} from active transaction ${t._id}`);
@@ -1246,15 +1298,18 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       console.log(`📊 Revenue breakdown: Completed: ${completedRevenue}, Prepaid: ${prepaidRevenue}, Total: ${totalPendapatan}`);
 
       const stats = {
-        totalTransaksi: filteredDocs.length,
+        totalTransaksi: totalTransaksi,
         transaksiSelesai: completedTransactions.length,
-        transaksiAktif: filteredDocs.filter((t: any) => {
-          if (t.type === 'member_entry') {
-            return t.status === 'in';
-          }
-          return t.status === 0;
-        }).length,
-        totalPendapatan: totalPendapatan
+        transaksiAktif: activeTransactions.length,
+        totalPendapatan: totalPendapatan,
+        // Member statistics
+        transaksiMember: memberTransactions.length,
+        memberSelesai: memberCompleted.length,
+        memberAktif: memberActive.length,
+        // Regular transactions statistics
+        transaksiUmum: regularTransactions.length,
+        umumSelesai: regularCompleted.length,
+        umumAktif: regularActive.length
       };
 
       console.log('📊 Calculated statistics:', stats);

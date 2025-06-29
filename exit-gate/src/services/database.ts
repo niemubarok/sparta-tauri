@@ -149,39 +149,41 @@ class DatabaseService {
 
   // Find transaction by barcode (using transaction id) - align with entry gate method
   async findTransactionByBarcode(barcode: string): Promise<ParkingTransaction | null> {
+    // console.log("🚀 ~ DatabaseService ~ result ~ barcode:", barcode)
     try {
       // Try to get by transaction ID (barcode as suffix)
       try {
         const doc = await this.db.get(`transaction_${barcode}`) as ParkingTransaction
+        console.log("🚀 ~ DatabaseService ~ findTransactionByBarcode ~ doc:", doc)
         if (
-          (doc.type === 'parking_transaction' || doc.type === 'member_entry') &&
-          doc.status === 0
+          doc && doc.status === 0
         ) {
           return doc
         }
       } catch (error) {
+        console.log("🚀 ~ DatabaseService ~ findTransactionByBarcode ~ error:", error)
         // Not found by direct ID, continue
       }
 
       // Try to get by barcode field (no_barcode) using a query if available
       // Only if pouchdb-find (map/reduce) is enabled, otherwise skip
-      if ((this.db as any).find) {
-        try {
-          const result = await (this.db as any).find({
-            selector: {
-              _id: `transaction_${barcode}`,
-              status: 0,
-              type: { $in: ['parking_transaction', 'member_entry'] }
-            },
-            limit: 1
-          })
-          if (result.docs && result.docs.length > 0) {
-            return result.docs[0] as ParkingTransaction
-          }
-        } catch (error) {
-          // Ignore find errors
-        }
-      }
+      // if ((this.db as any).find) {
+      //   try {
+      //     const result = await (this.db as any).find({
+      //       selector: {
+      //         _id: `transaction_${barcode}`,
+      //         status: 0,
+      //         type: { $in: ['parking_transaction', 'member_entry'] }
+      //       },
+      //       limit: 1
+      //     })
+      //     if (result.docs && result.docs.length > 0) {
+      //       return result.docs[0] as ParkingTransaction
+      //     }
+      //   } catch (error) {
+      //     // Ignore find errors
+      //   }
+      // }
 
       // If pouchdb-find is not available, skip scanning all transactions for performance
       return null

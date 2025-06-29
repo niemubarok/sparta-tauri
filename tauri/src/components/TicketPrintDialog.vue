@@ -3,7 +3,7 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide" @show="onDialogShow" persistent>
     <q-card 
       ref="cardRef"
-      class="ticket-print-card" 
+      class="ticket-print-card overflow-hidden" 
       style="min-width: 400px;"
       tabindex="0"
       autofocus
