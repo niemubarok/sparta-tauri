@@ -85,6 +85,13 @@
                   label="Tipe Gerbang"
                 />
               </div>
+              <div class="col-md-6 col-xs-12">
+                <q-input
+                  v-model="prefix"
+                  label="Default Prefix"
+                  placeholder="Masukkan prefix default"
+                />
+              </div>
               <div class="col-md-12 col-xs-12">
                 <q-input
                   v-model="serialPort"
@@ -377,6 +384,7 @@ import { useComponentStore } from "src/stores/component-store";
 import { useTransaksiStore } from "src/stores/transaksi-store";
 import { useSettingsService } from 'stores/settings-service';
 import LoginDialog from "src/components/LoginDialog.vue";
+import ls from "localstorage-slim";
 
 // Initialize cameras ref
 const cameras = ref([]);
@@ -408,6 +416,7 @@ const darkMode = ref(false);
 // Operation mode settings
 const operationMode = ref('manless');
 const manualPaymentMode = ref('postpaid');
+const prefix = ref(''); // Default prefix setting
 
 // Operation mode options
 const operationModeOptions = [
@@ -477,6 +486,7 @@ watch(gateSettings, (newSettings) => {
     gateType.value = newSettings.gateType || 'entry';
     operationMode.value = newSettings.operationMode || 'manless';
     manualPaymentMode.value = newSettings.manualPaymentMode || 'postpaid';
+    prefix.value = newSettings.prefix || ls.get('prefix') || '';
     printerName.value = newSettings.printerName || null;
     paperSize.value = newSettings.paperSize || '58mm';
     autoPrint.value = newSettings.autoPrint || true;
@@ -524,6 +534,7 @@ const onSaveSettings = async () => {
       gateType: gateType.value,
       operationMode: operationMode.value,
       manualPaymentMode: manualPaymentMode.value,
+      prefix: prefix.value,
       SERIAL_PORT: serialPort.value,
       printerName: printerName.value,
       paperSize: paperSize.value,
@@ -554,6 +565,10 @@ const onSaveSettings = async () => {
     
     console.log('Saving consolidated settings:', settingsToSave);
     await settingsService.saveGateSettings(settingsToSave);
+    
+    // Save prefix to localStorage
+    ls.set('prefix', prefix.value);
+    
     console.log('Settings saved successfully');
     
     // Show success notification
@@ -774,6 +789,9 @@ onMounted(async () => {
   console.log('SettingsDialog onMounted started');
   
   try {
+    // Initialize prefix from localStorage
+    prefix.value = ls.get('prefix') || '';
+    
     // Initialize settings first
     console.log('Initializing settings...');
     await settingsService.initializeSettings();

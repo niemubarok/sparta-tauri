@@ -3,9 +3,18 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use chrono::Utc;
 use std::process::Command;
 use tempfile::NamedTempFile;
+use reqwest;
+use std::time::Duration;
 
-// No longer using CctvConfig or CameraInfo structs from here as config will be passed directly
-// or managed by the frontend store.
+// Import untuk live streaming
+use tauri::{AppHandle, Runtime, Emitter};
+use tokio::process::Command as TokioCommand;
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, BufReader};
+use tokio::sync::mpsc;
+use std::process::Stdio;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+use once_cell::sync::Lazy;
 
 #[derive(Serialize)]
 pub struct CctvResponse {
@@ -13,6 +22,13 @@ pub struct CctvResponse {
     base64: Option<String>,
     time_stamp: String,
     message: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "snake_case")]
+pub enum CaptureMode {
+    Rtsp,
+    Snapshot,
 }
 
 fn get_ffmpeg_path() -> String {
@@ -30,49 +46,154 @@ fn get_ffmpeg_path() -> String {
     ffmpeg_full_path.to_str().expect("Failed to convert path to string").to_string()
 }
 
-// get_config_path and get_cctv_configs are removed as we no longer read from cctv_config.json
-
-#[derive(Deserialize)] // Tambahkan Deserialize
-#[serde(rename_all = "snake_case")] // Change to snake_case to match JavaScript naming
+// Updated CaptureCctvImageArgs untuk mendukung mode snapshot dan RTSP
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "snake_case")]
 pub struct CaptureCctvImageArgs {
     username: Option<String>,
     password: Option<String>,
     ip_address: String,
-    rtsp_stream_path: String,
+    rtsp_stream_path: Option<String>, // Optional untuk mode snapshot
+    snapshot_url: Option<String>,     // URL snapshot kustom
+    capture_mode: Option<CaptureMode>, // Mode capture (default: rtsp untuk backward compatibility)
+    port: Option<u16>,               // Port kustom
+    timeout_seconds: Option<u64>,    // Timeout kustom
 }
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
-#[tauri::command]
-pub async fn capture_cctv_image(args: CaptureCctvImageArgs) -> Result<CctvResponse, String> {
-    println!("📸 Capture CCTV Image called with args: ip={}, user={}, rtsp_path={}", 
-             args.ip_address, 
-             args.username.as_deref().unwrap_or("None"), 
-             args.rtsp_stream_path);
+// Fungsi untuk capture via HTTP snapshot
+async fn capture_via_snapshot(args: &CaptureCctvImageArgs) -> Result<CctvResponse, String> {
+    println!("📸 Capturing via HTTP snapshot mode");
     
-    // Validate inputs
-    if args.ip_address.is_empty() {
-        return Err("IP address cannot be empty".to_string());
+    let snapshot_url = if let Some(url) = &args.snapshot_url {
+        url.clone()
+    } else {
+        // Konstruksi URL snapshot default jika tidak disediakan
+        let port = args.port.unwrap_or(80);
+        let base_url = if port == 80 {
+            format!("http://{}", args.ip_address)
+        } else {
+            format!("http://{}:{}", args.ip_address, port)
+        };
+        
+        // Path snapshot umum untuk berbagai merek CCTV
+        let default_paths = vec![
+            "/cgi-bin/snapshot.cgi",           // Hikvision, Dahua
+            "/ISAPI/Streaming/channels/101/picture", // Hikvision modern
+            "/tmpfs/auto.jpg",                 // Beberapa IP camera
+            "/snapshot.jpg",                   // Generic
+            "/cgi-bin/currentpic.cgi",        // Axis cameras
+            "/jpeg/image.cgi",                 // Kamera lama
+            "/snapshot/view0.jpg",             // Kamera modern
+            "/image.jpg",
+            "/Snapshot/1/RemoteImageCapture?ImageFormat=2" //glenz                      // Path sederhana
+        ];
+        
+        // Gunakan path default pertama
+        format!("{}{}", base_url, default_paths[0])
+    };
+
+    println!("🔗 Snapshot URL: {}", snapshot_url.replace(&args.password.as_deref().unwrap_or(""), "***"));
+
+    let timeout = Duration::from_secs(args.timeout_seconds.unwrap_or(10));
+    let client = reqwest::Client::builder()
+        .timeout(timeout)
+        .danger_accept_invalid_certs(true) // Terima sertifikat self-signed
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+
+    let mut request = client.get(&snapshot_url);
+
+    // Tambahkan autentikasi jika disediakan
+    if let (Some(username), Some(password)) = (&args.username, &args.password) {
+        if !username.is_empty() && !password.is_empty() {
+            request = request.basic_auth(username, Some(password));
+        }
     }
-    if args.rtsp_stream_path.is_empty() {
+
+    // Set header umum untuk kamera CCTV
+    request = request
+        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+        .header("Accept", "image/jpeg,image/*,*/*")
+        .header("Connection", "close");
+
+    let response = request.send().await
+        .map_err(|e| format!("HTTP request failed: {}", e))?;
+
+    if !response.status().is_success() {
+        return Ok(CctvResponse {
+            is_success: false,
+            base64: None,
+            time_stamp: Utc::now().to_rfc3339(),
+            message: Some(format!("HTTP error: {} - {}", response.status(), response.status().canonical_reason().unwrap_or("Unknown error"))),
+        });
+    }
+
+    let image_data = response.bytes().await
+        .map_err(|e| format!("Failed to read image data: {}", e))?;
+
+    if image_data.is_empty() {
+        return Ok(CctvResponse {
+            is_success: false,
+            base64: None,
+            time_stamp: Utc::now().to_rfc3339(),
+            message: Some("Received empty image data".to_string()),
+        });
+    }
+
+    // Validasi bahwa data yang diterima adalah gambar
+    if image_data.len() < 100 || (!image_data.starts_with(&[0xFF, 0xD8]) && !image_data.starts_with(b"PNG")) {
+        return Ok(CctvResponse {
+            is_success: false,
+            base64: None,
+            time_stamp: Utc::now().to_rfc3339(),
+            message: Some("Invalid image data received".to_string()),
+        });
+    }
+
+    let base64_string = format!(
+        "data:image/jpeg;base64,{}",
+        BASE64.encode(&image_data)
+    );
+
+    println!("✅ Successfully captured snapshot image. Size: {} bytes", image_data.len());
+
+    Ok(CctvResponse {
+        is_success: true,
+        base64: Some(base64_string),
+        time_stamp: Utc::now().to_rfc3339(),
+        message: Some("Berhasil mengambil gambar dari CCTV melalui snapshot".to_string()),
+    })
+}
+
+// Fungsi untuk capture via RTSP (kode asli Anda yang sudah ada)
+async fn capture_via_rtsp(args: &CaptureCctvImageArgs) -> Result<CctvResponse, String> {
+    println!("📸 Capturing via RTSP mode");
+    
+    let rtsp_stream_path = args.rtsp_stream_path.as_ref()
+        .ok_or("RTSP stream path is required for RTSP mode")?;
+    
+    if rtsp_stream_path.is_empty() {
         return Err("RTSP stream path cannot be empty".to_string());
     }
 
     // Helper function to clean path
-    let clean_path = args.rtsp_stream_path.trim_matches('/');
+    let clean_path = rtsp_stream_path.trim_matches('/');
+    let port = args.port.unwrap_or(554);
     
     let rtsp_url = if let (Some(user), Some(pass)) = (args.username.as_deref(), args.password.as_deref()) {
         if !user.is_empty() && !pass.is_empty() {
             format!(
-                "rtsp://{}:{}@{}:554/{}",
-                user, pass, args.ip_address, clean_path
+                "rtsp://{}:{}@{}:{}/{}",
+                user, pass, args.ip_address, port, clean_path
             )
         } else {
-            format!("rtsp://{}:554/{}", args.ip_address, clean_path)
+            format!("rtsp://{}:{}/{}", args.ip_address, port, clean_path)
         }
     } else {
-        format!("rtsp://{}:554/{}", args.ip_address, clean_path)
+        format!("rtsp://{}:{}/{}", args.ip_address, port, clean_path)
     };
 
     println!("🔗 Constructed RTSP URL: {}", rtsp_url.replace(&args.password.as_deref().unwrap_or(""), "***"));
@@ -85,9 +206,12 @@ pub async fn capture_cctv_image(args: CaptureCctvImageArgs) -> Result<CctvRespon
     let ffmpeg_path = get_ffmpeg_path();
     println!("🎬 Using FFmpeg at: {}", ffmpeg_path);
 
+    let timeout_str = format!("{}", args.timeout_seconds.unwrap_or(10) * 1000000); // Convert to microseconds
+
     let mut command = Command::new(ffmpeg_path);
     command.args(&[
         "-rtsp_transport", "tcp",
+        "-timeout", &timeout_str,
         "-i", &rtsp_url,
         "-frames:v", "1",
         "-f", "image2",
@@ -123,24 +247,109 @@ pub async fn capture_cctv_image(args: CaptureCctvImageArgs) -> Result<CctvRespon
     temp_file.close()
         .map_err(|e| format!("Failed to delete temporary file: {}", e))?;
 
-    println!("✅ Successfully captured CCTV image. Size: {} bytes", image_data.len());
+    println!("✅ Successfully captured RTSP image. Size: {} bytes", image_data.len());
 
     Ok(CctvResponse {
         is_success: true,
         base64: Some(base64_string),
         time_stamp: Utc::now().to_rfc3339(),
-        message: Some("Berhasil mengambil gambar dari CCTV".to_string()),
+        message: Some("Berhasil mengambil gambar dari CCTV melalui RTSP".to_string()),
     })
 }
 
-use tauri::{AppHandle, Runtime, Emitter};
-use tokio::process::Command as TokioCommand;
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, BufReader};
-use tokio::sync::mpsc;
-use std::process::Stdio;
-use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
-use once_cell::sync::Lazy;
+// Command utama untuk capture image (mengganti yang lama)
+#[tauri::command]
+pub async fn capture_cctv_image(args: CaptureCctvImageArgs) -> Result<CctvResponse, String> {
+    println!("📸 Capture CCTV Image called with mode: {:?}, ip: {}", 
+             args.capture_mode.as_ref().unwrap_or(&CaptureMode::Rtsp), args.ip_address);
+    
+    // Validate inputs
+    if args.ip_address.is_empty() {
+        return Err("IP address cannot be empty".to_string());
+    }
+
+    let capture_mode = args.capture_mode.as_ref().unwrap_or(&CaptureMode::Rtsp);
+
+    match capture_mode {
+        CaptureMode::Snapshot => capture_via_snapshot(&args).await,
+        CaptureMode::Rtsp => capture_via_rtsp(&args).await,
+    }
+}
+
+// Command baru untuk auto-detect mode terbaik
+#[tauri::command]
+pub async fn capture_cctv_image_auto_detect(args: CaptureCctvImageArgs) -> Result<CctvResponse, String> {
+    println!("📸 Auto-detect CCTV capture called for IP: {}", args.ip_address);
+    
+    if args.ip_address.is_empty() {
+        return Err("IP address cannot be empty".to_string());
+    }
+
+    // Jika snapshot_url disediakan, gunakan langsung
+    if args.snapshot_url.is_some() {
+        return capture_via_snapshot(&args).await;
+    }
+
+    // Coba berbagai URL snapshot untuk merek CCTV yang berbeda
+    let port = args.port.unwrap_or(80);
+    let base_url = if port == 80 {
+        format!("http://{}", args.ip_address)
+    } else {
+        format!("http://{}:{}", args.ip_address, port)
+    };
+
+    let snapshot_paths = vec![
+        "/cgi-bin/snapshot.cgi",           // Hikvision, Dahua
+        "/ISAPI/Streaming/channels/101/picture", // Hikvision modern
+        "/snapshot.cgi",                   // Beberapa kamera
+        "/tmpfs/auto.jpg",                 // Beberapa IP camera
+        "/snapshot.jpg",                   // Generic
+        "/cgi-bin/currentpic.cgi",        // Axis cameras
+        "/jpeg/image.cgi",                 // Kamera lama
+        "/snapshot/view0.jpg",             // Kamera modern
+        "/image.jpg",                      // Path sederhana
+        "/jpg/image.jpg",                  // Path umum lainnya
+        "/cgi-bin/api.cgi?cmd=Snap&channel=0&rs=wuuPhkmUOeI9WG7C", // Reolink style
+    ];
+
+    let mut last_error = String::new();
+
+    for path in snapshot_paths {
+        let snapshot_url = format!("{}{}", base_url, path);
+
+        let mut test_args = args.clone();
+        test_args.snapshot_url = Some(snapshot_url);
+        test_args.timeout_seconds = Some(5); // Timeout lebih pendek untuk auto-detection
+
+        match capture_via_snapshot(&test_args).await {
+            Ok(response) if response.is_success => {
+                println!("✅ Auto-detected working snapshot URL: {}", path);
+                return Ok(response);
+            }
+            Ok(response) => {
+                last_error = response.message.unwrap_or("Unknown error".to_string());
+            }
+            Err(e) => {
+                last_error = e;
+            }
+        }
+    }
+
+    // Jika semua percobaan snapshot gagal, coba RTSP sebagai fallback
+    if args.rtsp_stream_path.is_some() {
+        println!("🔄 Snapshot auto-detection failed, trying RTSP fallback");
+        return capture_via_rtsp(&args).await;
+    }
+
+    Ok(CctvResponse {
+        is_success: false,
+        base64: None,
+        time_stamp: Utc::now().to_rfc3339(),
+        message: Some(format!("Auto-detection failed. Last error: {}", last_error)),
+    })
+}
+
+// === BAGIAN LIVE STREAMING (KODE ASLI ANDA) ===
 
 // Define a struct to hold the child process and its shutdown sender
 struct ActiveStream {
@@ -168,7 +377,6 @@ pub struct StreamResponse {
     message: Option<String>,
 }
 
-
 #[tauri::command]
 pub async fn start_rtsp_live_stream<R: Runtime>(
     app_handle: AppHandle<R>,
@@ -189,7 +397,6 @@ pub async fn start_rtsp_live_stream<R: Runtime>(
         _ => format!("rtsp://{}:554/{}", args.ip_address, clean_path)
     };
     
-
     let ffmpeg_path = get_ffmpeg_path();
 
     let mut cmd = TokioCommand::new(ffmpeg_path);
@@ -222,7 +429,6 @@ pub async fn start_rtsp_live_stream<R: Runtime>(
     let stdout = child.stdout.take().expect("FFmpeg stdout was not captured");
     let stderr = child.stderr.take().expect("FFmpeg stderr was not captured");
 
-
     let stream_id_for_insert = args.stream_id.clone(); // Clone for inserting into ACTIVE_STREAMS
     let stream_id_for_stderr_task = args.stream_id.clone(); // Clone for stderr task
     let stream_id_for_stdout_task = args.stream_id.clone(); // Clone for stdout task
@@ -242,7 +448,6 @@ pub async fn start_rtsp_live_stream<R: Runtime>(
 
     // Task to read stdout and emit frames
     tokio::spawn(async move {
-
         let mut reader = BufReader::new(stdout);
         let mut buffer = vec![0; 4096]; // Use a fixed-size buffer for reading chunks
         let mut frame_data = Vec::new();
@@ -316,7 +521,6 @@ pub async fn start_rtsp_live_stream<R: Runtime>(
                 }
             }
         }
-
     });
 
     let cleanup_handle = tokio::spawn(async move {

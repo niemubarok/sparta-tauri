@@ -113,13 +113,31 @@ const props = defineProps({
     type: String,
     default: 'Hiks2024',
   },
-  ipAddress:{
+  ipAddress: {
     type: String,
-    default:'192.168.10.25'
+    default: '192.168.10.25'
   },
-  rtspStreamPath:{
+  rtspStreamPath: {
     type: String,
-    default:'Streaming/Channels/101'
+    default: 'Streaming/Channels/101'
+  },
+  // Tambahkan props baru untuk mode snapshot
+  captureMode: {
+    type: String,
+    default: 'auto', // 'rtsp', 'snapshot', atau 'auto'
+    validator: (value) => ['rtsp', 'snapshot', 'auto'].includes(value)
+  },
+  snapshotUrl: {
+    type: String,
+    default: null
+  },
+  httpPort: {
+    type: Number,
+    default: 80
+  },
+  timeoutSeconds: {
+    type: Number,
+    default: 10
   },
   label: { type: String, default: 'Camera' },
 });
@@ -276,10 +294,6 @@ const cropImageFromFile = (file, cropArea) => {
 
 const fetchCameraImage = async () => {
   try {
-    // if (router.currentRoute.value.path !== "/") {
-    //   return;
-    // }
-    
     // Validate required parameters first
     if (!props.ipAddress || props.ipAddress === '192.168.10.25') {
       console.warn('Using default IP address - camera may not be configured');
@@ -288,40 +302,71 @@ const fetchCameraImage = async () => {
       return null;
     }
     
-    // Make sure the args structure matches what the Rust command expects
-    const args = {
-      username: props.username || null,
-      password: props.password || null,
-      ip_address: props.ipAddress,
-      rtsp_stream_path: props.rtspStreamPath,
-    };
+    let response;
+    
+    // Pilih command berdasarkan capture mode
+    if (props.captureMode === 'auto') {
+      // Gunakan auto-detect untuk mencoba snapshot dulu, fallback ke RTSP
+      const args = {
+        username: props.username || null,
+        password: props.password || null,
+        ip_address: props.ipAddress,
+        rtsp_stream_path: props.rtspStreamPath || null,
+        snapshot_url: props.snapshotUrl || null,
+        port: props.httpPort || 80,
+        timeout_seconds: props.timeoutSeconds || 10
+      };
 
-    // console.log('📸 Capturing CCTV image with config:', {
-    //   ...args,
-    //   password: args.password ? '***' : null,
-    //   cameraType: props.cameraType,
-    //   isInterval: props.isInterval,
-    //   isLiveModeActive: isLiveModeActive.value
-    // });
+      console.log('📸 Auto-detecting best capture method for:', props.ipAddress);
+      
+      response = await Promise.race([
+        invoke('capture_cctv_image_auto_detect', { args }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auto-detect timeout')), 12000)
+        )
+      ]);
+      
+    } else {
+      // Mode manual (rtsp atau snapshot)
+      const args = {
+        username: props.username || null,
+        password: props.password || null,
+        ip_address: props.ipAddress,
+        capture_mode: props.captureMode,
+        timeout_seconds: props.timeoutSeconds || 10
+      };
+
+      // Tambahkan parameter sesuai mode
+      if (props.captureMode === 'rtsp') {
+        args.rtsp_stream_path = props.rtspStreamPath;
+        args.port = 554; // Default RTSP port
+      } else if (props.captureMode === 'snapshot') {
+        args.snapshot_url = props.snapshotUrl;
+        args.port = props.httpPort || 80;
+      }
+
+      console.log(`📸 Capturing CCTV image in ${props.captureMode} mode:`, {
+        ...args,
+        password: args.password ? '***' : null
+      });
+      
+      response = await Promise.race([
+        invoke('capture_cctv_image', { args }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error(`${props.captureMode} capture timeout`)), 10000)
+        )
+      ]);
+    }
     
-    // Use Tauri invoke to capture image from CCTV with timeout
-    const response = await Promise.race([
-      invoke('capture_cctv_image', { args }),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('CCTV capture timeout')), 8000)
-      )
-    ]);
-    
-    // console.log('📸 CCTV capture response:', {
-    //   is_success: response?.is_success,
-    //   has_base64: response?.base64 ? 'yes' : 'no',
-    //   message: response?.message,
-    //   base64_length: response?.base64?.length || 0
-    // });
+    console.log('📸 CCTV capture response:', {
+      is_success: response?.is_success,
+      has_base64: response?.base64 ? 'yes' : 'no',
+      message: response?.message,
+      mode_used: props.captureMode
+    });
     
     if (response && response.is_success && response.base64) {
       imageSrc.value = response.base64;
-      
       message.value = '';
       retryCount.value = 0;
       notFoundCount.value = 0;
@@ -330,13 +375,15 @@ const fetchCameraImage = async () => {
     } else {
       const errorMsg = response?.message || 'Unknown error from CCTV camera';
       
-      // Handle specific RTSP errors
-      if (errorMsg.includes('5XX Server Error') || errorMsg.includes('Server returned 5XX')) {
-        message.value = 'Camera server error - check IP and credentials';
-      } else if (errorMsg.includes('Connection refused') || errorMsg.includes('Network unreachable')) {
-        message.value = 'Camera connection refused - check network';
-      } else if (errorMsg.includes('Authentication failed') || errorMsg.includes('401')) {
-        message.value = 'Camera auth failed - check username/password';
+      // Handle specific errors
+      if (errorMsg.includes('Auto-detection failed')) {
+        message.value = 'All capture methods failed - check camera settings';
+      } else if (errorMsg.includes('HTTP error: 401')) {
+        message.value = 'Camera auth failed - check credentials';
+      } else if (errorMsg.includes('HTTP error: 404')) {
+        message.value = 'Snapshot URL not found - try different mode';
+      } else if (errorMsg.includes('Invalid image data')) {
+        message.value = 'Camera returned invalid data';
       } else if (errorMsg.includes('timeout')) {
         message.value = 'Camera connection timeout';
       } else {
@@ -346,41 +393,27 @@ const fetchCameraImage = async () => {
       cameraStatus.value = false;
       console.error('❌ CCTV capture failed:', {
         response,
-        args: {
-          ...args,
-          password: args.password ? '***' : null
-        },
+        captureMode: props.captureMode,
         errorMessage: errorMsg
       });
       
-      // Return null to indicate failure
       return null;
     }
   } catch (error) {
     console.error('❌ Error fetching CCTV image:', {
       error,
       errorMessage: error.message,
-      args: {
-        username: props.username || null,
-        password: props.password ? '***' : null,
-        ip_address: props.ipAddress,
-        rtsp_stream_path: props.rtspStreamPath,
-      },
-      cameraType: props.cameraType,
+      captureMode: props.captureMode,
       ipAddress: props.ipAddress
     });
     
     ++notFoundCount.value;
     
     // Set appropriate error message based on error type
-    if (error.message && error.message.includes('missing required key')) {
-      message.value = 'Camera configuration error';
+    if (error.message && error.message.includes('Auto-detect timeout')) {
+      message.value = 'Auto-detection timeout - try manual mode';
     } else if (error.message && error.message.includes('timeout')) {
       message.value = 'Camera connection timeout';
-    } else if (error.message && error.message.includes('CCTV capture timeout')) {
-      message.value = 'Camera response timeout - check connection';
-    } else if (error.message && error.message.includes('5XX Server Error')) {
-      message.value = 'Camera server error - check IP and settings';
     } else {
       message.value = `Camera error: ${error.message || 'Unknown error'}`;
     }

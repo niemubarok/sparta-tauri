@@ -314,7 +314,8 @@ class DatabaseService(object):
                 'bayar_keluar': fee,
                 'id_pintu_keluar': gate_id,
                 'id_op_keluar': operator_id,
-                'id_shift_keluar': 'SHIFT_001'  # Default shift
+                'id_shift_keluar': 'SHIFT_001',  # Default shift
+                'status': 1  # Mark as exited
             }
             
             # Update transaction

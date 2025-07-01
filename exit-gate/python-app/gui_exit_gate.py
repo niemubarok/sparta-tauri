@@ -54,6 +54,7 @@ class ExitGateGUI(object):
         self.gate_service = None
         self.scanner = None
         self.db_service = None
+        self.audio_service = None
         
         # GUI Components
         self.status_label = None
@@ -217,6 +218,21 @@ class ExitGateGUI(object):
                 self.log("WARNING: Database service import failed: {}".format(str(db_error)))
                 self.db_service = None
             
+            try:
+                from audio_service import audio_service
+                self.audio_service = audio_service
+                self.log("Audio service imported successfully")
+                
+                # Test audio service and create sounds directory if needed
+                if self.audio_service.is_enabled():
+                    self.log("Audio service is enabled")
+                    self.audio_service.test_audio()
+                else:
+                    self.log("Audio service is disabled or not available")
+            except Exception as audio_error:
+                self.log("WARNING: Audio service import failed: {}".format(str(audio_error)))
+                self.audio_service = None
+            
             # Add barcode listener if available
             if self.scanner:
                 try:
@@ -247,6 +263,8 @@ class ExitGateGUI(object):
                 services_status.append("Scanner")
             if self.db_service:
                 services_status.append("Database")
+            if self.audio_service and self.audio_service.is_enabled():
+                services_status.append("Audio")
             
             if services_status:
                 status_msg = "Ready - Services: {}".format(", ".join(services_status))
@@ -312,6 +330,10 @@ class ExitGateGUI(object):
             
             self.log("BARCODE SCANNED: {} (valid: {})".format(barcode, is_valid))
             
+            # Play scan sound
+            if self.audio_service:
+                self.audio_service.play_scan_sound()
+            
             # Update UI
             self.root.after(0, self.update_barcode_display, barcode)
             
@@ -320,6 +342,9 @@ class ExitGateGUI(object):
                 self.root.after(0, self.process_vehicle_exit, barcode)
             else:
                 self.log("Invalid barcode - ignoring")
+                # Play error sound for invalid barcode
+                if self.audio_service:
+                    self.audio_service.play_error_sound()
                 
         except Exception as e:
             error_msg = "Barcode scan error: {}".format(str(e))
@@ -377,8 +402,18 @@ class ExitGateGUI(object):
                         self.transaction_count += 1
                         self.update_transaction_count()
                         self.log("✅ GATE OPENED SUCCESSFULLY by barcode scan!")
+                        
+                        # Play gate open sound
+                        if self.audio_service:
+                            self.audio_service.play_gate_open_sound()
+                        
+                        # Auto close gate after 1 second
+                        self.root.after(1000, self.auto_close_gate)
                     else:
                         self.log("❌ FAILED to open gate")
+                        # Play error sound for gate failure
+                        if self.audio_service:
+                            self.audio_service.play_error_sound()
                 else:
                     # Simulate gate operation when service not available
                     self.log("SIMULATION: Gate opened by barcode scan (no gate service)")
@@ -387,8 +422,18 @@ class ExitGateGUI(object):
                     self.gate_status = "OPEN"
                     self.update_gate_status()
                     self.log("✅ GATE OPENED SUCCESSFULLY (simulated)")
+                    
+                    # Play gate open sound for simulation
+                    if self.audio_service:
+                        self.audio_service.play_gate_open_sound()
+                    
+                    # Auto close gate after 1 second (simulation)
+                    self.root.after(1000, self.auto_close_gate_simulation)
             elif not gate_opened:
                 self.log("Gate NOT opened - access denied")
+                # Play error sound for access denied
+                if self.audio_service:
+                    self.audio_service.play_error_sound()
             else:
                 self.log("❌ ERROR: Unexpected condition")
                 
@@ -401,13 +446,24 @@ class ExitGateGUI(object):
             if self.debug_mode:
                 if self.gate_service:
                     self.log("DEBUG MODE: Opening gate despite processing error")
-                    self.gate_service.open_gate()  # No auto close
+                    gate_result = self.gate_service.open_gate()  # No auto close
+                    if gate_result:
+                        # Play gate open sound in debug mode
+                        if self.audio_service:
+                            self.audio_service.play_gate_open_sound()
+                        # Auto close gate after 1 second in debug mode too
+                        self.root.after(1000, self.auto_close_gate)
                 else:
                     self.log("DEBUG MODE: Simulating gate open despite processing error")
                     self.gate_status = "OPEN"
                     self.update_gate_status()
                     self.transaction_count += 1
                     self.update_transaction_count()
+                    # Play gate open sound for debug simulation
+                    if self.audio_service:
+                        self.audio_service.play_gate_open_sound()
+                    # Auto close gate after 1 second (simulation)
+                    self.root.after(1000, self.auto_close_gate_simulation)
     
     def on_gate_status_change(self, status):
         """Handle gate status changes"""
@@ -472,6 +528,13 @@ class ExitGateGUI(object):
                 if result:
                     self.transaction_count += 1
                     self.update_transaction_count()
+                    # Play gate open sound for manual operation
+                    if self.audio_service:
+                        self.audio_service.play_gate_open_sound()
+                else:
+                    # Play error sound for failed manual operation
+                    if self.audio_service:
+                        self.audio_service.play_error_sound()
             else:
                 self.log("SIMULATION: Gate opened manually (no gate service)")
                 # Simulate gate operation for testing
@@ -479,8 +542,14 @@ class ExitGateGUI(object):
                 self.update_transaction_count()
                 self.gate_status = "OPEN"
                 self.update_gate_status()
+                # Play gate open sound for manual simulation
+                if self.audio_service:
+                    self.audio_service.play_gate_open_sound()
         except Exception as e:
             self.log("ERROR: Manual open failed: {}".format(str(e)))
+            # Play error sound for exception
+            if self.audio_service:
+                self.audio_service.play_error_sound()
     
     def manual_close_gate(self):
         """Manual gate close"""
@@ -488,13 +557,27 @@ class ExitGateGUI(object):
             if self.gate_service:
                 result = self.gate_service.close_gate()
                 self.log("Manual gate close: {}".format("Success" if result else "Failed"))
+                if result:
+                    # Play gate close sound for successful manual close
+                    if self.audio_service:
+                        self.audio_service.play_gate_close_sound()
+                else:
+                    # Play error sound for failed manual close
+                    if self.audio_service:
+                        self.audio_service.play_error_sound()
             else:
                 self.log("SIMULATION: Gate closed manually (no gate service)")
                 # Simulate gate operation for testing
                 self.gate_status = "CLOSED"
                 self.update_gate_status()
+                # Play gate close sound for manual simulation
+                if self.audio_service:
+                    self.audio_service.play_gate_close_sound()
         except Exception as e:
             self.log("ERROR: Manual close failed: {}".format(str(e)))
+            # Play error sound for exception
+            if self.audio_service:
+                self.audio_service.play_error_sound()
     
     def test_barcode_scan(self):
         """Test barcode scan"""
@@ -578,6 +661,10 @@ class ExitGateGUI(object):
             self.log("Raw barcode: '{}'".format(barcode))
             self.log("Barcode length: {}".format(len(barcode)))
             
+            # Play scan sound for manual input
+            if self.audio_service:
+                self.audio_service.play_scan_sound()
+            
             # Update barcode display
             self.update_barcode_display(barcode)
             
@@ -588,12 +675,45 @@ class ExitGateGUI(object):
                 self.process_vehicle_exit(barcode)
             else:
                 self.log("❌ Barcode too short: {} (minimum 6 characters)".format(len(barcode)))
+                # Play error sound for invalid length
+                if self.audio_service:
+                    self.audio_service.play_error_sound()
                 
         except Exception as e:
             error_msg = "Barcode input processing error: {}".format(str(e))
             self.log("ERROR: " + error_msg)
             logger.error(error_msg)
+            # Play error sound for processing error
+            if self.audio_service:
+                self.audio_service.play_error_sound()
     
+    def auto_close_gate(self):
+        """Auto close gate after delay (with gate service)"""
+        try:
+            if self.gate_service:
+                result = self.gate_service.close_gate()
+                self.log("Auto-close gate: {}".format("Success" if result else "Failed"))
+                if result:
+                    # Play gate close sound for successful auto-close
+                    if self.audio_service:
+                        self.audio_service.play_gate_close_sound()
+            else:
+                self.log("ERROR: Gate service not available for auto-close")
+        except Exception as e:
+            self.log("ERROR: Auto-close failed: {}".format(str(e)))
+    
+    def auto_close_gate_simulation(self):
+        """Auto close gate after delay (simulation mode)"""
+        try:
+            self.gate_status = "CLOSED"
+            self.update_gate_status()
+            self.log("Auto-close gate: Success (simulated)")
+            # Play gate close sound for simulation auto-close
+            if self.audio_service:
+                self.audio_service.play_gate_close_sound()
+        except Exception as e:
+            self.log("ERROR: Auto-close simulation failed: {}".format(str(e)))
+
     def log(self, message):
         """Add message to log display"""
         timestamp = datetime.now().strftime("%H:%M:%S")
@@ -635,6 +755,9 @@ class ExitGateGUI(object):
             
             if self.gate_service:
                 self.gate_service.cleanup()
+            
+            if self.audio_service:
+                self.audio_service.cleanup()
             
             self.root.destroy()
             

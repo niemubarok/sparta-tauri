@@ -217,6 +217,7 @@ pub fn run() {
             command::serial_handler::close_serial,
             command::serial_handler::is_port_opened,
             command::camera_handler::capture_cctv_image,
+            command::camera_handler::capture_cctv_image_auto_detect,
             command::camera_handler::start_rtsp_live_stream,
             command::camera_handler::stop_rtsp_live_stream,
             command::alpr_handler::process_alpr_image,
