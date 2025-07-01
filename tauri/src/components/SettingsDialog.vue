@@ -3,7 +3,8 @@
     ref="dialogRef"
     maximized
     @hide="onDialogHide"
-    persistent
+    :persistent="false"
+    :no-esc-dismiss="false"
     :key="componentStore.settingsKey"
   >
     <div class="row justify-center items-center full-height">
@@ -166,20 +167,92 @@
                 <q-card-section>
                   <div class="settings-section-title">
                     <q-icon name="print" class="q-mr-sm" />
-                    Pengaturan Printer
+                    Pengaturan Printer & Test EPSON TM-T82X
                   </div>
                   
-                  <div class="row q-col-gutter-md q-mt-md items-end">
-                    <div class="col-12 col-sm-4">
-                      <q-input
-                        v-model="printerName"
-                        label="Nama Printer"
-                        placeholder="Kosongkan jika tidak ada"
-                        outlined
-                        dense
-                      />
+                  <!-- Quick Actions -->
+                  <div class="row q-gutter-sm q-mt-md">
+                    <q-btn
+                      color="secondary"
+                      label="Discover Printers"
+                      icon="search"
+                      @click="discoverPrinters"
+                      :loading="discovering"
+                      size="sm"
+                    />
+                    
+                    <q-btn
+                      color="info"
+                      label="List Thermal"
+                      icon="print"
+                      @click="listThermalPrinters"
+                      :loading="loadingPrinters"
+                      size="sm"
+                    />
+
+                    <q-btn
+                      color="primary"
+                      label="Check EPSON"
+                      icon="local_print_shop"
+                      @click="checkEpsonPrinters"
+                      :loading="checkingEpson"
+                      size="sm"
+                    />
+                    
+                    <q-btn
+                      color="orange"
+                      label="Clear Cache"
+                      icon="refresh"
+                      @click="clearPrinterCache"
+                      :disable="discovering || loadingPrinters || checkingEpson"
+                      size="sm"
+                    />
+                  </div>
+
+                  <!-- Printer Selection -->
+                  <div class="row q-col-gutter-md q-mt-md">
+                    <div class="col-12 col-sm-6">
+                      <q-select
+                        v-model="selectedPrinter"
+                        :options="availablePrinters"
+                        label="Pilih Printer"
+                        filled
+                        emit-value
+                        map-options
+                        @update:model-value="onPrinterSelected"
+                      >
+                        <template v-slot:no-option>
+                          <q-item>
+                            <q-item-section class="text-grey">
+                              Tidak ada printer ditemukan. Klik "Discover Printers".
+                            </q-item-section>
+                          </q-item>
+                        </template>
+                        
+                        <template v-slot:prepend>
+                          <q-icon 
+                            :name="getSelectedPrinterIcon()"
+                            :color="getSelectedPrinterColor()"
+                          />
+                        </template>
+                        
+                        <template v-slot:append>
+                          <q-btn
+                            flat
+                            round
+                            dense
+                            icon="cable"
+                            @click.stop="testPrinterConnection"
+                            :loading="testingConnection"
+                            :disable="!selectedPrinter"
+                            title="Test printer connection"
+                            size="sm"
+                          />
+                        </template>
+                      </q-select>
                     </div>
-                    <div class="col-12 col-sm-4">
+                    
+                    <div class="col-12 col-sm-6">
                       <q-select
                         v-model="paperSize"
                         :options="[
@@ -193,7 +266,33 @@
                         map-options
                       />
                     </div>
-                    <div class="col-12 col-sm-4">
+                  </div>
+
+                  <!-- Test Section -->
+                  <div class="row q-col-gutter-md q-mt-md">
+                    <div class="col-12 col-sm-6">
+                      <q-input
+                        v-model="testBarcode"
+                        label="Test Barcode"
+                        outlined
+                        dense
+                        placeholder="SPARTA-TEST123"
+                      >
+                        <template v-slot:append>
+                          <q-btn
+                            flat
+                            round
+                            dense
+                            icon="refresh"
+                            @click="generateTestBarcode"
+                            title="Generate random barcode"
+                            size="sm"
+                          />
+                        </template>
+                      </q-input>
+                    </div>
+                    
+                    <div class="col-12 col-sm-6">
                       <q-toggle
                         v-model="autoPrint"
                         label="Auto Print Tiket"
@@ -201,6 +300,99 @@
                         size="md"
                       />
                     </div>
+                  </div>
+                  
+                  <!-- Action Buttons -->
+                  <div class="row q-gutter-sm q-mt-md">
+                    <q-btn
+                      color="primary"
+                      label="Test Print"
+                      icon="receipt"
+                      @click="testPrintBarcode"
+                      :loading="printing"
+                      :disable="!testBarcode || !selectedPrinter"
+                      size="sm"
+                    />
+                    
+                    <q-btn
+                      color="orange"
+                      label="Test Connection"
+                      icon="cable"
+                      @click="testPrinterConnection"
+                      :loading="testingConnection"
+                      :disable="!selectedPrinter"
+                      size="sm"
+                    />
+
+                    <q-btn
+                      color="positive"
+                      label="Set as Default"
+                      icon="bookmark"
+                      @click="setAsDefaultPrinter"
+                      :disable="!selectedPrinter"
+                      size="sm"
+                    />
+                  </div>
+
+                  <!-- Current Default Printer -->
+                  <div v-if="defaultPrinter" class="q-mt-md">
+                    <q-chip 
+                      icon="bookmark"
+                      color="primary"
+                      text-color="white"
+                      size="sm"
+                    >
+                      Default: {{ defaultPrinter }}
+                    </q-chip>
+                  </div>
+
+                  <!-- EPSON Printers Section -->
+                  <div v-if="epsonPrinters.length > 0" class="q-mt-md">
+                    <div class="text-subtitle2 q-mb-sm text-primary">
+                      <q-icon name="local_print_shop" class="q-mr-xs" />
+                      EPSON TM-T82X Found ({{ epsonPrinters.length }})
+                    </div>
+                    <q-list dense bordered class="rounded-borders">
+                      <q-item
+                        v-for="printer in epsonPrinters"
+                        :key="printer"
+                        clickable
+                        @click="selectedPrinter = printer"
+                        :class="selectedPrinter === printer ? 'bg-primary text-white' : ''"
+                      >
+                        <q-item-section avatar>
+                          <q-icon name="local_print_shop" :color="selectedPrinter === printer ? 'white' : 'primary'" />
+                        </q-item-section>
+                        <q-item-section>
+                          <q-item-label>{{ printer }}</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                          <q-btn
+                            flat
+                            round
+                            dense
+                            icon="print"
+                            @click.stop="quickTestPrint(printer)"
+                            :loading="printing === printer"
+                            size="sm"
+                            :color="selectedPrinter === printer ? 'white' : 'primary'"
+                          />
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </div>
+
+                  <!-- Status Messages -->
+                  <div v-if="lastTestResult" class="q-mt-md">
+                    <q-banner 
+                      :class="lastTestResult.success ? 'bg-positive text-white' : 'bg-negative text-white'"
+                      rounded
+                    >
+                      <template v-slot:avatar>
+                        <q-icon :name="lastTestResult.success ? 'check_circle' : 'error'" />
+                      </template>
+                      {{ lastTestResult.message }}
+                    </q-banner>
                   </div>
                 </q-card-section>
               </q-card>
@@ -269,8 +461,33 @@
 
                 <q-card flat bordered class="q-ma-sm">
                   <q-card-section>
-                    <!-- USB Camera Selection -->
+                    <!-- Camera Type Selection -->
                     <div class="camera-config-section q-mb-md">
+                      <div class="text-subtitle2 text-weight-medium q-mb-sm">Tipe Kamera</div>
+                      <q-option-group
+                        :model-value="cameraType.name === 'plate' ? plateCameraMode : 
+                                     cameraType.name === 'driver' ? driverCameraMode : scannerCameraMode"
+                        @update:model-value="val => {
+                          if (cameraType.name === 'plate') plateCameraMode = val;
+                          else if (cameraType.name === 'driver') driverCameraMode = val;
+                          else scannerCameraMode = val;
+                        }"
+                        :options="[
+                          { label: 'CCTV (IP Camera)', value: 'cctv' },
+                          { label: 'USB Camera', value: 'usb' }
+                        ]"
+                        color="primary"
+                        inline
+                      />
+                    </div>
+
+                    <!-- USB Camera Selection -->
+                    <div 
+                      v-show="(cameraType.name === 'plate' && plateCameraMode === 'usb') || 
+                              (cameraType.name === 'driver' && driverCameraMode === 'usb') || 
+                              (cameraType.name === 'scanner' && scannerCameraMode === 'usb')"
+                      class="camera-config-section q-mb-md"
+                    >
                       <div class="text-subtitle2 text-weight-medium q-mb-sm">USB Kamera</div>
                       <q-select
                         :model-value="cameraType.name === 'plate' ? selectedPlateCam : 
@@ -293,15 +510,23 @@
                     </div>
 
                     <!-- CCTV Configuration -->
-                    <div class="camera-config-section q-mb-md">
+                    <div 
+                      v-show="(cameraType.name === 'plate' && plateCameraMode === 'cctv') || 
+                              (cameraType.name === 'driver' && driverCameraMode === 'cctv') || 
+                              (cameraType.name === 'scanner' && scannerCameraMode === 'cctv')"
+                      class="camera-config-section q-mb-md"
+                    >
                       <div class="text-subtitle2 text-weight-medium q-mb-sm">Konfigurasi CCTV</div>
                       <div class="row q-col-gutter-sm">
                         <div class="col-12 col-sm-6">
                           <q-input
                             :model-value="cameraType.name === 'plate' ? plateCameraIp : 
                                          cameraType.name === 'driver' ? driverCameraIp : scannerCameraIp"
-                            @update:model-value="cameraType.name === 'plate' ? setPlateCameraIP : 
-                                               cameraType.name === 'driver' ? setDriverCameraIP : updateScannerCameraUrl"
+                            @update:model-value="val => {
+                              if (cameraType.name === 'plate') plateCameraIp = val;
+                              else if (cameraType.name === 'driver') driverCameraIp = val;
+                              else scannerCameraIp = val;
+                            }"
                             label="IP Address CCTV"
                             placeholder="192.168.1.100"
                             outlined
@@ -327,8 +552,11 @@
                           <q-input
                             :model-value="cameraType.name === 'plate' ? plateCameraUsername : 
                                          cameraType.name === 'driver' ? driverCameraUsername : scannerCameraUsername"
-                            @update:model-value="cameraType.name === 'plate' ? updatePlateCameraUsername : 
-                                               cameraType.name === 'driver' ? updateDriverCameraUsername : updateScannerCameraUsername"
+                            @update:model-value="val => {
+                              if (cameraType.name === 'plate') plateCameraUsername = val;
+                              else if (cameraType.name === 'driver') driverCameraUsername = val;
+                              else scannerCameraUsername = val;
+                            }"
                             label="Username"
                             placeholder="admin"
                             outlined
@@ -339,8 +567,11 @@
                           <q-input
                             :model-value="cameraType.name === 'plate' ? plateCameraPassword : 
                                          cameraType.name === 'driver' ? driverCameraPassword : scannerCameraPassword"
-                            @update:model-value="cameraType.name === 'plate' ? updatePlateCameraPassword : 
-                                               cameraType.name === 'driver' ? updateDriverCameraPassword : updateScannerCameraPassword"
+                            @update:model-value="val => {
+                              if (cameraType.name === 'plate') plateCameraPassword = val;
+                              else if (cameraType.name === 'driver') driverCameraPassword = val;
+                              else scannerCameraPassword = val;
+                            }"
                             label="Password"
                             type="password"
                             outlined
@@ -433,16 +664,18 @@
 </template>
 
 <script setup>
-import { useDialogPluginComponent, useQuasar } from "quasar";
+import { useDialogPluginComponent, useQuasar, Notify } from "quasar";
 // import SuccessCheckMark from "./SuccessCheckMark.vue";
 import {
   onMounted,
+  onUnmounted,
   computed,
   ref,
   watch,
   toRefs, // Ditambahkan
 } from "vue";
 import { useComponentStore } from "src/stores/component-store";
+import { invoke } from '@tauri-apps/api/core';
 
 import { useTransaksiStore } from "src/stores/transaksi-store";
 import { useSettingsService } from 'stores/settings-service';
@@ -467,6 +700,18 @@ defineEmits([...useDialogPluginComponent.emits]);
 
 const { dialogRef } = useDialogPluginComponent();
 
+// Dialog handlers
+const onDialogHide = () => {
+  // Dialog is closing, perform any cleanup if needed
+  console.log('Settings dialog is closing');
+};
+
+// Handle Esc key press
+const handleEscKey = () => {
+  console.log('Esc key pressed in settings dialog');
+  dialogRef.value?.hide();
+};
+
 // Pengaturan gerbang sekarang diambil dari gateSettings dan globalSettings
 const gateName = ref('');
 const gateType = ref('entry');
@@ -474,7 +719,34 @@ const manlessMode = ref(true);
 const printerName = ref(null);
 const paperSize = ref('58mm');
 const autoPrint = ref(true);
-const darkMode = ref(false);
+
+// Printer test and discovery state
+const availablePrinters = ref([]);
+const discoveredDevices = ref([]);
+const epsonPrinters = ref([]);
+const selectedPrinter = ref('');
+const defaultPrinter = ref('');
+const testBarcode = ref('SPARTA-' + Date.now().toString(36).toUpperCase());
+const lastTestResult = ref(null);
+
+// Loading states
+const discovering = ref(false);
+const loadingPrinters = ref(false);
+const checkingEpson = ref(false);
+const testingConnection = ref(false);
+const printing = ref(false);
+
+// Cache untuk printer discovery
+const printerCache = ref({
+  printers: [],
+  discoveredDevices: [],
+  epsonPrinters: [],
+  lastUpdate: null,
+  cacheTimeout: 30000 // 30 seconds cache
+});
+
+// Flag untuk prevent multiple concurrent discovery
+const discoveryInProgress = ref(false);
 
 // Operation mode settings
 const operationMode = ref('manless');
@@ -497,16 +769,19 @@ const selectedPlateCam = ref(null);
 const plateCameraIp = ref('');
 const plateCameraUsername = ref('');
 const plateCameraPassword = ref('');
+const plateCameraMode = ref('cctv'); // Default to CCTV
 
 const selectedDriverCam = ref(null);
 const driverCameraIp = ref('');
 const driverCameraUsername = ref('');
 const driverCameraPassword = ref('');
+const driverCameraMode = ref('cctv'); // Default to CCTV
 
 const selectedScannerCam = ref(null);
 const scannerCameraIp = ref('');
 const scannerCameraUsername = ref('');
 const scannerCameraPassword = ref('');
+const scannerCameraMode = ref('cctv'); // Default to CCTV
 const plateCameraRtspPath = ref('');
 const driverCameraRtspPath = ref('');
 const scannerCameraRtspPath = ref('');
@@ -570,13 +845,14 @@ watch(gateSettings, (newSettings) => {
     manualPaymentMode.value = newSettings.manualPaymentMode || 'postpaid';
     prefix.value = newSettings.prefix || ls.get('prefix') || '';
     printerName.value = newSettings.printerName || null;
+    selectedPrinter.value = newSettings.selectedPrinter || newSettings.printerName || '';
+    defaultPrinter.value = newSettings.defaultPrinter || '';
     paperSize.value = newSettings.paperSize || '58mm';
     autoPrint.value = newSettings.autoPrint || true;
     serialPort.value = newSettings.SERIAL_PORT || '';
     captureInterval.value = newSettings.CAPTURE_INTERVAL || 5000;
     wsUrl.value = newSettings.WS_URL || '';
     useExternalAlpr.value = newSettings.USE_EXTERNAL_ALPR || false;
-    // darkMode.value = newSettings.darkMode || false;
     
     // Camera settings
     selectedPlateCam.value = newSettings.PLATE_CAM_DEVICE_ID || null;
@@ -587,6 +863,7 @@ watch(gateSettings, (newSettings) => {
     plateCameraDefaultMode.value = newSettings.PLATE_CAM_DEFAULT_MODE || 'auto';
     plateCameraSnapshotUrl.value = newSettings.PLATE_CAM_SNAPSHOT_URL || '';
     plateCameraHttpPort.value = newSettings.PLATE_CAM_HTTP_PORT || 80;
+    plateCameraMode.value = newSettings.PLATE_CAM_MODE || 'cctv';
     
     selectedDriverCam.value = newSettings.DRIVER_CAM_DEVICE_ID || null;
     driverCameraIp.value = newSettings.DRIVER_CAM_IP || '';
@@ -596,6 +873,7 @@ watch(gateSettings, (newSettings) => {
     driverCameraDefaultMode.value = newSettings.DRIVER_CAM_DEFAULT_MODE || 'auto';
     driverCameraSnapshotUrl.value = newSettings.DRIVER_CAM_SNAPSHOT_URL || '';
     driverCameraHttpPort.value = newSettings.DRIVER_CAM_HTTP_PORT || 80;
+    driverCameraMode.value = newSettings.DRIVER_CAM_MODE || 'cctv';
     
     selectedScannerCam.value = newSettings.SCANNER_CAM_DEVICE_ID || null;
     scannerCameraIp.value = newSettings.SCANNER_CAM_IP || '';
@@ -605,14 +883,451 @@ watch(gateSettings, (newSettings) => {
     scannerCameraDefaultMode.value = newSettings.SCANNER_CAM_DEFAULT_MODE || 'auto';
     scannerCameraSnapshotUrl.value = newSettings.SCANNER_CAM_SNAPSHOT_URL || '';
     scannerCameraHttpPort.value = newSettings.SCANNER_CAM_HTTP_PORT || 80;
+    scannerCameraMode.value = newSettings.SCANNER_CAM_MODE || 'cctv';
     
     // Former global settings
     wsUrl.value = newSettings.WS_URL || 'ws://localhost:8765';
     useExternalAlpr.value = newSettings.USE_EXTERNAL_ALPR || false;
-    // darkMode.value = newSettings.darkMode || false;
     selectedLocation.value = newSettings.LOCATION || null;
   }
 }, { immediate: true, deep: true });
+
+// Printer utility functions
+const getSelectedPrinterIcon = () => {
+  if (!selectedPrinter.value) return 'print';
+  return (selectedPrinter.value.includes('EPSON') || selectedPrinter.value.includes('TM-T82')) 
+    ? 'local_print_shop' : 'print';
+};
+
+const getSelectedPrinterColor = () => {
+  if (!selectedPrinter.value) return 'grey';
+  return (selectedPrinter.value.includes('EPSON') || selectedPrinter.value.includes('TM-T82')) 
+    ? 'primary' : 'secondary';
+};
+
+// Cache management functions
+const isCacheValid = () => {
+  if (!printerCache.value.lastUpdate) return false;
+  const now = Date.now();
+  return (now - printerCache.value.lastUpdate) < printerCache.value.cacheTimeout;
+};
+
+const loadFromCache = () => {
+  if (isCacheValid()) {
+    availablePrinters.value = [...printerCache.value.printers];
+    discoveredDevices.value = [...printerCache.value.discoveredDevices];
+    epsonPrinters.value = [...printerCache.value.epsonPrinters];
+    console.log('📦 Loaded printer data from cache');
+    return true;
+  }
+  return false;
+};
+
+const saveToCache = () => {
+  printerCache.value = {
+    printers: [...availablePrinters.value],
+    discoveredDevices: [...discoveredDevices.value],
+    epsonPrinters: [...epsonPrinters.value],
+    lastUpdate: Date.now(),
+    cacheTimeout: 30000
+  };
+  console.log('💾 Saved printer data to cache');
+};
+
+const withConcurrencyControl = async (operation, timeoutMs = 10000) => {
+  if (discoveryInProgress.value) {
+    console.log('⚠️ Discovery already in progress, waiting...');
+    
+    const startTime = Date.now();
+    while (discoveryInProgress.value && (Date.now() - startTime) < timeoutMs) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    if (discoveryInProgress.value) {
+      console.error('❌ Discovery timed out, forcing reset');
+      discoveryInProgress.value = false;
+      throw new Error('Discovery operation timed out');
+    }
+    
+    if (loadFromCache()) {
+      return;
+    }
+  }
+  
+  discoveryInProgress.value = true;
+  try {
+    await operation();
+    saveToCache();
+  } finally {
+    discoveryInProgress.value = false;
+  }
+};
+
+// Printer discovery functions
+const discoverPrinters = async () => {
+  if (loadFromCache()) {
+    console.log('📦 Using cached printer data');
+    
+    Notify.create({
+      type: 'positive',
+      message: `Menggunakan data cache: ${discoveredDevices.value.length} device`,
+      timeout: 2000
+    });
+    return;
+  }
+  
+  await withConcurrencyControl(async () => {
+    discovering.value = true;
+    
+    try {
+      console.log('🔍 Starting printer discovery...');
+      
+      const devices = await Promise.race([
+        invoke('discover_thermal_printers'),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Discovery timeout after 8 seconds')), 8000)
+        )
+      ]);
+      
+      discoveredDevices.value = devices;
+      
+      availablePrinters.value = devices.map(device => ({
+        label: device.name,
+        value: device.name
+      }));
+      
+      console.log('✅ Discovery completed:', devices.length, 'devices found');
+      
+      Notify.create({
+        type: 'positive',
+        message: `Ditemukan ${devices.length} device`,
+        timeout: 3000
+      });
+    } catch (error) {
+      console.error('❌ Discover printers error:', error);
+      
+      const fallbackDevices = [{
+        name: "Manual Entry",
+        connection_type: "manual",
+        port: "manual",
+        status: "available"
+      }];
+      
+      discoveredDevices.value = fallbackDevices;
+      availablePrinters.value = fallbackDevices.map(device => ({
+        label: device.name,
+        value: device.name
+      }));
+      
+      Notify.create({
+        type: 'warning',
+        message: `Discovery gagal: ${error.message || error}. Menggunakan fallback.`,
+        timeout: 5000
+      });
+    } finally {
+      discovering.value = false;
+    }
+  });
+};
+
+const listThermalPrinters = async () => {
+  if (loadFromCache() && availablePrinters.value.length > 0) {
+    console.log('📦 Using cached thermal printer list');
+    
+    Notify.create({
+      type: 'positive',
+      message: `Menggunakan data cache: ${availablePrinters.value.length} printer`,
+      timeout: 2000
+    });
+    return;
+  }
+  
+  await withConcurrencyControl(async () => {
+    loadingPrinters.value = true;
+    
+    try {
+      console.log('📝 Starting thermal printer list...');
+      
+      const result = await Promise.race([
+        invoke('list_thermal_printers'),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('List timeout after 6 seconds')), 6000)
+        )
+      ]);
+      
+      availablePrinters.value = result.map(printer => ({
+        label: printer,
+        value: printer
+      }));
+      
+      discoveredDevices.value = [];
+      
+      console.log('✅ Thermal printer list completed:', result.length, 'printers found');
+      
+      Notify.create({
+        type: 'positive',
+        message: `Ditemukan ${result.length} printer`,
+        timeout: 3000
+      });
+    } catch (error) {
+      console.error('❌ List printers error:', error);
+      
+      const fallbackPrinters = [
+        { label: 'Manual Entry', value: 'Manual Entry' },
+        { label: 'EPSON TM-T82X', value: 'EPSON TM-T82X' }
+      ];
+      
+      availablePrinters.value = fallbackPrinters;
+      
+      Notify.create({
+        type: 'warning',
+        message: `List printer gagal: ${error.message || error}. Menggunakan fallback.`,
+        timeout: 5000
+      });
+    } finally {
+      loadingPrinters.value = false;
+    }
+  });
+};
+
+const checkEpsonPrinters = async () => {
+  if (loadFromCache() && epsonPrinters.value.length > 0) {
+    console.log('📦 Using cached EPSON printer data');
+    
+    Notify.create({
+      type: 'positive',
+      message: `Cache: ${epsonPrinters.value.length} EPSON printer`,
+      timeout: 2000
+    });
+    return;
+  }
+  
+  await withConcurrencyControl(async () => {
+    checkingEpson.value = true;
+    
+    try {
+      console.log('🖨️ Starting EPSON printer check...');
+      
+      const result = await Promise.race([
+        invoke('check_epson_printers'),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('EPSON check timeout after 5 seconds')), 5000)
+        )
+      ]);
+      
+      epsonPrinters.value = result.filter(name => !name.includes('No EPSON'));
+      
+      if (epsonPrinters.value.length > 0) {
+        console.log('✅ EPSON check completed:', epsonPrinters.value.length, 'EPSON printers found');
+        
+        Notify.create({
+          type: 'positive',
+          message: `Ditemukan ${epsonPrinters.value.length} EPSON printer`,
+          timeout: 3000
+        });
+        
+        if (!selectedPrinter.value) {
+          selectedPrinter.value = epsonPrinters.value[0];
+        }
+      } else {
+        console.log('⚠️ No EPSON printers found');
+        Notify.create({
+          type: 'warning',
+          message: 'Tidak ada EPSON TM-T82X yang ditemukan',
+          timeout: 3000
+        });
+      }
+    } catch (error) {
+      console.error('❌ Check EPSON printers error:', error);
+      
+      epsonPrinters.value = ['EPSON TM-T82X (Fallback)'];
+      
+      Notify.create({
+        type: 'warning',
+        message: `EPSON check gagal: ${error.message || error}. Menggunakan fallback.`,
+        timeout: 5000
+      });
+    } finally {
+      checkingEpson.value = false;
+    }
+  });
+};
+
+// Printer testing functions
+const testPrintBarcode = async () => {
+  printing.value = true;
+  lastTestResult.value = null;
+  
+  try {
+    const result = await invoke('test_print_barcode', { 
+      barcodeData: testBarcode.value,
+      printerName: selectedPrinter.value
+    });
+    
+    lastTestResult.value = result;
+    
+    Notify.create({
+      type: 'positive',
+      message: result.message || 'Test print berhasil!',
+      timeout: 3000
+    });
+  } catch (error) {
+    console.error('Test print error:', error);
+    
+    lastTestResult.value = {
+      success: false,
+      message: error.toString()
+    };
+    
+    Notify.create({
+      type: 'negative',
+      message: `Test print gagal: ${error}`,
+      timeout: 5000
+    });
+  } finally {
+    printing.value = false;
+  }
+};
+
+const quickTestPrint = async (printerName) => {
+  printing.value = printerName;
+  
+  try {
+    const result = await invoke('test_print_barcode', { 
+      barcodeData: `QUICK-TEST-${Date.now().toString(36).toUpperCase()}`,
+      printerName: printerName
+    });
+    
+    Notify.create({
+      type: 'positive',
+      message: `Quick test berhasil: ${result.message}`,
+      timeout: 3000
+    });
+  } catch (error) {
+    Notify.create({
+      type: 'negative',
+      message: `Quick test gagal: ${error}`,
+      timeout: 5000
+    });
+  } finally {
+    printing.value = false;
+  }
+};
+
+const testPrinterConnection = async () => {
+  testingConnection.value = true;
+  lastTestResult.value = null;
+  
+  try {
+    const result = await invoke('test_printer_connection', { 
+      printerIdentifier: selectedPrinter.value 
+    });
+    
+    lastTestResult.value = result;
+    
+    Notify.create({
+      type: 'positive',
+      message: result.message,
+      timeout: 3000
+    });
+  } catch (error) {
+    console.error('Test connection error:', error);
+    
+    lastTestResult.value = {
+      success: false,
+      message: error.toString()
+    };
+    
+    Notify.create({
+      type: 'negative',
+      message: `Test connection gagal: ${error}`,
+      timeout: 5000
+    });
+  } finally {
+    testingConnection.value = false;
+  }
+};
+
+// Printer management functions
+const setAsDefaultPrinter = async () => {
+  try {
+    const result = await invoke('set_default_printer', { 
+      printerName: selectedPrinter.value 
+    });
+    
+    defaultPrinter.value = selectedPrinter.value;
+    
+    Notify.create({
+      type: 'positive',
+      message: result.message || 'Printer default berhasil diset!'
+    });
+  } catch (error) {
+    console.error('Set default printer error:', error);
+    Notify.create({
+      type: 'negative',
+      message: `Gagal set default printer: ${error}`
+    });
+  }
+};
+
+const getDefaultPrinter = async () => {
+  try {
+    const result = await invoke('get_default_printer');
+    defaultPrinter.value = result;
+    if (!selectedPrinter.value) {
+      selectedPrinter.value = result;
+    }
+    
+    Notify.create({
+      type: 'info',
+      message: `Default printer: ${result}`,
+      timeout: 2000
+    });
+  } catch (error) {
+    console.log('No default printer set');
+    Notify.create({
+      type: 'warning',
+      message: 'Tidak ada default printer yang diset'
+    });
+  }
+};
+
+// Utility functions
+const generateTestBarcode = () => {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 7).toUpperCase();
+  testBarcode.value = `SPARTA-${timestamp}-${random}`;
+};
+
+const clearPrinterCache = () => {
+  printerCache.value = {
+    printers: [],
+    discoveredDevices: [],
+    epsonPrinters: [],
+    lastUpdate: null,
+    cacheTimeout: 30000
+  };
+  
+  availablePrinters.value = [];
+  discoveredDevices.value = [];
+  epsonPrinters.value = [];
+  selectedPrinter.value = '';
+  lastTestResult.value = null;
+  
+  discoveryInProgress.value = false;
+  
+  Notify.create({
+    type: 'info',
+    message: 'Cache printer berhasil dibersihkan',
+    timeout: 2000
+  });
+};
+
+const onPrinterSelected = (selectedPrinterName) => {
+  console.log('Selected printer:', selectedPrinterName);
+  printerName.value = selectedPrinterName; // Update the printerName for settings
+  lastTestResult.value = null;
+};
 
 const onSaveSettings = async () => {
   console.log('onSaveSettings started - saving all settings...');
@@ -627,7 +1342,9 @@ const onSaveSettings = async () => {
       manualPaymentMode: manualPaymentMode.value,
       prefix: prefix.value,
       SERIAL_PORT: serialPort.value,
-      printerName: printerName.value,
+      printerName: selectedPrinter.value || printerName.value,
+      selectedPrinter: selectedPrinter.value,
+      defaultPrinter: defaultPrinter.value,
       paperSize: paperSize.value,
       autoPrint: autoPrint.value,
       PLATE_CAM_DEVICE_ID: selectedPlateCam.value,
@@ -638,6 +1355,7 @@ const onSaveSettings = async () => {
       PLATE_CAM_DEFAULT_MODE: plateCameraDefaultMode.value,
       PLATE_CAM_SNAPSHOT_URL: plateCameraSnapshotUrl.value,
       PLATE_CAM_HTTP_PORT: plateCameraHttpPort.value,
+      PLATE_CAM_MODE: plateCameraMode.value,
       DRIVER_CAM_DEVICE_ID: selectedDriverCam.value,
       DRIVER_CAM_IP: driverCameraIp.value,
       DRIVER_CAM_USERNAME: driverCameraUsername.value,
@@ -646,6 +1364,7 @@ const onSaveSettings = async () => {
       DRIVER_CAM_DEFAULT_MODE: driverCameraDefaultMode.value,
       DRIVER_CAM_SNAPSHOT_URL: driverCameraSnapshotUrl.value,
       DRIVER_CAM_HTTP_PORT: driverCameraHttpPort.value,
+      DRIVER_CAM_MODE: driverCameraMode.value,
       SCANNER_CAM_DEVICE_ID: selectedScannerCam.value,
       SCANNER_CAM_IP: scannerCameraIp.value,
       SCANNER_CAM_USERNAME: scannerCameraUsername.value,
@@ -654,16 +1373,27 @@ const onSaveSettings = async () => {
       SCANNER_CAM_DEFAULT_MODE: scannerCameraDefaultMode.value,
       SCANNER_CAM_SNAPSHOT_URL: scannerCameraSnapshotUrl.value,
       SCANNER_CAM_HTTP_PORT: scannerCameraHttpPort.value,
+      SCANNER_CAM_MODE: scannerCameraMode.value,
       CAPTURE_INTERVAL: parseInt(captureInterval.value, 10) || 5000,
       
       // Former global settings now in gate settings
       WS_URL: wsUrl.value || 'ws://localhost:8765',
       USE_EXTERNAL_ALPR: useExternalAlpr.value || false,
-      // darkMode: darkMode.value || false,
       LOCATION: selectedLocation.value,
     };
     
     console.log('Saving consolidated settings:', settingsToSave);
+    
+    // Debug camera settings specifically
+    console.log('Camera settings being saved:', {
+      PLATE_CAM_MODE: plateCameraMode.value,
+      PLATE_CAM_IP: plateCameraIp.value,
+      DRIVER_CAM_MODE: driverCameraMode.value,
+      DRIVER_CAM_IP: driverCameraIp.value,
+      SCANNER_CAM_MODE: scannerCameraMode.value,
+      SCANNER_CAM_IP: scannerCameraIp.value
+    });
+    
     await settingsService.saveGateSettings(settingsToSave);
     
     // Save prefix to localStorage
@@ -791,73 +1521,25 @@ const getCameras = async () => {
 };
 
 const updatePlateCamera = (cam) => {
-  // Dipanggil oleh q-select @update:model-value, 'cam' adalah objek kamera atau null
-  // selectedPlateCam.value sudah diupdate oleh v-model q-select
-  // Perubahan akan disimpan oleh watcher selectedPlateCam
-  // console.log("updatePlateCamera, selected cam object:", cam);
+  // USB camera selected, clear CCTV IP if needed
+  if (cam && plateCameraMode.value === 'usb') {
+    plateCameraIp.value = '';
+  }
 };
 
 const updateDriverCamera = (cam) => {
-  // Dipanggil oleh q-select @update:model-value, 'cam' adalah objek kamera atau null
-  // selectedDriverCam.value sudah diupdate oleh v-model q-select
-  // Perubahan akan disimpan oleh watcher selectedDriverCam
-  // console.log("updateDriverCamera, selected cam object:", cam);
+  // USB camera selected, clear CCTV IP if needed
+  if (cam && driverCameraMode.value === 'usb') {
+    driverCameraIp.value = '';
+  }
 };
 
 const updateScannerCamera = (cam) => {
-  // Dipanggil oleh q-select @update:model-value, 'cam' adalah objek kamera atau null
-  // selectedScannerCam.value sudah diupdate oleh v-model q-select
-  // Perubahan akan disimpan oleh watcher selectedScannerCam
-  // console.log("updateScannerCamera, selected cam object:", cam);
+  // USB camera selected, clear CCTV IP if needed
+  if (cam && scannerCameraMode.value === 'usb') {
+    scannerCameraIp.value = '';
+  }
 };
-
-const setPlateCameraIP = (ip) => {
-  if (ip) {
-    // Clear USB camera selection
-    selectedPlateCam.value = null
-    // settingsService.saveGateSettings({ PLATE_CAM_DEVICE_ID: null, PLATE_CAM_IP: ip }); // Sudah ditangani oleh watcher
-  }
-}
-
-const setDriverCameraIP = (ip) => {
-  if (ip) {
-    // Clear USB camera selection
-    selectedDriverCam.value = null
-    // settingsService.saveGateSettings({ DRIVER_CAM_DEVICE_ID: null, DRIVER_CAM_IP: ip }); // Sudah ditangani oleh watcher
-  }
-}
-
-const updateScannerCameraUrl = (url) => {
-  if (url) {
-    // Clear USB camera selection
-    selectedScannerCam.value = null
-    // settingsService.saveGateSettings({ SCANNER_CAM_DEVICE_ID: null, SCANNER_CAM_IP: url }); // Sudah ditangani oleh watcher
-  }
-}
-
-const updatePlateCameraUsername = (username) => {
-  // settingsService.saveGateSettings({ PLATE_CAM_USERNAME: username }); // Sudah ditangani oleh watcher
-}
-
-const updatePlateCameraPassword = (password) => {
-  // settingsService.saveGateSettings({ PLATE_CAM_PASSWORD: password }); // Sudah ditangani oleh watcher
-}
-
-const updateDriverCameraUsername = (username) => {
-  // settingsService.saveGateSettings({ DRIVER_CAM_USERNAME: username }); // Sudah ditangani oleh watcher
-}
-
-const updateDriverCameraPassword = (password) => {
-  // settingsService.saveGateSettings({ DRIVER_CAM_PASSWORD: password }); // Sudah ditangani oleh watcher
-}
-
-const updateScannerCameraUsername = (username) => {
-  // settingsService.saveGateSettings({ SCANNER_CAM_USERNAME: username }); // Sudah ditangani oleh watcher
-}
-
-const updateScannerCameraPassword = (password) => {
-  // settingsService.saveGateSettings({ SCANNER_CAM_PASSWORD: password }); // Sudah ditangani oleh watcher
-}
 
 // backendUrl, alprUrl, dan wsUrl sekarang diambil dari globalSettings dan tidak lagi disimpan secara lokal di sini.
 // Inisialisasi sudah dilakukan di atas dengan `globalSettings.value?.API_IP` dll.
@@ -888,6 +1570,19 @@ const updateLocation = (val) => {
 onMounted(async () => {
   console.log('SettingsDialog onMounted started');
   
+  // Add keyboard event listener for Esc key
+  const handleKeydown = (event) => {
+    if (event.key === 'Escape') {
+      console.log('Esc key pressed, closing settings dialog');
+      handleEscKey();
+    }
+  };
+  
+  document.addEventListener('keydown', handleKeydown);
+  
+  // Store reference for cleanup
+  window.settingsDialogKeydownHandler = handleKeydown;
+  
   try {
     // Initialize prefix from localStorage
     prefix.value = ls.get('prefix') || '';
@@ -905,6 +1600,29 @@ onMounted(async () => {
     await getCameras(); 
     console.log('Camera enumeration completed, camera count:', cameras.value.length);
     
+    // Initialize printer discovery
+    console.log('Starting printer initialization...');
+    try {
+      // Check if cache is available first
+      if (loadFromCache()) {
+        console.log('📦 Loaded printer data from cache');
+      } else {
+        // Start with checking EPSON printers first (fastest usually)
+        await checkEpsonPrinters();
+        
+        // Get default printer
+        await getDefaultPrinter();
+      }
+    } catch (error) {
+      console.error('❌ Error during printer initialization:', error);
+      Notify.create({
+        type: 'warning',
+        message: 'Gagal inisialisasi printer. Gunakan tombol discovery manual.',
+        timeout: 3000
+      });
+    }
+    console.log('Printer initialization completed');
+    
     // The form values will be automatically updated by the watcher
     // when gateSettings changes, so we don't need to manually set them here
     console.log('Current settings after initialization:', gateSettings.value);
@@ -917,6 +1635,15 @@ onMounted(async () => {
       message: 'Failed to load settings. Please try again.',
       position: 'top'
     });
+  }
+});
+
+onUnmounted(() => {
+  // Clean up keyboard event listener
+  if (window.settingsDialogKeydownHandler) {
+    document.removeEventListener('keydown', window.settingsDialogKeydownHandler);
+    delete window.settingsDialogKeydownHandler;
+    console.log('SettingsDialog: Keyboard event listener cleaned up');
   }
 });
 </script>
@@ -971,7 +1698,7 @@ onMounted(async () => {
 
 .settings-section-title {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   color: #1976d2;
   display: flex;
   align-items: center;
@@ -990,25 +1717,27 @@ onMounted(async () => {
 
 .settings-expansion :deep(.q-item) {
   padding: 12px 16px;
-  background-color: #f8f9fa;
-  color: #424242;
+  background-color: #f5f7fa;
+  color: #212121;
+  font-weight: 500;
 }
 
 .settings-expansion :deep(.q-item:hover) {
   background-color: #e3f2fd;
   color: #1565c0;
+  font-weight: 600;
 }
 
 .camera-config-section {
   padding: 12px;
-  background-color: #fafafa;
+  background-color: #f5f7fa;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e1e5e9;
 }
 
 .camera-config-section .text-subtitle2 {
   color: #1976d2;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 8px;
 }
 
@@ -1085,26 +1814,30 @@ onMounted(async () => {
 .text-caption {
   font-size: 12px;
   line-height: 1.4;
-  color: #666666 !important;
+  color: #616161 !important;
+  font-weight: 500;
 }
 
 /* Ensure proper text contrast */
 :deep(.q-item-label) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 :deep(.q-expansion-item__label) {
-  color: #424242 !important;
-  font-weight: 500;
+  color: #212121 !important;
+  font-weight: 600;
 }
 
 /* Input label improvements */
 :deep(.q-field__label) {
   color: #424242 !important;
+  font-weight: 500;
 }
 
 :deep(.q-field--focused .q-field__label) {
   color: #1976d2 !important;
+  font-weight: 600;
 }
 
 /* Card section improvements */
@@ -1114,90 +1847,103 @@ onMounted(async () => {
 
 /* Text color improvements for better visibility */
 :deep(.q-field__control) {
-  color: #424242;
+  color: #212121;
 }
 
 :deep(.q-field__native) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 :deep(.q-input .q-field__native) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 :deep(.q-select .q-field__native) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 :deep(.q-field__input) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 :deep(.q-toggle__label) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 /* Placeholder text */
 :deep(.q-field__input::placeholder) {
-  color: #999999 !important;
+  color: #757575 !important;
+  font-weight: 400;
 }
 
 :deep(input::placeholder) {
-  color: #999999 !important;
+  color: #757575 !important;
+  font-weight: 400;
 }
 
 /* Selected option text in dropdowns */
 :deep(.q-select__selection) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 /* Dropdown options */
 :deep(.q-menu .q-item) {
-  color: #424242 !important;
+  color: #212121 !important;
 }
 
 /* Input text when typing */
 :deep(input[type="text"]) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 :deep(input[type="number"]) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 :deep(input[type="password"]) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 /* Ensure all input elements have proper contrast */
 :deep(.q-field .q-field__control .q-field__native) {
-  color: #424242 !important;
+  color: #212121 !important;
   background-color: transparent !important;
+  font-weight: 500;
 }
 
 :deep(.q-field .q-field__control input) {
-  color: #424242 !important;
+  color: #212121 !important;
   background-color: transparent !important;
+  font-weight: 500;
 }
 
 /* Fix for autofilled inputs */
 :deep(input:-webkit-autofill) {
-  -webkit-text-fill-color: #424242 !important;
+  -webkit-text-fill-color: #212121 !important;
   -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
 }
 
 :deep(input:-webkit-autofill:focus) {
-  -webkit-text-fill-color: #424242 !important;
+  -webkit-text-fill-color: #212121 !important;
   -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
 }
 
 /* Ensure text remains visible in all states */
 :deep(.q-field--readonly .q-field__native) {
-  color: #424242 !important;
+  color: #212121 !important;
 }
 
 :deep(.q-field--disable .q-field__native) {
-  color: #757575 !important;
+  color: #616161 !important;
 }
 
 /* Force text visibility in all scenarios */
@@ -1208,13 +1954,15 @@ onMounted(async () => {
 :deep(.q-field__native),
 :deep(.q-field__input),
 :deep(input) {
-  -webkit-text-fill-color: #424242 !important;
-  color: #424242 !important;
+  -webkit-text-fill-color: #212121 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 /* Specific fixes for different input types */
 :deep(.q-select .q-field__native span) {
-  color: #424242 !important;
+  color: #212121 !important;
+  font-weight: 500;
 }
 
 /* Override any inherited transparency */
@@ -1228,12 +1976,46 @@ onMounted(async () => {
 
 /* Help text improvements */
 .text-grey-6 {
-  color: #757575 !important;
+  color: #616161 !important;
+  font-weight: 400;
 }
 
 /* Separator styling */
 :deep(.q-separator) {
   background-color: #e0e0e0;
   opacity: 0.6;
+}
+
+/* Button text improvements */
+:deep(.q-btn .q-btn__content) {
+  color: inherit !important;
+  font-weight: 500;
+}
+
+/* Card content text */
+:deep(.q-card__section) {
+  color: #212121;
+}
+
+/* General text improvements */
+:deep(.q-item__label) {
+  color: #212121 !important;
+  font-weight: 500;
+}
+
+/* Option group text */
+:deep(.q-option-group .q-option__label) {
+  color: #212121 !important;
+  font-weight: 500;
+}
+
+/* Chip text */
+:deep(.q-chip) {
+  font-weight: 500;
+}
+
+/* Banner text */
+:deep(.q-banner) {
+  font-weight: 500;
 }
 </style>

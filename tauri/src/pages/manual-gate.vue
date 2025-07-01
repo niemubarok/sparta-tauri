@@ -1,8 +1,5 @@
 <template>
 
-  <div v-if="settingsService.isManlessMode">
-      <EntryGatePage class="full-width q-pa-md" />
-  </div>
   <div v-if="$q.screen.lt.md" class="text-h2">
     <q-card class="fixed-center glass">
       <img src="~assets/logo.png" />
@@ -239,7 +236,7 @@
           >
         </div>
         <div class="q-gutter-sm">
-          <q-btn color="grey-8" size="sm" label="Dashboard" @click="onClickDashboard">
+          <q-btn v-if="isAdmin" color="grey-8" size="sm" label="Dashboard" @click="onClickDashboard">
             <q-badge
               color="primary"
               text-color="white"
@@ -259,6 +256,7 @@
           </q-btn>
 
           <q-btn
+          v-if="isAdmin"
             color="grey-6"
             size="sm"
             @click="onClickSettings()"
@@ -421,10 +419,6 @@ import ShinyCard from "src/components/ShinyCard.vue";
 import Camera from "src/components/Camera.vue";
 import CompanyName from "src/components/CompanyName.vue";
 import SettingsDialog from "src/components/SettingsDialog.vue";
-import EntryGatePage from "src/pages/Gate.vue";
-import ViewImagesButton from "src/components/ViewImagesButton.vue";
-import CameraDebugger from "src/components/CameraDebugger.vue";
-
 // Card Reader integration (keyboard wedge detection)
 import mitt from 'mitt';
 const emitter = mitt();
@@ -506,10 +500,17 @@ const membershipStoreStatus = ref({
 
 
 const onClickDashboard = () => {
-  // Navigate to the dashboard
-  componentStore.startingApp = false
-  router.push('/');
-
+  // Only allow admin to access dashboard
+  if (isAdmin.value) {
+    componentStore.startingApp = false;
+    router.push('/');
+  } else {
+    $q.notify({
+      type: "negative",
+      message: "Anda tidak memiliki akses ke Dashboard",
+      position: "bottom",
+    });
+  }
 };
 
 // Listen card reader event (mitt, for simulation/testing only)
@@ -949,14 +950,40 @@ const pegawai = ls.get("pegawai") ? ls.get("pegawai").nama : null;
 
 // Camera configuration similar to ManlessEntryGate.vue
 const plateCameraType = computed(() => {
-  if (gateSettings.value?.PLATE_CAM_DEVICE_ID) return 'usb';
-  if (gateSettings.value?.PLATE_CAM_IP) return 'cctv';
+  // Check the explicit camera mode setting first
+  if (gateSettings.value?.PLATE_CAM_MODE) {
+    console.log('🎥 Plate camera mode from settings:', gateSettings.value.PLATE_CAM_MODE);
+    return gateSettings.value.PLATE_CAM_MODE; // 'usb' or 'cctv'
+  }
+  // Fallback to legacy detection for backwards compatibility
+  if (gateSettings.value?.PLATE_CAM_DEVICE_ID) {
+    console.log('🎥 Plate camera mode detected: USB (legacy)');
+    return 'usb';
+  }
+  if (gateSettings.value?.PLATE_CAM_IP) {
+    console.log('🎥 Plate camera mode detected: CCTV (legacy)');
+    return 'cctv';
+  }
+  console.log('🎥 Plate camera mode: CCTV (default)');
   return 'cctv'; // Default to cctv if no specific config
 });
 
 const driverCameraType = computed(() => {
-  if (gateSettings.value?.DRIVER_CAM_DEVICE_ID) return 'usb';
-  if (gateSettings.value?.DRIVER_CAM_IP) return 'cctv';
+  // Check the explicit camera mode setting first
+  if (gateSettings.value?.DRIVER_CAM_MODE) {
+    console.log('🎥 Driver camera mode from settings:', gateSettings.value.DRIVER_CAM_MODE);
+    return gateSettings.value.DRIVER_CAM_MODE; // 'usb' or 'cctv'
+  }
+  // Fallback to legacy detection for backwards compatibility
+  if (gateSettings.value?.DRIVER_CAM_DEVICE_ID) {
+    console.log('🎥 Driver camera mode detected: USB (legacy)');
+    return 'usb';
+  }
+  if (gateSettings.value?.DRIVER_CAM_IP) {
+    console.log('🎥 Driver camera mode detected: CCTV (legacy)');
+    return 'cctv';
+  }
+  console.log('🎥 Driver camera mode: CCTV (default)');
   return 'cctv'; // Default to cctv if no specific config
 });
 
@@ -1475,7 +1502,7 @@ const logout = async () => {
   }
 };
 
-const isAdmin = ls.get("isAdmin") || false;
+const isAdmin = ref(ls.get("isAdmin")) || false;
 
 const handleKeyDown = (event) => {
   // console.log(event.key);
@@ -1488,7 +1515,7 @@ const handleKeyDown = (event) => {
       onClickKendaraanKeluar();
     } else if (event.key === "F2") {
       event.preventDefault();
-      if (isAdmin) {
+      if (isAdmin.value) {
         componentStore.currentPage = "daftar-transaksi";
         router.push("/daftar-transaksi");
       } else {
@@ -1516,7 +1543,7 @@ const handleKeyDown = (event) => {
       onClickEmergency();
     } else if (event.key === "F7") {
       event.preventDefault();
-      if (isAdmin) {
+      if (isAdmin.value) {
         onClickSettings();
       } else {
         $q.notify({
@@ -2037,6 +2064,17 @@ onMounted(async () => {
   initializeMembershipStore();
 
   // Debug: Check if gateSettings are loaded correctly
+  console.log('🎥 Camera configuration loaded:', {
+    gateSettings: !!gateSettings.value,
+    plateCameraMode: gateSettings.value?.PLATE_CAM_MODE,
+    driverCameraMode: gateSettings.value?.DRIVER_CAM_MODE,
+    plateCameraType: plateCameraType.value,
+    driverCameraType: driverCameraType.value,
+    plateCameraIP: gateSettings.value?.PLATE_CAM_IP,
+    driverCameraIP: gateSettings.value?.DRIVER_CAM_IP,
+    plateCameraDeviceID: gateSettings.value?.PLATE_CAM_DEVICE_ID,
+    driverCameraDeviceID: gateSettings.value?.DRIVER_CAM_DEVICE_ID
+  });
 
   // Check camera configuration and show notification if needed
   const missingCameraConfigs = [];
@@ -2058,7 +2096,7 @@ onMounted(async () => {
           label: 'Buka Settings', 
           color: 'white',
           handler: () => {
-            if (isAdmin) {
+            if (isAdmin.value) {
               onClickSettings();
             }
           }
@@ -2095,6 +2133,25 @@ onMounted(async () => {
       }
     }
   }, { deep: true });
+
+  // Watch for camera type changes
+  watch([plateCameraType, driverCameraType], ([newPlateType, newDriverType], [oldPlateType, oldDriverType]) => {
+    if (oldPlateType && oldDriverType) { // Only run after initial load
+      console.log('🎥 Camera types changed:', {
+        plateCamera: `${oldPlateType} → ${newPlateType}`,
+        driverCamera: `${oldDriverType} → ${newDriverType}`,
+        plateCameraMode: gateSettings.value?.PLATE_CAM_MODE,
+        driverCameraMode: gateSettings.value?.DRIVER_CAM_MODE
+      });
+      
+      $q.notify({
+        type: 'info',
+        message: `Kamera diperbarui: Plat=${newPlateType.toUpperCase()}, Driver=${newDriverType.toUpperCase()}`,
+        position: 'top',
+        timeout: 3000
+      });
+    }
+  });
 
   // Watch for selectedJenisKendaraan changes to auto-process entry
   watch(
@@ -2227,7 +2284,11 @@ const showSystemStatus = () => {
     gateSettings: !!gateSettings.value,
     cameraConfig: {
       plateCamera: !!plateCameraCredentials.value.ip_address,
-      driverCamera: !!driverCameraCredentials.value.ip_address
+      driverCamera: !!driverCameraCredentials.value.ip_address,
+      plateCameraType: plateCameraType.value,
+      driverCameraType: driverCameraType.value,
+      plateCameraMode: gateSettings.value?.PLATE_CAM_MODE || 'Not Set',
+      driverCameraMode: gateSettings.value?.DRIVER_CAM_MODE || 'Not Set'
     }
   };
 
@@ -2257,8 +2318,12 @@ const showSystemStatus = () => {
         <h6>🏢 General</h6>
         <p>Current Page: ${status.currentPage}</p>
         <p>Gate Settings: ${status.gateSettings ? '✅' : '❌'}</p>
-        <p>Plate Camera: ${status.cameraConfig.plateCamera ? '✅' : '❌'}</p>
-        <p>Driver Camera: ${status.cameraConfig.driverCamera ? '✅' : '❌'}</p>
+        
+        <h6>📷 Camera Configuration</h6>
+        <p>Plate Camera IP: ${status.cameraConfig.plateCamera ? '✅' : '❌'}</p>
+        <p>Driver Camera IP: ${status.cameraConfig.driverCamera ? '✅' : '❌'}</p>
+        <p><strong>Plate Camera Mode:</strong> ${status.cameraConfig.plateCameraMode} → ${status.cameraConfig.plateCameraType}</p>
+        <p><strong>Driver Camera Mode:</strong> ${status.cameraConfig.driverCameraMode} → ${status.cameraConfig.driverCameraType}</p>
       </div>
     `,
     html: true,

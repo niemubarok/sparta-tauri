@@ -102,6 +102,7 @@ const onSubmit = async () => {
     
     // Try to authenticate using petugas store (offline first)
     const petugas = await petugasStore.authenticatePetugas(username.value, password.value);
+    console.log("🚀 ~ onSubmit ~ petugas:", petugas)
     
     if (petugas) {
       // Determine shift based on current time

@@ -165,6 +165,9 @@ const componentStore = useComponentStore()
 const gateStore = useGateStore();
 const isManlessMode = ls.get("manlessMode") || true;
 
+import { ref } from "vue";
+const isAdmin = ref(ls.get("isAdmin") || false);
+
 const transaksiStore = useTransaksiStore();
 const { globalSettings, gateSettings, loadGateSettings } = useSettingsService(); // Diubah
 
@@ -277,6 +280,7 @@ const handleKeyDown = (event) => {
 onMounted(async () => {
   // Clear any gate-related states when entering home page
   ls.remove('gateMode');
+  console.log("🚀 ~ onMounted ~ isAdmin.value:", isAdmin.value)
   
   // Reset gate store states
   gateStore.loop1 = false;
@@ -289,7 +293,7 @@ onMounted(async () => {
   // Navigasi otomatis berdasarkan gateType dari settingsStore akan dihapus dari sini
   // karena pengguna harus secara eksplisit memilih gerbang dari halaman Index.
   // Jika ingin navigasi otomatis, logika berikut bisa diaktifkan kembali:
-  if (componentStore.startingApp) { // Diubah
+  if (componentStore.startingApp && !isAdmin.value) { // Diubah
      router.push({ path: "/manual-gate" });
   } 
 

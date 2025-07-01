@@ -5,7 +5,7 @@
       class="text-white absolute inset-shadow" :label="label" />
     
     <!-- Capture Mode Indicator -->
-    <q-chip v-if="cameraType === 'cctv' && isCameraEnabled"
+    <!-- <q-chip v-if="cameraType === 'cctv' && isCameraEnabled"
       style="border-radius:8px; top: 0px; right: 0px; font-size:small; z-index: 5;"
       :class="{
         'bg-blue-6': selectedCaptureMode.value === 'auto',
@@ -13,7 +13,7 @@
         'bg-purple-6': selectedCaptureMode.value === 'rtsp'
       }"
       class="text-white absolute"
-      :label="selectedCaptureMode.label + (selectedCaptureMode.value === 'rtsp' && isLiveModeActive ? ' (Live)' : '')" />
+      :label="selectedCaptureMode.label + (selectedCaptureMode.value === 'rtsp' && isLiveModeActive ? ' (Live)' : '')" /> -->
     <div class="connection-indicator" :class="{ 'connected': cameraStatus }">
       <div class="indicator-dot"></div>
     </div>
