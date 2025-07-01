@@ -53,7 +53,6 @@
             :key="componentStore.vehicleOutKey"
             class="bg-grey-8 q-mx-md"
             title="Kendaraan Keluar"
-            shortkey="F4"
             :jumlah="transaksiStore.totalVehicleOut"
           />
           <ShinyCard
