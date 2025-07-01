@@ -55,12 +55,15 @@ class ExitGateGUI(object):
         self.scanner = None
         self.db_service = None
         self.audio_service = None
+        self.camera_service = None
         
         # GUI Components
         self.status_label = None
         self.barcode_label = None
         self.transaction_label = None
         self.log_text = None
+        self.camera_preview_label = None
+        self.camera_status_label = None
         
         self.setup_gui()
         self.initialize_services()
@@ -124,6 +127,59 @@ class ExitGateGUI(object):
         
         # Auto-focus on entry field
         self.barcode_entry.focus_set()
+        
+        # Camera Preview Section
+        camera_frame = tk.Frame(self.root, bg='#34495e', relief=tk.RAISED, bd=2)
+        camera_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        # Camera title
+        tk.Label(camera_frame, text="Camera Preview:", font=status_font, 
+                bg='#34495e', fg='white').pack(anchor=tk.W, padx=15, pady=5)
+        
+        # Camera preview and controls container
+        camera_container = tk.Frame(camera_frame, bg='#34495e')
+        camera_container.pack(fill=tk.X, padx=15, pady=5)
+        
+        # Camera preview (left side)
+        preview_frame = tk.Frame(camera_container, bg='#2c3e50', relief=tk.SUNKEN, bd=2)
+        preview_frame.pack(side=tk.LEFT, padx=5)
+        
+        self.camera_preview_label = tk.Label(preview_frame, text="Camera Preview\n(No Image)", 
+                                           font=('Arial', 12), bg='#2c3e50', fg='#bdc3c7',
+                                           width=40, height=15, justify=tk.CENTER)
+        self.camera_preview_label.pack(padx=10, pady=10)
+        
+        # Camera controls (right side)
+        camera_controls_frame = tk.Frame(camera_container, bg='#34495e')
+        camera_controls_frame.pack(side=tk.RIGHT, padx=15, fill=tk.Y)
+        
+        # Camera status
+        self.camera_status_label = tk.Label(camera_controls_frame, text="Camera: Unknown", 
+                                           font=('Arial', 12, 'bold'), bg='#34495e', fg='#f39c12')
+        self.camera_status_label.pack(pady=5)
+        
+        # Camera control buttons
+        camera_btn_font = tkFont.Font(family="Arial", size=10, weight="bold")
+        
+        capture_plate_btn = tk.Button(camera_controls_frame, text="Capture Plate", font=camera_btn_font,
+                                     bg='#3498db', fg='white', width=15, height=2,
+                                     command=lambda: self.capture_camera_image('plate'))
+        capture_plate_btn.pack(pady=3)
+        
+        capture_driver_btn = tk.Button(camera_controls_frame, text="Capture Driver", font=camera_btn_font,
+                                      bg='#9b59b6', fg='white', width=15, height=2,
+                                      command=lambda: self.capture_camera_image('driver'))
+        capture_driver_btn.pack(pady=3)
+        
+        capture_both_btn = tk.Button(camera_controls_frame, text="Capture Both", font=camera_btn_font,
+                                    bg='#e67e22', fg='white', width=15, height=2,
+                                    command=self.capture_exit_images)
+        capture_both_btn.pack(pady=3)
+        
+        test_cameras_btn = tk.Button(camera_controls_frame, text="Test Cameras", font=camera_btn_font,
+                                    bg='#16a085', fg='white', width=15, height=2,
+                                    command=self.test_all_cameras)
+        test_cameras_btn.pack(pady=3)
         
         # Control Buttons - larger for fullscreen
         button_frame = tk.Frame(self.root, bg='#2c3e50')
@@ -233,6 +289,27 @@ class ExitGateGUI(object):
                 self.log("WARNING: Audio service import failed: {}".format(str(audio_error)))
                 self.audio_service = None
             
+            try:
+                from camera_service import camera_service
+                self.camera_service = camera_service
+                self.log("Camera service imported successfully")
+                
+                # Test camera service
+                if self.camera_service:
+                    self.log("Testing camera connectivity...")
+                    camera_results = self.camera_service.test_all_cameras()
+                    for camera_name, success in camera_results.items():
+                        status = "OK" if success else "FAILED"
+                        self.log("Camera '{}': {}".format(camera_name, status))
+                    
+                    # Update camera status in GUI
+                    self.root.after(0, self.update_camera_status)
+                else:
+                    self.log("Camera service is not available")
+            except Exception as camera_error:
+                self.log("WARNING: Camera service import failed: {}".format(str(camera_error)))
+                self.camera_service = None
+            
             # Add barcode listener if available
             if self.scanner:
                 try:
@@ -265,6 +342,8 @@ class ExitGateGUI(object):
                 services_status.append("Database")
             if self.audio_service and self.audio_service.is_enabled():
                 services_status.append("Audio")
+            if self.camera_service:
+                services_status.append("Camera")
             
             if services_status:
                 status_msg = "Ready - Services: {}".format(", ".join(services_status))
@@ -357,6 +436,11 @@ class ExitGateGUI(object):
             self.log("=== PROCESSING VEHICLE EXIT ===")
             self.log("Barcode: {}".format(barcode))
             self.log("Debug mode: {}".format("ENABLED" if self.debug_mode else "DISABLED"))
+            
+            # Automatically capture exit images
+            if self.camera_service:
+                self.log("Capturing exit images...")
+                self.root.after(0, self.capture_exit_images_async, barcode)
             
             gate_opened = False
             
@@ -713,6 +797,211 @@ class ExitGateGUI(object):
                 self.audio_service.play_gate_close_sound()
         except Exception as e:
             self.log("ERROR: Auto-close simulation failed: {}".format(str(e)))
+    
+    def update_camera_status(self):
+        """Update camera status display"""
+        try:
+            if self.camera_service:
+                camera_status = self.camera_service.get_cameras_status()
+                status_texts = []
+                
+                for camera_name, status in camera_status.items():
+                    if status['enabled']:
+                        status_texts.append("{}:ON".format(camera_name.upper()))
+                    else:
+                        status_texts.append("{}:OFF".format(camera_name.upper()))
+                
+                if status_texts:
+                    status_text = "Camera: {}".format(" | ".join(status_texts))
+                    self.camera_status_label.config(text=status_text, fg='#27ae60')
+                else:
+                    self.camera_status_label.config(text="Camera: No cameras", fg='#e74c3c')
+            else:
+                self.camera_status_label.config(text="Camera: Service unavailable", fg='#e74c3c')
+        except Exception as e:
+            self.log("ERROR: Camera status update failed: {}".format(str(e)))
+            if self.camera_status_label:
+                self.camera_status_label.config(text="Camera: Error", fg='#e74c3c')
+    
+    def capture_camera_image(self, camera_name):
+        """Capture image from specific camera"""
+        try:
+            if not self.camera_service:
+                self.log("Camera service not available")
+                return
+            
+            self.log("Capturing image from {} camera...".format(camera_name))
+            
+            # Capture image
+            result = self.camera_service.capture_image(camera_name)
+            
+            if result.success:
+                self.log("✅ {} camera capture successful".format(camera_name.upper()))
+                
+                # Update preview if we have image data
+                if result.image_data:
+                    self.root.after(0, self.update_camera_preview, result.image_data)
+                
+                # Play scan sound for successful capture
+                if self.audio_service:
+                    self.audio_service.play_scan_sound()
+                    
+            else:
+                self.log("❌ {} camera capture failed: {}".format(camera_name.upper(), result.error_message))
+                
+                # Play error sound for failed capture
+                if self.audio_service:
+                    self.audio_service.play_error_sound()
+                    
+        except Exception as e:
+            error_msg = "Camera capture error: {}".format(str(e))
+            self.log("ERROR: " + error_msg)
+            if self.audio_service:
+                self.audio_service.play_error_sound()
+    
+    def capture_exit_images(self):
+        """Capture images from both cameras for exit processing"""
+        try:
+            if not self.camera_service:
+                self.log("Camera service not available")
+                return
+            
+            self.log("Capturing exit images from all cameras...")
+            
+            # Capture from both cameras
+            result = self.camera_service.capture_exit_images()
+            
+            if result.success:
+                self.log("✅ Exit images capture successful")
+                
+                # Update preview with captured image
+                if result.image_data:
+                    self.root.after(0, self.update_camera_preview, result.image_data)
+                
+                # Play scan sound for successful capture
+                if self.audio_service:
+                    self.audio_service.play_scan_sound()
+                    
+            else:
+                self.log("❌ Exit images capture failed: {}".format(result.error_message))
+                
+                # Play error sound for failed capture
+                if self.audio_service:
+                    self.audio_service.play_error_sound()
+                    
+        except Exception as e:
+            error_msg = "Exit images capture error: {}".format(str(e))
+            self.log("ERROR: " + error_msg)
+            if self.audio_service:
+                self.audio_service.play_error_sound()
+    
+    def capture_exit_images_async(self, barcode):
+        """Capture exit images asynchronously with barcode context"""
+        try:
+            if not self.camera_service:
+                return
+            
+            self.log("Auto-capturing exit images for barcode: {}".format(barcode))
+            
+            # Capture from both cameras
+            result = self.camera_service.capture_exit_images()
+            
+            if result.success:
+                self.log("✅ Auto-capture successful for barcode: {}".format(barcode))
+                
+                # Update preview with captured image
+                if result.image_data:
+                    self.root.after(0, self.update_camera_preview, result.image_data)
+                
+                # TODO: Save image with barcode reference for audit trail
+                # This could be enhanced to save images to disk with timestamp and barcode
+                    
+            else:
+                self.log("❌ Auto-capture failed for barcode {}: {}".format(barcode, result.error_message))
+                
+        except Exception as e:
+            self.log("ERROR: Auto-capture failed for barcode {}: {}".format(barcode, str(e)))
+    
+    def test_all_cameras(self):
+        """Test all cameras connectivity"""
+        try:
+            if not self.camera_service:
+                self.log("Camera service not available")
+                return
+            
+            self.log("=== TESTING ALL CAMERAS ===")
+            
+            # Test all cameras
+            results = self.camera_service.test_all_cameras()
+            
+            success_count = 0
+            for camera_name, success in results.items():
+                if success:
+                    self.log("✅ Camera '{}': OK".format(camera_name.upper()))
+                    success_count += 1
+                else:
+                    self.log("❌ Camera '{}': FAILED".format(camera_name.upper()))
+            
+            # Update camera status display
+            self.root.after(0, self.update_camera_status)
+            
+            # Play appropriate sound
+            if success_count > 0:
+                self.log("Camera test completed - {}/{} cameras working".format(success_count, len(results)))
+                if self.audio_service:
+                    self.audio_service.play_scan_sound()
+            else:
+                self.log("Camera test completed - No cameras working")
+                if self.audio_service:
+                    self.audio_service.play_error_sound()
+                    
+        except Exception as e:
+            error_msg = "Camera test error: {}".format(str(e))
+            self.log("ERROR: " + error_msg)
+            if self.audio_service:
+                self.audio_service.play_error_sound()
+    
+    def update_camera_preview(self, image_data):
+        """Update camera preview with base64 image data"""
+        try:
+            if not image_data or not self.camera_preview_label:
+                return
+            
+            # Try to use PIL for image preview
+            try:
+                # Decode base64 image
+                import base64
+                import io
+                from PIL import Image, ImageTk
+                
+                # Decode and resize image for preview
+                image_bytes = base64.b64decode(image_data)
+                image = Image.open(io.BytesIO(image_bytes))
+                
+                # Resize image to fit preview area (maintain aspect ratio)
+                preview_width = 320
+                preview_height = 240
+                image.thumbnail((preview_width, preview_height), Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+                
+                # Convert to PhotoImage for Tkinter
+                photo = ImageTk.PhotoImage(image)
+                
+                # Update preview label
+                self.camera_preview_label.config(image=photo, text="")
+                self.camera_preview_label.image = photo  # Keep a reference
+                
+                self.log("Camera preview updated")
+                
+            except ImportError:
+                # PIL not available - show text preview
+                self.camera_preview_label.config(text="Camera Preview\n(Image captured)\n\nPIL/Pillow not available\nfor image display", 
+                                                bg='#27ae60', fg='white')
+                self.log("Camera image captured (PIL not available for preview)")
+                
+        except Exception as e:
+            self.log("ERROR: Camera preview update failed: {}".format(str(e)))
+            if self.camera_preview_label:
+                self.camera_preview_label.config(text="Camera Preview\n(Update Error)", bg='#e74c3c', fg='white')
 
     def log(self, message):
         """Add message to log display"""
@@ -758,6 +1047,10 @@ class ExitGateGUI(object):
             
             if self.audio_service:
                 self.audio_service.cleanup()
+            
+            if self.camera_service:
+                # Camera service doesn't need explicit cleanup, but log it
+                self.log("Camera service shutdown")
             
             self.root.destroy()
             

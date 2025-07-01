@@ -46,9 +46,50 @@ class CameraConfig(object):
         self.ip = config.get('camera', 'plate_camera_ip', '192.168.1.100')
         self.username = config.get('camera', 'plate_camera_username', 'admin')
         self.password = config.get('camera', 'plate_camera_password', 'admin123')
+        
+        # Default snapshot path - will be auto-detected by brand
         self.snapshot_path = config.get('camera', 'snapshot_path', 'Streaming/Channels/1/picture')
+        
+        # Camera brand for specific URL patterns
+        self.brand = config.get('camera', 'camera_brand', 'auto')  # auto, hikvision, dahua, glenz, generic
+        
         self.timeout = config.getint('camera', 'capture_timeout', 5)
         self.enabled = config.getboolean('camera', 'enabled', True)
+    
+    def get_snapshot_url(self):
+        """Get snapshot URL based on camera brand"""
+        base_url = "http://{}".format(self.ip)
+        
+        # Brand-specific URL patterns
+        if self.brand.lower() == 'hikvision' or self.brand.lower() == 'hik':
+            # Hikvision standard URLs
+            return "{}/ISAPI/Streaming/channels/101/picture".format(base_url)
+        elif self.brand.lower() == 'dahua':
+            # Dahua standard URLs
+            return "{}/cgi-bin/snapshot.cgi?channel=1".format(base_url)
+        elif self.brand.lower() == 'glenz':
+            # Glenz camera URLs (similar to generic ONVIF)
+            return "{}/onvif-http/snapshot?Profile_1".format(base_url)
+        elif self.brand.lower() == 'axis':
+            # Axis camera URLs
+            return "{}/axis-cgi/jpg/image.cgi".format(base_url)
+        elif self.brand.lower() == 'generic' or self.brand.lower() == 'onvif':
+            # Generic ONVIF snapshot
+            return "{}/onvif/media_service/snapshot?ProfileToken=Profile_1".format(base_url)
+        else:
+            # Use configured path or auto-detect
+            if self.brand.lower() == 'auto':
+                # Try to auto-detect based on common patterns
+                return self._auto_detect_url(base_url)
+            else:
+                # Use custom snapshot path
+                return "{}/{}".format(base_url, self.snapshot_path)
+    
+    def _auto_detect_url(self, base_url):
+        """Auto-detect camera URL by trying common patterns"""
+        # Return the configured path as fallback, but we could enhance this
+        # to actually test different URLs
+        return "{}/{}".format(base_url, self.snapshot_path)
 
 class CameraService(object):
     """CCTV Camera service for image capture"""
@@ -57,6 +98,11 @@ class CameraService(object):
         self.cameras = {}
         self._initialize_cameras()
     
+    def log(self, message):
+        """Log message"""
+        logger.info(message)
+        print("[CAMERA] {}".format(message))
+    
     def _initialize_cameras(self):
         """Initialize camera configurations"""
         # Plate camera
@@ -64,6 +110,7 @@ class CameraService(object):
         plate_config.ip = config.get('camera', 'plate_camera_ip', '192.168.1.100')
         plate_config.username = config.get('camera', 'plate_camera_username', 'admin')
         plate_config.password = config.get('camera', 'plate_camera_password', 'admin123')
+        plate_config.brand = config.get('camera', 'plate_camera_brand', 'auto')
         self.cameras['plate'] = plate_config
         
         # Driver camera
@@ -71,6 +118,7 @@ class CameraService(object):
         driver_config.ip = config.get('camera', 'driver_camera_ip', '192.168.1.101')
         driver_config.username = config.get('camera', 'driver_camera_username', 'admin')
         driver_config.password = config.get('camera', 'driver_camera_password', 'admin123')
+        driver_config.brand = config.get('camera', 'driver_camera_brand', 'auto')
         self.cameras['driver'] = driver_config
         
         logger.info("Initialized {} cameras".format(len(self.cameras)))
@@ -92,8 +140,10 @@ class CameraService(object):
             )
         
         try:
-            # Build snapshot URL
-            snapshot_url = "http://{}/{}".format(camera.ip, camera.snapshot_path)
+            # Build snapshot URL using brand-specific logic
+            snapshot_url = camera.get_snapshot_url()
+            
+            self.log("Attempting capture from: {}".format(snapshot_url))
             
             # Make HTTP request
             auth = HTTPBasicAuth(camera.username, camera.password)

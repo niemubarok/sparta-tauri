@@ -138,6 +138,10 @@ const onSubmit = async () => {
           position: "top",
           timeout: 2000,
         });
+
+        if(isAdmin){
+          router.push({path:'/'})
+        }
         
         // Hide dialog and reload page
         dialogRef.value.hide();

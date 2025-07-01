@@ -306,7 +306,7 @@
             <q-tooltip>Lihat Detail</q-tooltip>
           </q-btn>
           <q-btn
-            v-if="props.row.status === 0"
+            v-if="props.row.status === 0 || props.row.status === 'in'"
             size="sm"
             color="green"
             icon="exit_to_app"
@@ -786,16 +786,19 @@ const computedStatistics = computed(() => {
   }
 
   const totalTransaksi = pagination.value.rowsNumber || transaksiList.value.length
-  const selesai = transaksiList.value.filter(t => t.status === 1).length
-  const aktif = transaksiList.value.filter(t => t.status === 0).length
+  // Support both legacy string status ('out') and new integer status (1) for completed transactions
+  const selesai = transaksiList.value.filter(t => t.status === 1 || t.status === 'out').length
+  // Support both legacy string status ('in') and new integer status (0) for active transactions
+  const aktif = transaksiList.value.filter(t => t.status === 0 || t.status === 'in').length
   const pendapatan = transaksiList.value
-    .filter(t => t.status === 1)
+    .filter(t => t.status === 1 || t.status === 'out')
     .reduce((total, t) => total + (t.tarif || 0), 0)
 
   // Separate member and regular transactions
   const memberTransactions = transaksiList.value.filter(t => t.type === 'member_entry' || t.is_member === true)
   const regularTransactions = transaksiList.value.filter(t => t.type === 'parking_transaction' && !t.is_member)
   
+  // Member transactions: support both legacy ('out'/1) and new integer (1) status
   const memberSelesai = memberTransactions.filter(t => t.status === 1 || t.status === 'out').length
   const memberAktif = memberTransactions.filter(t => t.status === 0 || t.status === 'in').length
   
@@ -853,7 +856,11 @@ const statistics = ref({
 const statusOptions = [
   { label: 'Aktif (Belum Keluar)', value: 0 },
   { label: 'Selesai', value: 1 },
-  { label: 'Dibatalkan', value: 2 }
+  { label: 'Dibatalkan', value: 2 },
+  // Legacy member status options (untuk data lama)
+  { label: 'Aktif Member (Legacy)', value: 'in' },
+  { label: 'Selesai Member (Legacy)', value: 'out' },
+  { label: 'Dibatalkan Member (Legacy)', value: 'cancelled' }
 ]
 
 const jenisKendaraanOptions = [
@@ -1600,6 +1607,9 @@ const calculateDuration = (masuk, keluar) => {
   const end = new Date(keluar)
   const diffMs = end - start
   
+  // Handle negative duration (data issue)
+  if (diffMs < 0) return 'Data tidak valid'
+  
   const hours = Math.floor(diffMs / (1000 * 60 * 60))
   const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
   
@@ -1611,19 +1621,41 @@ const calculateDuration = (masuk, keluar) => {
 }
 
 const getStatusColor = (status) => {
+  // Handle member transaction status (string values - legacy format)
+  if (typeof status === 'string') {
+    switch (status.toLowerCase()) {
+      case 'in': return 'orange'
+      case 'out': return 'green'
+      case 'cancelled': return 'red'
+      default: return 'grey'
+    }
+  }
+  
+  // Handle both parking and member transaction status (numeric values)
   switch (status) {
-    case 0: return 'orange'
-    case 1: return 'green'
-    case 2: return 'red'
+    case 0: return 'orange' // Aktif/Masuk
+    case 1: return 'green'  // Selesai/Keluar
+    case 2: return 'red'    // Dibatalkan
     default: return 'grey'
   }
 }
 
 const getStatusLabel = (status) => {
+  // Handle member transaction status (string values - legacy format)
+  if (typeof status === 'string') {
+    switch (status.toLowerCase()) {
+      case 'in': return 'Aktif (Member)'
+      case 'out': return 'Selesai (Member)'
+      case 'cancelled': return 'Dibatalkan (Member)'
+      default: return 'Unknown'
+    }
+  }
+  
+  // Handle both parking and member transaction status (numeric values)
   switch (status) {
-    case 0: return 'Aktif'
-    case 1: return 'Selesai'
-    case 2: return 'Dibatalkan'
+    case 0: return 'Aktif'      // Aktif/Masuk (untuk parkir umum dan member)
+    case 1: return 'Selesai'    // Selesai/Keluar (untuk parkir umum dan member)
+    case 2: return 'Dibatalkan' // Dibatalkan
     default: return 'Unknown'
   }
 }

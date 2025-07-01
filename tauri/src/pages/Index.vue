@@ -121,14 +121,14 @@
         label="Settings"
         @click="onClickSettings()"
       />
-      <q-btn
+      <!-- <q-btn
         push
         style="width: 300px; height: 100px"
         color="primary"
         icon="print"
         label="Test Printer"
         @click="onClickTestPrinter()"
-      >
+      > -->
         <!-- <q-btn
           push
           class="q-ma-md"
@@ -136,7 +136,7 @@
           text-color="primary"
           
         /> -->
-      </q-btn>
+      <!-- </q-btn> -->
       <!-- @click="$router.push('/outgate')" -->
     </div>
   </q-page>

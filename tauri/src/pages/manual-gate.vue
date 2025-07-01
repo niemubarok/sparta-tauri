@@ -26,7 +26,7 @@
       class="flex row justify-between items-center q-pl-lg no-wrap q-pt-md"
       style="height: 150px"
     >
-      <q-card flat class="row items-center transparent">
+      <q-card  class="row items-center bg-grey-2" >
         <!-- <q-img
           v-if="$q.screen.gt.sm"
           src="~assets/logo.png"
@@ -38,7 +38,11 @@
           style="transform: scale(1.5)"
         /> -->
 
-        <CompanyName />
+        <!-- <CompanyName /> -->
+         <!-- <div style="width:150px"> -->
+
+           <Logo />
+          <!-- </div> -->
       </q-card>
 
       <div class="content-end q-pr-md">
@@ -406,6 +410,7 @@ import { useGateStore } from "src/stores/gate-store";
 import { userStore } from "src/stores/user-store";
 import { useMembershipStore } from "src/stores/membership-store";
 import LoginDialog from "src/components/LoginDialog.vue";
+import Logo from "src/components/Logo.vue";
 import ApiUrlDialog from "src/components/ApiUrlDialog.vue";
 import { getTime, checkSubscriptionExpiration } from "src/utils/time-util";
 import ls from "localstorage-slim";
@@ -1482,7 +1487,7 @@ const logout = async () => {
     petugasStore.logout();
     
     // Also try to logout from user store if needed
-    await userStore().logout();
+    // await userStore().logout();
     
     // Clear all login related data
     ls.remove("pegawai");
