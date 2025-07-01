@@ -1,369 +1,432 @@
 <template>
   <q-dialog
     ref="dialogRef"
-    no-backdrop-dismiss
-    no-esc-dismiss
     maximized
     @hide="onDialogHide"
     persistent
     :key="componentStore.settingsKey"
   >
-    <div class="row justify-center items-center ">
+    <div class="row justify-center items-center full-height">
       <q-card
-        class="q-px-md q-pt-sm q-pb-md glass relative"
-        style="width: 90vw; height: fit-content"
+        class="q-px-lg q-py-md glass relative"
+        style="width: 95vw; max-width: 1400px; height: 90vh; overflow: hidden;"
       >
-        <div>
-          <q-avatar
-            size="40px"
-            class="cursor-pointer z-top absolute-top-right q-ma-sm"
-            text-color="grey-7"
-            color="grey-5"
+        <!-- Header -->
+        <div class="row items-center q-mb-lg">
+          <q-icon name="settings" size="md" color="primary" class="q-mr-md" />
+          <div class="text-h5 text-weight-bold" style="color: #1976d2;">
+            Pengaturan Sistem Parkir
+          </div>
+          <q-space />
+          <q-btn
+            round
+            flat
             icon="close"
+            color="grey-7"
+            size="md"
             @click="dialogRef.hide()"
           />
         </div>
-        <!-- <q-icon name="close"  /> -->
-        <q-item>
-          <q-item-section avatar>
-            <q-icon name="settings" />
-          </q-item-section>
-          <q-item-section>
-            <q-item-label
-              style="margin-left: -20px"
-              class="q-mt-xs text-weight-bolder"
-              >Pengaturan Parkir</q-item-label
-            >
-          </q-item-section>
-        </q-item>
 
-        <!-- General Settings Section -->
-        <div class="q-pa-md">          <!-- ALPR Mode Settings -->
-          <div class="q-mb-md">
-            <div class="text-subtitle1 q-mb-sm">ALPR Mode Settings</div>
-            <div class="row q-col-gutter-md items-center">
-              <div class="col-md-6 col-xs-12">        
-                <q-toggle
-                  v-model="useExternalAlpr"
-                  label="Use External ALPR Service"
-                  left-label
-                />
-                <div class="text-caption text-grey-6 q-mt-xs">
-                  {{ useExternalAlpr ? 'Using external WebSocket ALPR service' : 'Using internal Tauri ALPR service' }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- WebSocket URL Settings -->
-          <div class="q-mb-md" v-show="useExternalAlpr">
-            <div class="text-subtitle1 q-mb-sm">ALPR WebSocket Settings</div>
-            <div class="row q-col-gutter-md">
-              <div class="col">                <q-input
-                  v-model="wsUrl"
-                  label="WebSocket URL"
-                  placeholder="ws://localhost:8001/ws"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Gate Specific Settings -->
-          <div class="q-mb-md">
-            <div class="text-subtitle1 q-mb-sm">Pengaturan Gerbang</div>
-            <div class="row q-col-gutter-md">
-              <div class="col-md-6 col-xs-12">
-                <q-input
-                  v-model="gateName"
-                  label="Nama Gerbang"
-                />
-              </div>
-              <div class="col-md-6 col-xs-12">
-                <q-select
-                  v-model="gateType"
-                  :options="['entry', 'exit']"
-                  label="Tipe Gerbang"
-                />
-              </div>
-              <div class="col-md-6 col-xs-12">
-                <q-input
-                  v-model="prefix"
-                  label="Default Prefix"
-                  placeholder="Masukkan prefix default"
-                />
-              </div>
-              <div class="col-md-12 col-xs-12">
-                <q-input
-                  v-model="serialPort"
-                  label="Serial Port (misal: COM3 atau /dev/ttyUSB0)"
-                  :rules="[val => !!val || 'Serial port tidak boleh kosong']"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Operation Mode Settings -->
-          <div class="q-mb-md">
-            <div class="text-subtitle1 q-mb-sm">Mode Operasi</div>
-            <div class="row q-col-gutter-md">
-              <div class="col-md-6 col-xs-12">
-                <q-select
-                  v-model="operationMode"
-                  :options="operationModeOptions"
-                  label="Mode Operasi"
-                  emit-value
-                  map-options
-                />
-                <div class="text-caption text-grey-6 q-mt-xs">
-                  {{ operationMode === 'manless' ? 'Mode tanpa petugas - otomatis dengan ALPR' : 'Mode dengan petugas - input manual' }}
-                </div>
-              </div>
-              <div class="col-md-6 col-xs-12" v-show="operationMode === 'manual'">
-                <q-select
-                  v-model="manualPaymentMode"
-                  :options="manualPaymentModeOptions"
-                  label="Mode Pembayaran Manual"
-                  emit-value
-                  map-options
-                />
-                <div class="text-caption text-grey-6 q-mt-xs">
-                  {{ manualPaymentMode === 'prepaid' ? 'Bayar depan - tarif prepaid' : 'Bayar belakang - tarif progresif' }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Printer Settings -->
-          <div class="q-mb-md">
-            <div class="text-subtitle1 q-mb-sm">Printer Settings</div>
-            <div class="row q-col-gutter-md items-center">
-              <div class="col-md-4 col-xs-12">
-                <q-input
-                  v-model="printerName"
-                  label="Printer Name (leave blank if none)"
-                />
-              </div>
-              <div class="col-md-4 col-xs-12">
-                <q-select
-                  v-model="paperSize"
-                  :options="['58mm', '80mm']"
-                  label="Paper Size"
-                />
-              </div>
-              <div class="col-md-4 col-xs-12">
-                <q-toggle
-                  v-model="autoPrint"
-                  label="Auto Print Ticket"
-                  color="primary"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div >
-          <div class="q-pa-md">
-            <!-- Camera Settings -->
-            <div class="q-mb-md">
-              <div class="text-subtitle1 q-mb-sm">Camera Settings</div>
+        <!-- Main Content with Scroll -->
+        <div class="settings-content" style="height: calc(100% - 120px); overflow-y: auto;">
+          <div class="row q-col-gutter-lg">
+            <!-- Left Column -->
+            <div class="col-12 col-lg-6">
               
-              <!-- Capture Interval -->
-              <div class="q-mb-md">
-                <div class="text-caption q-mb-sm">Capture Interval (ms)</div>
-                <div class="row q-col-gutter-md">
-                  <div class="col-md-6 col-xs-12">
-                    <q-input
-                      v-model.number="captureInterval"
-                      type="number"
-                      label="Interval (e.g., 5000 for 5 seconds)"
-                      filled
-                    />
+              <!-- ALPR Settings Card -->
+              <q-card class="settings-card q-mb-lg" flat bordered>
+                <q-card-section>
+                  <div class="settings-section-title">
+                    <q-icon name="auto_awesome" class="q-mr-sm" />
+                    Pengaturan ALPR
                   </div>
-                  <div class="col-md-6 col-xs-12">
-                    <q-btn 
-                      color="primary" 
-                      label="Refresh Cameras" 
-                      icon="refresh"
-                      @click="getCameras"
-                      size="sm"
+                  
+                  <div class="q-mt-md">
+                    <q-toggle
+                      v-model="useExternalAlpr"
+                      label="Gunakan Service ALPR Eksternal"
+                      color="primary"
+                      size="md"
                     />
-                    <div class="text-caption q-mt-xs">
-                      {{ availableCameras.length }} camera(s) detected
+                    <div class="text-caption text-grey-6 q-mt-xs q-ml-lg">
+                      {{ useExternalAlpr ? 'Menggunakan service WebSocket ALPR eksternal' : 'Menggunakan service ALPR internal Tauri' }}
                     </div>
                   </div>
-                </div>
-              </div>
 
-              <!-- License Plate Camera -->
-              <div class="q-mb-md">
-                <div class="text-caption q-mb-sm">License Plate Camera</div>
-                <div class="row q-col-gutter-md">
-                  <div class="col">
-                    <!-- :disable="plateCameraUrl" -->
-                    <q-select
-                      v-model="selectedPlateCam"
-                      :options="availableCameras"
-                      label="USB Camera"
-                      option-value="deviceId"
-                      option-label="label"
-                      clearable
-                      emit-value
-                      map-options
-                      @update:model-value="updatePlateCamera"
-                    />
-                    <div class="text-caption text-grey-6 q-mt-xs" v-if="availableCameras.length === 0">
-                      No USB cameras detected. Click "Refresh Cameras" to try again.
-                    </div>
-                  </div>
-                  <div class="col">
+                  <div v-show="useExternalAlpr" class="q-mt-md">
                     <q-input
-                      v-model="plateCameraIp" 
-                      label="CCTV IP Address"
-                      @update:model-value="setPlateCameraIP"
+                      v-model="wsUrl"
+                      label="WebSocket URL"
+                      placeholder="ws://localhost:8001/ws"
+                      outlined
+                      dense
+                    />
+                  </div>
+                </q-card-section>
+              </q-card>
+
+              <!-- Gate Settings Card -->
+              <q-card class="settings-card q-mb-lg" flat bordered>
+                <q-card-section>
+                  <div class="settings-section-title">
+                    <q-icon name="door_front" class="q-mr-sm" />
+                    Pengaturan Gerbang
+                  </div>
+                  
+                  <div class="row q-col-gutter-md q-mt-md">
+                    <div class="col-12 col-sm-6">
+                      <q-input
+                        v-model="gateName"
+                        label="Nama Gerbang"
+                        outlined
+                        dense
                       />
                     </div>
-                    <!-- :disable="selectedPlateCam" -->
-                  <div class="col">
-                    <q-input
-                      v-model="plateCameraUsername"
-                      label="CCTV Username"
-                      @update:model-value="updatePlateCameraUsername"
-                    />
-                  </div>
-                  <div class="col">
-                    <q-input
-                      v-model="plateCameraPassword"
-                      label="CCTV Password"
-                      type="password"
-                      @update:model-value="updatePlateCameraPassword"
-                    />
-                  </div>
-                  <div class="col">
-                    <q-input
-                      v-model="plateCameraRtspPath"
-                      label="CCTV RTSP Path"
-                    />
-                  </div>
-                </div>
-              </div>
-        
-              <!-- Driver Camera -->
-              <div class="q-mb-md">
-                <div class="text-caption q-mb-sm">Driver Camera</div>
-                <div class="row q-col-gutter-md">
-                  <div class="col">
-                    <q-select
-                      v-model="selectedDriverCam"
-                      :options="availableCameras"
-                      label="USB Camera"
-                      option-value="deviceId"
-                      option-label="label"
-                      clearable
-                      emit-value
-                      map-options
-                      @update:model-value="updateDriverCamera"
-                    />
-                    <div class="text-caption text-grey-6 q-mt-xs" v-if="availableCameras.length === 0">
-                      No USB cameras detected. Click "Refresh Cameras" to try again.
+                    <div class="col-12 col-sm-6">
+                      <q-select
+                        v-model="gateType"
+                        :options="[
+                          { label: 'Gerbang Masuk', value: 'entry' },
+                          { label: 'Gerbang Keluar', value: 'exit' }
+                        ]"
+                        label="Tipe Gerbang"
+                        outlined
+                        dense
+                        emit-value
+                        map-options
+                      />
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <q-input
+                        v-model="prefix"
+                        label="Prefix Default"
+                        placeholder="Contoh: A, B, C"
+                        outlined
+                        dense
+                      />
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <q-input
+                        v-model="serialPort"
+                        label="Serial Port"
+                        placeholder="COM3 atau /dev/ttyUSB0"
+                        outlined
+                        dense
+                        :rules="[val => !!val || 'Serial port wajib diisi']"
+                      />
                     </div>
                   </div>
-                  <div class="col">
-                    <q-input
-                      v-model="driverCameraIp"
-                      label="CCTV IP Address"
-                      @update:model-value="setDriverCameraIP"
-                    />
-                  </div>
-                  <div class="col">
-                    <q-input
-                      v-model="driverCameraUsername"
-                      label="CCTV Username"
-                      @update:model-value="updateDriverCameraUsername"
-                    />
-                  </div>
-                  <div class="col">
-                    <q-input
-                      v-model="driverCameraPassword"
-                      label="CCTV Password"
-                      type="password"
-                      @update:model-value="updateDriverCameraPassword"
-                    />
-                  </div>
-                  <div class="col">
-                    <q-input
-                      v-model="driverCameraRtspPath"
-                      label="CCTV RTSP Path"
-                    />
-                  </div>
-                </div>
-              </div>
+                </q-card-section>
+              </q-card>
 
-              <!-- QR Scanner Camera -->
-              <div class="q-mb-md">
-                <div class="text-caption q-mb-sm">QR Scanner Camera</div>
-                <div class="row q-col-gutter-md">
-                  <div class="col">
-                    <q-select
-                      v-model="selectedScannerCam"
-                      :options="availableCameras"
-                      label="USB Camera"
-                      option-value="deviceId"
-                      option-label="label"
-                      clearable
-                      emit-value
-                      map-options
-                      @update:model-value="updateScannerCamera"
-                    />
-                    <div class="text-caption text-grey-6 q-mt-xs" v-if="availableCameras.length === 0">
-                      No USB cameras detected. Click "Refresh Cameras" to try again.
+              <!-- Operation Mode Card -->
+              <q-card class="settings-card q-mb-lg" flat bordered>
+                <q-card-section>
+                  <div class="settings-section-title">
+                    <q-icon name="settings_applications" class="q-mr-sm" />
+                    Mode Operasi
+                  </div>
+                  
+                  <div class="row q-col-gutter-md q-mt-md">
+                    <div class="col-12" :class="operationMode === 'manual' ? 'col-sm-6' : ''">
+                      <q-select
+                        v-model="operationMode"
+                        :options="operationModeOptions"
+                        label="Mode Operasi"
+                        outlined
+                        dense
+                        emit-value
+                        map-options
+                      />
+                      <div class="text-caption text-grey-6 q-mt-xs">
+                        {{ operationMode === 'manless' ? 'Mode otomatis dengan ALPR tanpa petugas' : 'Mode manual dengan input petugas' }}
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6" v-show="operationMode === 'manual'">
+                      <q-select
+                        v-model="manualPaymentMode"
+                        :options="manualPaymentModeOptions"
+                        label="Mode Pembayaran"
+                        outlined
+                        dense
+                        emit-value
+                        map-options
+                      />
+                      <div class="text-caption text-grey-6 q-mt-xs">
+                        {{ manualPaymentMode === 'prepaid' ? 'Bayar di depan dengan tarif tetap' : 'Bayar di belakang dengan tarif progresif' }}
+                      </div>
                     </div>
                   </div>
-                  <div class="col">
-                    <q-input
-                      v-model="scannerCameraIp"
-                      label="CCTV URL"
-                      @update:model-value="updateScannerCameraUrl"
-                    />
+                </q-card-section>
+              </q-card>
+
+              <!-- Printer Settings Card -->
+              <q-card class="settings-card q-mb-lg" flat bordered>
+                <q-card-section>
+                  <div class="settings-section-title">
+                    <q-icon name="print" class="q-mr-sm" />
+                    Pengaturan Printer
                   </div>
-                  <div class="col">
-                    <q-input
-                      v-model="scannerCameraUsername"
-                      label="CCTV Username"
-                      @update:model-value="updateScannerCameraUsername"
-                    />
+                  
+                  <div class="row q-col-gutter-md q-mt-md items-end">
+                    <div class="col-12 col-sm-4">
+                      <q-input
+                        v-model="printerName"
+                        label="Nama Printer"
+                        placeholder="Kosongkan jika tidak ada"
+                        outlined
+                        dense
+                      />
+                    </div>
+                    <div class="col-12 col-sm-4">
+                      <q-select
+                        v-model="paperSize"
+                        :options="[
+                          { label: '58mm (Kecil)', value: '58mm' },
+                          { label: '80mm (Besar)', value: '80mm' }
+                        ]"
+                        label="Ukuran Kertas"
+                        outlined
+                        dense
+                        emit-value
+                        map-options
+                      />
+                    </div>
+                    <div class="col-12 col-sm-4">
+                      <q-toggle
+                        v-model="autoPrint"
+                        label="Auto Print Tiket"
+                        color="primary"
+                        size="md"
+                      />
+                    </div>
                   </div>
-                  <div class="col">
-                    <q-input
-                      v-model="scannerCameraPassword"
-                      label="CCTV Password"
-                      type="password"
-                      @update:model-value="updateScannerCameraPassword"
-                    />
+                </q-card-section>
+              </q-card>
+
+            </div>
+
+            <!-- Right Column -->
+            <div class="col-12 col-lg-6">
+              
+              <!-- Camera Settings Card -->
+              <q-card class="settings-card q-mb-lg" flat bordered>
+                <q-card-section>
+                  <div class="settings-section-title">
+                    <q-icon name="videocam" class="q-mr-sm" />
+                    Pengaturan Kamera
                   </div>
-                  <div class="col">
-                    <q-input
-                      v-model="scannerCameraRtspPath"
-                      label="CCTV RTSP Path"
-                      placeholder="/Streaming/Channels/101"
-                    />
+                  
+                  <!-- Camera Controls -->
+                  <div class="row q-col-gutter-md q-mt-md">
+                    <div class="col-12 col-sm-6">
+                      <q-input
+                        v-model.number="captureInterval"
+                        type="number"
+                        label="Interval Capture (ms)"
+                        placeholder="5000 = 5 detik"
+                        outlined
+                        dense
+                      />
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <q-btn 
+                        color="primary" 
+                        label="Refresh Kamera" 
+                        icon="refresh"
+                        @click="getCameras"
+                        size="md"
+                        style="width: 100%"
+                      />
+                      <div class="text-caption text-center q-mt-xs">
+                        {{ availableCameras.length }} kamera terdeteksi
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </q-card-section>
+              </q-card>
+
+              <!-- Camera Configurations -->
+              <q-expansion-item
+                v-for="(cameraType, index) in [
+                  { name: 'plate', label: 'Kamera Plat Nomor', icon: 'pin' },
+                  { name: 'driver', label: 'Kamera Driver', icon: 'person' },
+                  { name: 'scanner', label: 'Kamera Scanner QR', icon: 'qr_code_scanner' }
+                ]"
+                :key="cameraType.name"
+                :default-opened="index === 0"
+                class="settings-expansion q-mb-md"
+              >
+                <template v-slot:header>
+                  <q-item-section avatar>
+                    <q-icon :name="cameraType.icon" color="primary" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-weight-medium">{{ cameraType.label }}</q-item-label>
+                  </q-item-section>
+                </template>
+
+                <q-card flat bordered class="q-ma-sm">
+                  <q-card-section>
+                    <!-- USB Camera Selection -->
+                    <div class="camera-config-section q-mb-md">
+                      <div class="text-subtitle2 text-weight-medium q-mb-sm">USB Kamera</div>
+                      <q-select
+                        :model-value="cameraType.name === 'plate' ? selectedPlateCam : 
+                                      cameraType.name === 'driver' ? selectedDriverCam : selectedScannerCam"
+                        @update:model-value="cameraType.name === 'plate' ? updatePlateCamera : 
+                                           cameraType.name === 'driver' ? updateDriverCamera : updateScannerCamera"
+                        :options="availableCameras"
+                        label="Pilih USB Camera"
+                        option-value="deviceId"
+                        option-label="label"
+                        clearable
+                        emit-value
+                        map-options
+                        outlined
+                        dense
+                      />
+                      <div class="text-caption text-grey-6 q-mt-xs" v-if="availableCameras.length === 0">
+                        Tidak ada USB kamera terdeteksi. Klik "Refresh Kamera" untuk coba lagi.
+                      </div>
+                    </div>
+
+                    <!-- CCTV Configuration -->
+                    <div class="camera-config-section q-mb-md">
+                      <div class="text-subtitle2 text-weight-medium q-mb-sm">Konfigurasi CCTV</div>
+                      <div class="row q-col-gutter-sm">
+                        <div class="col-12 col-sm-6">
+                          <q-input
+                            :model-value="cameraType.name === 'plate' ? plateCameraIp : 
+                                         cameraType.name === 'driver' ? driverCameraIp : scannerCameraIp"
+                            @update:model-value="cameraType.name === 'plate' ? setPlateCameraIP : 
+                                               cameraType.name === 'driver' ? setDriverCameraIP : updateScannerCameraUrl"
+                            label="IP Address CCTV"
+                            placeholder="192.168.1.100"
+                            outlined
+                            dense
+                          />
+                        </div>
+                        <div class="col-12 col-sm-6">
+                          <q-input
+                            :model-value="cameraType.name === 'plate' ? plateCameraRtspPath : 
+                                         cameraType.name === 'driver' ? driverCameraRtspPath : scannerCameraRtspPath"
+                            @update:model-value="val => {
+                              if (cameraType.name === 'plate') plateCameraRtspPath = val;
+                              else if (cameraType.name === 'driver') driverCameraRtspPath = val;
+                              else scannerCameraRtspPath = val;
+                            }"
+                            label="RTSP Path"
+                            placeholder="/Streaming/Channels/101"
+                            outlined
+                            dense
+                          />
+                        </div>
+                        <div class="col-12 col-sm-6">
+                          <q-input
+                            :model-value="cameraType.name === 'plate' ? plateCameraUsername : 
+                                         cameraType.name === 'driver' ? driverCameraUsername : scannerCameraUsername"
+                            @update:model-value="cameraType.name === 'plate' ? updatePlateCameraUsername : 
+                                               cameraType.name === 'driver' ? updateDriverCameraUsername : updateScannerCameraUsername"
+                            label="Username"
+                            placeholder="admin"
+                            outlined
+                            dense
+                          />
+                        </div>
+                        <div class="col-12 col-sm-6">
+                          <q-input
+                            :model-value="cameraType.name === 'plate' ? plateCameraPassword : 
+                                         cameraType.name === 'driver' ? driverCameraPassword : scannerCameraPassword"
+                            @update:model-value="cameraType.name === 'plate' ? updatePlateCameraPassword : 
+                                               cameraType.name === 'driver' ? updateDriverCameraPassword : updateScannerCameraPassword"
+                            label="Password"
+                            type="password"
+                            outlined
+                            dense
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Capture Mode Configuration -->
+                    <div class="camera-config-section">
+                      <div class="text-subtitle2 text-weight-medium q-mb-sm">Mode Capture Default</div>
+                      <div class="row q-col-gutter-sm">
+                        <div class="col-12 col-sm-4">
+                          <q-select
+                            :model-value="cameraType.name === 'plate' ? plateCameraDefaultMode : 
+                                         cameraType.name === 'driver' ? driverCameraDefaultMode : scannerCameraDefaultMode"
+                            @update:model-value="val => {
+                              if (cameraType.name === 'plate') plateCameraDefaultMode = val;
+                              else if (cameraType.name === 'driver') driverCameraDefaultMode = val;
+                              else scannerCameraDefaultMode = val;
+                            }"
+                            :options="captureModeOptions"
+                            label="Mode Default"
+                            emit-value
+                            map-options
+                            outlined
+                            dense
+                          />
+                          <div class="text-caption text-grey-6 q-mt-xs">
+                            Metode capture default untuk kamera ini
+                          </div>
+                        </div>
+                        <div class="col-12 col-sm-4">
+                          <q-input
+                            :model-value="cameraType.name === 'plate' ? plateCameraSnapshotUrl : 
+                                         cameraType.name === 'driver' ? driverCameraSnapshotUrl : scannerCameraSnapshotUrl"
+                            @update:model-value="val => {
+                              if (cameraType.name === 'plate') plateCameraSnapshotUrl = val;
+                              else if (cameraType.name === 'driver') driverCameraSnapshotUrl = val;
+                              else scannerCameraSnapshotUrl = val;
+                            }"
+                            label="Custom Snapshot URL"
+                            placeholder="/cgi-bin/snapshot.cgi"
+                            outlined
+                            dense
+                          />
+                        </div>
+                        <div class="col-12 col-sm-4">
+                          <q-input
+                            :model-value="cameraType.name === 'plate' ? plateCameraHttpPort : 
+                                         cameraType.name === 'driver' ? driverCameraHttpPort : scannerCameraHttpPort"
+                            @update:model-value="val => {
+                              if (cameraType.name === 'plate') plateCameraHttpPort = val;
+                              else if (cameraType.name === 'driver') driverCameraHttpPort = val;
+                              else scannerCameraHttpPort = val;
+                            }"
+                            type="number"
+                            label="HTTP Port"
+                            placeholder="80"
+                            outlined
+                            dense
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </q-expansion-item>
+
             </div>
           </div>
         </div>
-        </div>
 
-        <q-separator spaced />
-        <q-card-actions align="right">
-          <q-chip
-            text-color="primary"
-            label="Simpan"
-            style="padding: 2rem 1rem"
-            class="q-mt-lg q-pa-md text-h6 rounded-corner"
-          >
-            <q-btn @click="onSaveSettings" push icon="keyboard_return" color="black" class="q-ma-md"
-          /></q-chip>
-        </q-card-actions>
+        <!-- Footer Actions -->
+        <div class="row justify-end q-pt-md" style="border-top: 1px solid #e0e0e0;">
+          <q-btn
+            @click="onSaveSettings"
+            color="primary"
+            size="lg"
+            icon="save"
+            label="Simpan Pengaturan"
+            class="q-px-xl"
+            :loading="false"
+          />
+        </div>
       </q-card>
     </div>
   </q-dialog>
@@ -449,6 +512,25 @@ const driverCameraRtspPath = ref('');
 const scannerCameraRtspPath = ref('');
 const captureInterval = ref(5000); // Default to 5 seconds
 
+// Capture mode settings for each camera
+const captureModeOptions = [
+  { label: 'Auto (Detect Best)', value: 'auto' },
+  { label: 'Snapshot (HTTP)', value: 'snapshot' },
+  { label: 'RTSP (Stream)', value: 'rtsp' }
+];
+
+const plateCameraDefaultMode = ref('auto');
+const plateCameraSnapshotUrl = ref('');
+const plateCameraHttpPort = ref(80);
+
+const driverCameraDefaultMode = ref('auto');
+const driverCameraSnapshotUrl = ref('');
+const driverCameraHttpPort = ref(80);
+
+const scannerCameraDefaultMode = ref('auto');
+const scannerCameraSnapshotUrl = ref('');
+const scannerCameraHttpPort = ref(80);
+
 // Add computed properties to determine camera types
 const serialPort = ref(''); // Ditambahkan untuk input serial port
 const plateCameraType = computed(() => {
@@ -502,18 +584,27 @@ watch(gateSettings, (newSettings) => {
     plateCameraUsername.value = newSettings.PLATE_CAM_USERNAME || '';
     plateCameraPassword.value = newSettings.PLATE_CAM_PASSWORD || '';
     plateCameraRtspPath.value = newSettings.PLATE_CAM_RTSP_PATH || '';
+    plateCameraDefaultMode.value = newSettings.PLATE_CAM_DEFAULT_MODE || 'auto';
+    plateCameraSnapshotUrl.value = newSettings.PLATE_CAM_SNAPSHOT_URL || '';
+    plateCameraHttpPort.value = newSettings.PLATE_CAM_HTTP_PORT || 80;
     
     selectedDriverCam.value = newSettings.DRIVER_CAM_DEVICE_ID || null;
     driverCameraIp.value = newSettings.DRIVER_CAM_IP || '';
     driverCameraUsername.value = newSettings.DRIVER_CAM_USERNAME || '';
     driverCameraPassword.value = newSettings.DRIVER_CAM_PASSWORD || '';
     driverCameraRtspPath.value = newSettings.DRIVER_CAM_RTSP_PATH || '';
+    driverCameraDefaultMode.value = newSettings.DRIVER_CAM_DEFAULT_MODE || 'auto';
+    driverCameraSnapshotUrl.value = newSettings.DRIVER_CAM_SNAPSHOT_URL || '';
+    driverCameraHttpPort.value = newSettings.DRIVER_CAM_HTTP_PORT || 80;
     
     selectedScannerCam.value = newSettings.SCANNER_CAM_DEVICE_ID || null;
     scannerCameraIp.value = newSettings.SCANNER_CAM_IP || '';
     scannerCameraUsername.value = newSettings.SCANNER_CAM_USERNAME || '';
     scannerCameraPassword.value = newSettings.SCANNER_CAM_PASSWORD || '';
     scannerCameraRtspPath.value = newSettings.SCANNER_CAM_RTSP_PATH || '';
+    scannerCameraDefaultMode.value = newSettings.SCANNER_CAM_DEFAULT_MODE || 'auto';
+    scannerCameraSnapshotUrl.value = newSettings.SCANNER_CAM_SNAPSHOT_URL || '';
+    scannerCameraHttpPort.value = newSettings.SCANNER_CAM_HTTP_PORT || 80;
     
     // Former global settings
     wsUrl.value = newSettings.WS_URL || 'ws://localhost:8765';
@@ -544,16 +635,25 @@ const onSaveSettings = async () => {
       PLATE_CAM_USERNAME: plateCameraUsername.value,
       PLATE_CAM_PASSWORD: plateCameraPassword.value,
       PLATE_CAM_RTSP_PATH: plateCameraRtspPath.value,
+      PLATE_CAM_DEFAULT_MODE: plateCameraDefaultMode.value,
+      PLATE_CAM_SNAPSHOT_URL: plateCameraSnapshotUrl.value,
+      PLATE_CAM_HTTP_PORT: plateCameraHttpPort.value,
       DRIVER_CAM_DEVICE_ID: selectedDriverCam.value,
       DRIVER_CAM_IP: driverCameraIp.value,
       DRIVER_CAM_USERNAME: driverCameraUsername.value,
       DRIVER_CAM_PASSWORD: driverCameraPassword.value,
       DRIVER_CAM_RTSP_PATH: driverCameraRtspPath.value,
+      DRIVER_CAM_DEFAULT_MODE: driverCameraDefaultMode.value,
+      DRIVER_CAM_SNAPSHOT_URL: driverCameraSnapshotUrl.value,
+      DRIVER_CAM_HTTP_PORT: driverCameraHttpPort.value,
       SCANNER_CAM_DEVICE_ID: selectedScannerCam.value,
       SCANNER_CAM_IP: scannerCameraIp.value,
       SCANNER_CAM_USERNAME: scannerCameraUsername.value,
       SCANNER_CAM_PASSWORD: scannerCameraPassword.value,
       SCANNER_CAM_RTSP_PATH: scannerCameraRtspPath.value,
+      SCANNER_CAM_DEFAULT_MODE: scannerCameraDefaultMode.value,
+      SCANNER_CAM_SNAPSHOT_URL: scannerCameraSnapshotUrl.value,
+      SCANNER_CAM_HTTP_PORT: scannerCameraHttpPort.value,
       CAPTURE_INTERVAL: parseInt(captureInterval.value, 10) || 5000,
       
       // Former global settings now in gate settings
@@ -825,13 +925,315 @@ onMounted(async () => {
 .glass {
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background-color: rgba(255, 255, 255, 0.378);
-  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.98);
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.125);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 :deep(.q-dialog__backdrop.fixed-full) {
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(30px);
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.settings-content {
+  padding: 0 8px;
+}
+
+.settings-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.settings-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.settings-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.settings-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.settings-card {
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.settings-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.settings-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1976d2;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.settings-expansion {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.settings-expansion :deep(.q-expansion-item__container) {
+  border-radius: 8px;
+}
+
+.settings-expansion :deep(.q-item) {
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  color: #424242;
+}
+
+.settings-expansion :deep(.q-item:hover) {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.camera-config-section {
+  padding: 12px;
+  background-color: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.camera-config-section .text-subtitle2 {
+  color: #1976d2;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Input field improvements */
+:deep(.q-field--outlined .q-field__control) {
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+:deep(.q-field--outlined .q-field__control:before) {
+  border-color: #e0e0e0;
+}
+
+:deep(.q-field--dense .q-field__control) {
+  height: 40px;
+  background-color: #ffffff;
+}
+
+:deep(.q-field--focused .q-field__control) {
+  background-color: #ffffff !important;
+}
+
+:deep(.q-field--focused .q-field__native) {
+  color: #424242 !important;
+}
+
+:deep(.q-select__dropdown-icon) {
+  color: #1976d2;
+}
+
+/* Toggle improvements */
+:deep(.q-toggle__inner) {
+  color: #1976d2;
+}
+
+/* Button improvements */
+:deep(.q-btn) {
+  border-radius: 8px;
+  text-transform: none;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1023px) {
+  .settings-content {
+    padding: 0 4px;
+  }
+  
+  .settings-card {
+    margin-bottom: 16px !important;
+  }
+}
+
+@media (max-width: 599px) {
+  .row.q-col-gutter-sm > .col-12:not(:last-child) {
+    margin-bottom: 8px;
+  }
+  
+  .camera-config-section {
+    padding: 8px;
+  }
+  
+  .settings-section-title {
+    font-size: 14px;
+  }
+}
+
+/* Animation for expansion items */
+.settings-expansion :deep(.q-expansion-item__content) {
+  transition: all 0.3s ease;
+}
+
+/* Status indicators */
+.text-caption {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #666666 !important;
+}
+
+/* Ensure proper text contrast */
+:deep(.q-item-label) {
+  color: #424242 !important;
+}
+
+:deep(.q-expansion-item__label) {
+  color: #424242 !important;
+  font-weight: 500;
+}
+
+/* Input label improvements */
+:deep(.q-field__label) {
+  color: #424242 !important;
+}
+
+:deep(.q-field--focused .q-field__label) {
+  color: #1976d2 !important;
+}
+
+/* Card section improvements */
+:deep(.q-card__section) {
+  padding: 16px 20px;
+}
+
+/* Text color improvements for better visibility */
+:deep(.q-field__control) {
+  color: #424242;
+}
+
+:deep(.q-field__native) {
+  color: #424242 !important;
+}
+
+:deep(.q-input .q-field__native) {
+  color: #424242 !important;
+}
+
+:deep(.q-select .q-field__native) {
+  color: #424242 !important;
+}
+
+:deep(.q-field__input) {
+  color: #424242 !important;
+}
+
+:deep(.q-toggle__label) {
+  color: #424242 !important;
+}
+
+/* Placeholder text */
+:deep(.q-field__input::placeholder) {
+  color: #999999 !important;
+}
+
+:deep(input::placeholder) {
+  color: #999999 !important;
+}
+
+/* Selected option text in dropdowns */
+:deep(.q-select__selection) {
+  color: #424242 !important;
+}
+
+/* Dropdown options */
+:deep(.q-menu .q-item) {
+  color: #424242 !important;
+}
+
+/* Input text when typing */
+:deep(input[type="text"]) {
+  color: #424242 !important;
+}
+
+:deep(input[type="number"]) {
+  color: #424242 !important;
+}
+
+:deep(input[type="password"]) {
+  color: #424242 !important;
+}
+
+/* Ensure all input elements have proper contrast */
+:deep(.q-field .q-field__control .q-field__native) {
+  color: #424242 !important;
+  background-color: transparent !important;
+}
+
+:deep(.q-field .q-field__control input) {
+  color: #424242 !important;
+  background-color: transparent !important;
+}
+
+/* Fix for autofilled inputs */
+:deep(input:-webkit-autofill) {
+  -webkit-text-fill-color: #424242 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+}
+
+:deep(input:-webkit-autofill:focus) {
+  -webkit-text-fill-color: #424242 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+}
+
+/* Ensure text remains visible in all states */
+:deep(.q-field--readonly .q-field__native) {
+  color: #424242 !important;
+}
+
+:deep(.q-field--disable .q-field__native) {
+  color: #757575 !important;
+}
+
+/* Force text visibility in all scenarios */
+* {
+  -webkit-text-fill-color: initial !important;
+}
+
+:deep(.q-field__native),
+:deep(.q-field__input),
+:deep(input) {
+  -webkit-text-fill-color: #424242 !important;
+  color: #424242 !important;
+}
+
+/* Specific fixes for different input types */
+:deep(.q-select .q-field__native span) {
+  color: #424242 !important;
+}
+
+/* Override any inherited transparency */
+:deep(.q-field__control) {
+  background-color: #ffffff !important;
+}
+
+:deep(.q-field--outlined .q-field__control) {
+  background-color: #ffffff !important;
+}
+
+/* Help text improvements */
+.text-grey-6 {
+  color: #757575 !important;
+}
+
+/* Separator styling */
+:deep(.q-separator) {
+  background-color: #e0e0e0;
+  opacity: 0.6;
 }
 </style>

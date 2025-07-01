@@ -22,16 +22,25 @@ interface GateSetting {
   PLATE_CAM_USERNAME?: string;
   PLATE_CAM_PASSWORD?: string;
   PLATE_CAM_RTSP_PATH?: string;
+  PLATE_CAM_DEFAULT_MODE?: string;
+  PLATE_CAM_SNAPSHOT_URL?: string;
+  PLATE_CAM_HTTP_PORT?: number;
   DRIVER_CAM_DEVICE_ID: string | null;
   DRIVER_CAM_IP: string;
   DRIVER_CAM_USERNAME?: string;
   DRIVER_CAM_PASSWORD?: string;
   DRIVER_CAM_RTSP_PATH?: string;
+  DRIVER_CAM_DEFAULT_MODE?: string;
+  DRIVER_CAM_SNAPSHOT_URL?: string;
+  DRIVER_CAM_HTTP_PORT?: number;
   SCANNER_CAM_DEVICE_ID: string | null;
   SCANNER_CAM_IP: string;
   SCANNER_CAM_USERNAME?: string;
   SCANNER_CAM_PASSWORD?: string;
   SCANNER_CAM_RTSP_PATH?: string;
+  SCANNER_CAM_DEFAULT_MODE?: string;
+  SCANNER_CAM_SNAPSHOT_URL?: string;
+  SCANNER_CAM_HTTP_PORT?: number;
   SERIAL_PORT: string | null;
   CAPTURE_INTERVAL?: number;
   // Former global settings moved into gate settings
@@ -55,16 +64,25 @@ const defaultGateSettings: Omit<GateSetting, '_id' | '_rev'> = {
   PLATE_CAM_USERNAME: 'admin',
   PLATE_CAM_PASSWORD: 'password',
   PLATE_CAM_RTSP_PATH: 'Streaming/Channels/101',
+  PLATE_CAM_DEFAULT_MODE: 'auto',
+  PLATE_CAM_SNAPSHOT_URL: '',
+  PLATE_CAM_HTTP_PORT: 80,
   DRIVER_CAM_DEVICE_ID: '1', // Default USB camera device ID for second camera
   DRIVER_CAM_IP: '',
   DRIVER_CAM_USERNAME: 'admin',
   DRIVER_CAM_PASSWORD: 'password',
   DRIVER_CAM_RTSP_PATH: 'Streaming/Channels/101',
+  DRIVER_CAM_DEFAULT_MODE: 'auto',
+  DRIVER_CAM_SNAPSHOT_URL: '',
+  DRIVER_CAM_HTTP_PORT: 80,
   SCANNER_CAM_DEVICE_ID: null,
   SCANNER_CAM_IP: '',
   SCANNER_CAM_USERNAME: 'admin',
   SCANNER_CAM_PASSWORD: 'password',
   SCANNER_CAM_RTSP_PATH: 'Streaming/Channels/101',
+  SCANNER_CAM_DEFAULT_MODE: 'auto',
+  SCANNER_CAM_SNAPSHOT_URL: '',
+  SCANNER_CAM_HTTP_PORT: 80,
   SERIAL_PORT: null,
   CAPTURE_INTERVAL: 5000,
   // Former global settings with defaults
@@ -87,6 +105,9 @@ export const useSettingsService = defineStore('settings-service', () => {
       ipAddress: gateSettings.value.PLATE_CAM_IP || '',
       rtspStreamPath: gateSettings.value.PLATE_CAM_RTSP_PATH || '',
       deviceId: gateSettings.value.PLATE_CAM_DEVICE_ID,
+      defaultMode: gateSettings.value.PLATE_CAM_DEFAULT_MODE || 'auto',
+      snapshotUrl: gateSettings.value.PLATE_CAM_SNAPSHOT_URL || '',
+      httpPort: gateSettings.value.PLATE_CAM_HTTP_PORT || 80,
     },
     DRIVER: {
       username: gateSettings.value.DRIVER_CAM_USERNAME || '',
@@ -94,6 +115,9 @@ export const useSettingsService = defineStore('settings-service', () => {
       ipAddress: gateSettings.value.DRIVER_CAM_IP || '',
       rtspStreamPath: gateSettings.value.DRIVER_CAM_RTSP_PATH || '',
       deviceId: gateSettings.value.DRIVER_CAM_DEVICE_ID,
+      defaultMode: gateSettings.value.DRIVER_CAM_DEFAULT_MODE || 'auto',
+      snapshotUrl: gateSettings.value.DRIVER_CAM_SNAPSHOT_URL || '',
+      httpPort: gateSettings.value.DRIVER_CAM_HTTP_PORT || 80,
     },
     SCANNER: {
       username: gateSettings.value.SCANNER_CAM_USERNAME || '',
@@ -101,6 +125,9 @@ export const useSettingsService = defineStore('settings-service', () => {
       ipAddress: gateSettings.value.SCANNER_CAM_IP || '',
       rtspStreamPath: gateSettings.value.SCANNER_CAM_RTSP_PATH || '',
       deviceId: gateSettings.value.SCANNER_CAM_DEVICE_ID,
+      defaultMode: gateSettings.value.SCANNER_CAM_DEFAULT_MODE || 'auto',
+      snapshotUrl: gateSettings.value.SCANNER_CAM_SNAPSHOT_URL || '',
+      httpPort: gateSettings.value.SCANNER_CAM_HTTP_PORT || 80,
     },
   }));
   

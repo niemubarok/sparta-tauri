@@ -3,6 +3,17 @@
     <q-chip v-if="label"
       style="border-radius:8px; top: 0px; left: 0px; font-size:medium; background-color: rgba(0, 0, 0, 0.5);"
       class="text-white absolute inset-shadow" :label="label" />
+    
+    <!-- Capture Mode Indicator -->
+    <q-chip v-if="cameraType === 'cctv' && isCameraEnabled"
+      style="border-radius:8px; top: 0px; right: 0px; font-size:small; z-index: 5;"
+      :class="{
+        'bg-blue-6': selectedCaptureMode.value === 'auto',
+        'bg-green-6': selectedCaptureMode.value === 'snapshot',
+        'bg-purple-6': selectedCaptureMode.value === 'rtsp'
+      }"
+      class="text-white absolute"
+      :label="selectedCaptureMode.label + (selectedCaptureMode.value === 'rtsp' && isLiveModeActive ? ' (Live)' : '')" />
     <div class="connection-indicator" :class="{ 'connected': cameraStatus }">
       <div class="indicator-dot"></div>
     </div>
@@ -26,12 +37,15 @@
         <template v-slot:default>
           <div class="absolute-center text-center text-grey-7">
             <q-icon 
-              :name="cameraStatus ? 'camera_alt' : 'camera_off'" 
-              :color="cameraStatus ? 'grey-6' : 'red-6'"
+              :name="!isCameraEnabled ? 'videocam_off' : (cameraStatus ? 'camera_alt' : 'camera_off')" 
+              :color="!isCameraEnabled ? 'orange-6' : (cameraStatus ? 'grey-6' : 'red-6')"
               size="xl" 
             />
             <div class="q-mt-sm">{{ message }}</div>
-            <div v-if="!cameraStatus && message.includes('check settings')" class="q-mt-xs text-caption">
+            <div v-if="!isCameraEnabled" class="q-mt-xs text-caption">
+              Enable camera to start capturing
+            </div>
+            <div v-else-if="!cameraStatus && message.includes('check settings')" class="q-mt-xs text-caption">
               Press F7 to open settings
             </div>
           </div>
@@ -56,16 +70,44 @@
       </q-skeleton>
     </div>
 
-    <q-toggle
-      v-if="cameraType === 'cctv' "
-      v-model="isLiveModeActive"
-      label="Live"
-      class="absolute z-top"
-      style="bottom: 5px; right: 5px; background-color: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 15px;"
-      color="green"
-      dense
-      @update:model-value="handleModeChange"
-    />
+    <div v-if="cameraType === 'cctv'" class="absolute" style="bottom: 5px; right: 5px; display: flex; gap: 8px;z-index: 10;">
+      <q-toggle
+        v-model="isCameraEnabled"
+        :label="isCameraEnabled ? 'ON' : 'OFF'"
+        style="background-color: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 15px;"
+        :color="isCameraEnabled ? 'green' : 'red'"
+        dense
+        @update:model-value="handleCameraEnable"
+      />
+      <q-select
+        v-if="isCameraEnabled"
+        v-model="selectedCaptureMode"
+        :options="captureModeOptions"
+        dense
+        outlined
+        style="background-color: rgba(0,0,0,0.3); border-radius: 15px; min-width: 80px;"
+        class="text-white"
+        popup-content-style="background-color: rgba(0,0,0,0.8); color: white;"
+        @update:model-value="handleCaptureModeChange"
+      >
+        <q-tooltip anchor="top middle" self="bottom middle" class="bg-grey-8">
+          <div style="max-width: 200px;">
+            <div><strong>Auto:</strong> Try snapshot first, fallback to RTSP</div>
+            <div><strong>Snapshot:</strong> HTTP image capture (fast)</div>
+            <div><strong>RTSP:</strong> Video stream capture (high quality)</div>
+          </div>
+        </q-tooltip>
+      </q-select>
+      <q-toggle
+        v-if="isCameraEnabled && selectedCaptureMode?.value === 'rtsp'"
+        v-model="isLiveModeActive"
+        label="Live"
+        style="background-color: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 15px;"
+        color="green"
+        dense
+        @update:model-value="handleModeChange"
+      />
+    </div>
   </div>
 </template>
 
@@ -78,6 +120,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { base64ToBlob } from "src/utils/helpers.js";
 import { useCameraStore } from "src/stores/camera-store";
 import { useGateStore } from "src/stores/gate-store";
+import { useSettingsService } from "src/stores/settings-service";
 import { listen } from '@tauri-apps/api/event';
 
 let unlistenLiveFrame = null;
@@ -124,7 +167,7 @@ const props = defineProps({
   // Tambahkan props baru untuk mode snapshot
   captureMode: {
     type: String,
-    default: 'auto', // 'rtsp', 'snapshot', atau 'auto'
+    default: 'snapshot', // 'rtsp', 'snapshot', atau 'auto'
     validator: (value) => ['rtsp', 'snapshot', 'auto'].includes(value)
   },
   snapshotUrl: {
@@ -157,10 +200,54 @@ const isLiveModeActive = ref(
     ? (ls.get(`liveModeActive_${props.cameraUrl}_${props.label || 'default'}`) === null ? false : !!ls.get(`liveModeActive_${props.cameraUrl}_${props.label || 'default'}`))
     : false
 );
+
+const isCameraEnabled = ref(
+  (props.cameraType === 'cctv')
+    ? (ls.get(`cameraEnabled_${props.cameraUrl}_${props.label || 'default'}`) === null ? true : !!ls.get(`cameraEnabled_${props.cameraUrl}_${props.label || 'default'}`))
+    : true
+);
+
 const cameraStore = useCameraStore()
 const gateStore = useGateStore()
+const settingsService = useSettingsService()
 
 const emit = defineEmits(['captured', 'error']);
+
+// Capture mode options dan state
+const captureModeOptions = [
+  { label: 'Auto', value: 'auto' },
+  { label: 'Snapshot', value: 'snapshot' },
+  { label: 'RTSP', value: 'rtsp' }
+];
+
+// Initialize capture mode based on camera label and settings
+const getDefaultCaptureMode = () => {
+  // Try to get from settings first, but fallback gracefully if not available
+  try {
+    if (settingsService?.gateSettings) {
+      const settings = settingsService.gateSettings;
+      const cameraLabel = props.label?.toLowerCase() || '';
+      
+      if (cameraLabel.includes('plate') && settings.PLATE_CAM_DEFAULT_MODE) {
+        return settings.PLATE_CAM_DEFAULT_MODE;
+      } else if (cameraLabel.includes('driver') && settings.DRIVER_CAM_DEFAULT_MODE) {
+        return settings.DRIVER_CAM_DEFAULT_MODE;
+      } else if (cameraLabel.includes('scanner') && settings.SCANNER_CAM_DEFAULT_MODE) {
+        return settings.SCANNER_CAM_DEFAULT_MODE;
+      }
+    }
+  } catch (error) {
+    console.warn('Settings not available yet, using fallback mode:', error);
+  }
+  
+  // Fallback to props or localStorage
+  const savedMode = ls.get(`captureMode_${props.cameraUrl}_${props.label || 'default'}`);
+  return savedMode || props.captureMode || 'auto';
+};
+
+const selectedCaptureMode = ref(
+  captureModeOptions.find(option => option.value === getDefaultCaptureMode()) || captureModeOptions[0]
+);
 
 
 
@@ -196,6 +283,11 @@ const initUsbCamera = async (deviceId) => {
 // Method to get image from either USB or CCTV camera
 const getImage = async () => {
   try {
+    // Check if camera is enabled for CCTV type
+    if (props.cameraType === 'cctv' && !isCameraEnabled.value) {
+      throw new Error('Camera is disabled');
+    }
+    
     let imageFile;
     if(props.cameraType === 'cctv') {
     
@@ -294,8 +386,69 @@ const cropImageFromFile = (file, cropArea) => {
 
 const fetchCameraImage = async () => {
   try {
+    // Check if camera is enabled for CCTV type
+    if (props.cameraType === 'cctv' && !isCameraEnabled.value) {
+      console.log(`📹 Camera disabled, skipping fetch for: ${props.label || 'unnamed'}`);
+      imageSrc.value = '';
+      message.value = 'Camera disabled';
+      cameraStatus.value = false;
+      return null;
+    }
+    
+    // Get camera configuration from settings service based on camera label
+    const getCameraConfig = () => {
+      const cameraLabel = props.label?.toLowerCase() || '';
+      
+      try {
+        const config = settingsService?.cctvConfig;
+        
+        if (config && cameraLabel.includes('plate') && config.PLATE) {
+          return {
+            username: config.PLATE.username || props.username,
+            password: config.PLATE.password || props.password,
+            ipAddress: config.PLATE.ipAddress || props.ipAddress,
+            rtspStreamPath: config.PLATE.rtspStreamPath || props.rtspStreamPath,
+            snapshotUrl: config.PLATE.snapshotUrl || props.snapshotUrl,
+            httpPort: config.PLATE.httpPort || props.httpPort || 80,
+          };
+        } else if (config && cameraLabel.includes('driver') && config.DRIVER) {
+          return {
+            username: config.DRIVER.username || props.username,
+            password: config.DRIVER.password || props.password,
+            ipAddress: config.DRIVER.ipAddress || props.ipAddress,
+            rtspStreamPath: config.DRIVER.rtspStreamPath || props.rtspStreamPath,
+            snapshotUrl: config.DRIVER.snapshotUrl || props.snapshotUrl,
+            httpPort: config.DRIVER.httpPort || props.httpPort || 80,
+          };
+        } else if (config && cameraLabel.includes('scanner') && config.SCANNER) {
+          return {
+            username: config.SCANNER.username || props.username,
+            password: config.SCANNER.password || props.password,
+            ipAddress: config.SCANNER.ipAddress || props.ipAddress,
+            rtspStreamPath: config.SCANNER.rtspStreamPath || props.rtspStreamPath,
+            snapshotUrl: config.SCANNER.snapshotUrl || props.snapshotUrl,
+            httpPort: config.SCANNER.httpPort || props.httpPort || 80,
+          };
+        }
+      } catch (error) {
+        console.warn('Error accessing camera config from settings, using props:', error);
+      }
+      
+      // Fallback to props if no specific config found or error occurred
+      return {
+        username: props.username,
+        password: props.password,
+        ipAddress: props.ipAddress,
+        rtspStreamPath: props.rtspStreamPath,
+        snapshotUrl: props.snapshotUrl,
+        httpPort: props.httpPort || 80,
+      };
+    };
+    
+    const cameraConfig = getCameraConfig();
+    
     // Validate required parameters first
-    if (!props.ipAddress || props.ipAddress === '192.168.10.25') {
+    if (!cameraConfig.ipAddress || cameraConfig.ipAddress === '192.168.10.25') {
       console.warn('Using default IP address - camera may not be configured');
       message.value = 'Camera not configured - check settings';
       cameraStatus.value = false;
@@ -304,20 +457,23 @@ const fetchCameraImage = async () => {
     
     let response;
     
+    // Gunakan mode capture dari UI selection, bukan dari props
+    const currentMode = selectedCaptureMode.value.value;
+    
     // Pilih command berdasarkan capture mode
-    if (props.captureMode === 'auto') {
+    if (currentMode === 'auto') {
       // Gunakan auto-detect untuk mencoba snapshot dulu, fallback ke RTSP
       const args = {
-        username: props.username || null,
-        password: props.password || null,
-        ip_address: props.ipAddress,
-        rtsp_stream_path: props.rtspStreamPath || null,
-        snapshot_url: props.snapshotUrl || null,
-        port: props.httpPort || 80,
+        username: cameraConfig.username || null,
+        password: cameraConfig.password || null,
+        ip_address: cameraConfig.ipAddress,
+        rtsp_stream_path: cameraConfig.rtspStreamPath || null,
+        snapshot_url: cameraConfig.snapshotUrl || null,
+        port: cameraConfig.httpPort || 80,
         timeout_seconds: props.timeoutSeconds || 10
       };
 
-      console.log('📸 Auto-detecting best capture method for:', props.ipAddress);
+      console.log('📸 Auto-detecting best capture method for:', cameraConfig.ipAddress);
       
       response = await Promise.race([
         invoke('capture_cctv_image_auto_detect', { args }),
@@ -329,23 +485,23 @@ const fetchCameraImage = async () => {
     } else {
       // Mode manual (rtsp atau snapshot)
       const args = {
-        username: props.username || null,
-        password: props.password || null,
-        ip_address: props.ipAddress,
-        capture_mode: props.captureMode,
+        username: cameraConfig.username || null,
+        password: cameraConfig.password || null,
+        ip_address: cameraConfig.ipAddress,
+        capture_mode: currentMode,
         timeout_seconds: props.timeoutSeconds || 10
       };
 
       // Tambahkan parameter sesuai mode
-      if (props.captureMode === 'rtsp') {
-        args.rtsp_stream_path = props.rtspStreamPath;
+      if (currentMode === 'rtsp') {
+        args.rtsp_stream_path = cameraConfig.rtspStreamPath;
         args.port = 554; // Default RTSP port
-      } else if (props.captureMode === 'snapshot') {
-        args.snapshot_url = props.snapshotUrl;
-        args.port = props.httpPort || 80;
+      } else if (currentMode === 'snapshot') {
+        args.snapshot_url = cameraConfig.snapshotUrl;
+        args.port = cameraConfig.httpPort || 80;
       }
 
-      console.log(`📸 Capturing CCTV image in ${props.captureMode} mode:`, {
+      console.log(`📸 Capturing CCTV image in ${currentMode} mode:`, {
         ...args,
         password: args.password ? '***' : null
       });
@@ -353,7 +509,7 @@ const fetchCameraImage = async () => {
       response = await Promise.race([
         invoke('capture_cctv_image', { args }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error(`${props.captureMode} capture timeout`)), 10000)
+          setTimeout(() => reject(new Error(`${currentMode} capture timeout`)), 10000)
         )
       ]);
     }
@@ -362,7 +518,7 @@ const fetchCameraImage = async () => {
       is_success: response?.is_success,
       has_base64: response?.base64 ? 'yes' : 'no',
       message: response?.message,
-      mode_used: props.captureMode
+      mode_used: currentMode
     });
     
     if (response && response.is_success && response.base64) {
@@ -489,7 +645,59 @@ const setManualBase64 = async (base64String) => {
 
 const startLiveStream = async () => {
   try {
-    if (!props.ipAddress) {
+    // Check if camera is enabled first
+    if (props.cameraType === 'cctv' && !isCameraEnabled.value) {
+      console.log(`📹 Cannot start live stream - camera disabled for: ${props.label || 'unnamed'}`);
+      message.value = 'Camera disabled';
+      cameraStatus.value = false;
+      return;
+    }
+    
+    // Get camera configuration from settings service
+    const getCameraConfigForLive = () => {
+      const cameraLabel = props.label?.toLowerCase() || '';
+      
+      try {
+        const config = settingsService?.cctvConfig;
+        
+        if (config && cameraLabel.includes('plate') && config.PLATE) {
+          return {
+            username: config.PLATE.username || props.username,
+            password: config.PLATE.password || props.password,
+            ipAddress: config.PLATE.ipAddress || props.ipAddress,
+            rtspStreamPath: config.PLATE.rtspStreamPath || props.rtspStreamPath,
+          };
+        } else if (config && cameraLabel.includes('driver') && config.DRIVER) {
+          return {
+            username: config.DRIVER.username || props.username,
+            password: config.DRIVER.password || props.password,
+            ipAddress: config.DRIVER.ipAddress || props.ipAddress,
+            rtspStreamPath: config.DRIVER.rtspStreamPath || props.rtspStreamPath,
+          };
+        } else if (config && cameraLabel.includes('scanner') && config.SCANNER) {
+          return {
+            username: config.SCANNER.username || props.username,
+            password: config.SCANNER.password || props.password,
+            ipAddress: config.SCANNER.ipAddress || props.ipAddress,
+            rtspStreamPath: config.SCANNER.rtspStreamPath || props.rtspStreamPath,
+          };
+        }
+      } catch (error) {
+        console.warn('Error accessing camera config for live stream, using props:', error);
+      }
+      
+      // Fallback to props if no specific config found or error occurred
+      return {
+        username: props.username,
+        password: props.password,
+        ipAddress: props.ipAddress,
+        rtspStreamPath: props.rtspStreamPath,
+      };
+    };
+    
+    const cameraConfig = getCameraConfigForLive();
+    
+    if (!cameraConfig.ipAddress) {
       throw new Error('RTSP IP is not provided');
     }
 
@@ -501,10 +709,15 @@ const startLiveStream = async () => {
 
     // Start listening for live frames from the backend
     unlistenLiveFrame = await listen(`cctv-live-frame::${streamId.value}`, (event) => {
-      const base64Payload = event.payload;
-      imageSrc.value = `data:image/jpeg;base64,${base64Payload}`;
-      cameraStatus.value = true;
-      message.value = '';
+      // Check if camera is still enabled before processing frame
+      if (isCameraEnabled.value) {
+        const base64Payload = event.payload;
+        imageSrc.value = `data:image/jpeg;base64,${base64Payload}`;
+        cameraStatus.value = true;
+        message.value = '';
+      } else {
+        console.log(`📷 Ignoring live frame - camera disabled for ${props.label || 'camera'}`);
+      }
     });
     
     // Set a placeholder message while waiting for the stream to start
@@ -516,10 +729,10 @@ const startLiveStream = async () => {
       invoke('start_rtsp_live_stream', {
         args: {
           stream_id: streamId.value,
-          username: props.username || null,
-          password: props.password || null,
-          ip_address: props.ipAddress,
-          rtsp_stream_path: props.rtspStreamPath,
+          username: cameraConfig.username || null,
+          password: cameraConfig.password || null,
+          ip_address: cameraConfig.ipAddress,
+          rtsp_stream_path: cameraConfig.rtspStreamPath,
         },
       }),
       new Promise((_, reject) => 
@@ -635,8 +848,60 @@ watch(() => cameraStore.imgSrc, (newValue) => {
   }
 }, { immediate: true });
 
+// Watch for settings changes to update capture mode
+watch(() => settingsService?.gateSettings, (newSettings) => {
+  if (newSettings && props.cameraType === 'cctv') {
+    const cameraLabel = props.label?.toLowerCase() || '';
+    let defaultMode = 'auto';
+    
+    try {
+      if (cameraLabel.includes('plate') && newSettings.PLATE_CAM_DEFAULT_MODE) {
+        defaultMode = newSettings.PLATE_CAM_DEFAULT_MODE;
+      } else if (cameraLabel.includes('driver') && newSettings.DRIVER_CAM_DEFAULT_MODE) {
+        defaultMode = newSettings.DRIVER_CAM_DEFAULT_MODE;
+      } else if (cameraLabel.includes('scanner') && newSettings.SCANNER_CAM_DEFAULT_MODE) {
+        defaultMode = newSettings.SCANNER_CAM_DEFAULT_MODE;
+      }
+      
+      // Update selected mode if it's different from settings and not overridden by localStorage
+      const savedMode = ls.get(`captureMode_${props.cameraUrl}_${props.label || 'default'}`);
+      if (!savedMode) { // Only update if no localStorage preference exists
+        const foundMode = captureModeOptions.find(option => option.value === defaultMode);
+        if (foundMode && selectedCaptureMode.value.value !== defaultMode) {
+          console.log(`📸 Updating capture mode from settings: ${defaultMode} for ${cameraLabel}`);
+          selectedCaptureMode.value = foundMode;
+        }
+      }
+    } catch (error) {
+      console.warn('Error updating capture mode from settings:', error);
+    }
+  }
+}, { immediate: true, deep: true });
+
 // Update initialization logic
 onMounted(async () => {
+  // Initialize capture mode - prioritize localStorage, then settings, then props
+  const savedCaptureMode = ls.get(`captureMode_${props.cameraUrl}_${props.label || 'default'}`);
+  if (savedCaptureMode) {
+    const foundMode = captureModeOptions.find(option => option.value === savedCaptureMode);
+    if (foundMode) {
+      selectedCaptureMode.value = foundMode;
+      console.log(`📸 Loaded capture mode from localStorage: ${savedCaptureMode} for ${props.label || 'camera'}`);
+    }
+  } else {
+    // Try to get from settings if localStorage doesn't have it
+    try {
+      const defaultMode = getDefaultCaptureMode();
+      const foundMode = captureModeOptions.find(option => option.value === defaultMode);
+      if (foundMode && foundMode.value !== selectedCaptureMode.value.value) {
+        selectedCaptureMode.value = foundMode;
+        console.log(`📸 Loaded capture mode from settings: ${defaultMode} for ${props.label || 'camera'}`);
+      }
+    } catch (error) {
+      console.warn('Could not load capture mode from settings, using default:', error);
+    }
+  }
+  
   if (props.cameraType === 'usb') {
     try {
       // Use props.deviceId directly if available, otherwise fallback to cameraDeviceId computed value
@@ -668,22 +933,37 @@ onMounted(async () => {
   }
 
   if (props.cameraType === 'cctv') {
-    if (isLiveModeActive.value) {
+    // Check if camera is enabled first
+    if (!isCameraEnabled.value) {
+      console.log(`📹 Camera disabled for: ${props.label || 'unnamed'}`);
+      imageSrc.value = '';
+      message.value = 'Camera disabled';
+      cameraStatus.value = false;
+      return;
+    }
+    
+    // Check capture mode dan start appropriately
+    if (selectedCaptureMode.value.value === 'rtsp' && isLiveModeActive.value) {
       console.log(`📺 Starting in live mode for CCTV camera: ${props.label || 'unnamed'}`);
       isLiveStreamEnabled.value = true; // Attempt to start live stream
       await nextTick();
       startLiveStream();
     } else {
-      console.log(`📸 Starting in snapshot mode for CCTV camera: ${props.label || 'unnamed'} (interval: ${intervalValue}ms)`);
+      console.log(`📸 Starting in ${selectedCaptureMode.value.label} snapshot mode for CCTV camera: ${props.label || 'unnamed'} (interval: ${intervalValue}ms)`);
       intervalId.value = setInterval(() => {
-        console.log(`📷 Interval capture for ${props.label || 'camera'} - ${props.ipAddress}`);
-        fetchCameraImage();
+        if (isCameraEnabled.value) {
+          console.log(`📷 Interval capture for ${props.label || 'camera'} - ${props.ipAddress}`);
+          fetchCameraImage();
+        } else {
+          console.log(`📷 Skipping interval capture - camera disabled for ${props.label || 'camera'}`);
+        }
       }, intervalValue);
       fetchCameraImage(); // Initial fetch
     }
   } else if (props.isInterval) { // For non-CCTV types that support interval
     console.log(`📸 Starting interval mode for ${props.cameraType} camera: ${props.label || 'unnamed'} (interval: ${intervalValue}ms)`);
     intervalId.value = setInterval(() => {
+      // For non-CCTV types, always run (no camera enable/disable feature for non-CCTV)
       console.log(`📷 Interval capture for ${props.label || 'camera'}`);
       fetchCameraImage();
     }, intervalValue);
@@ -741,7 +1021,7 @@ onUnmounted(() => {
 });
 
 const handleModeChange = async (newValue) => { // newValue is the new state of isLiveModeActive, already updated by v-model
-  if (props.cameraType === 'cctv' ) {
+  if (props.cameraType === 'cctv' && isCameraEnabled.value && selectedCaptureMode.value.value === 'rtsp') {
     ls.set(`liveModeActive_${props.cameraUrl}_${props.label || 'default'}`, newValue);
 
   // The rest of the condition 'if (props.cameraType === 'cctv' && props.cameraUrl && props.cameraUrl.startsWith('rtsp://'))' was here
@@ -769,13 +1049,141 @@ const handleModeChange = async (newValue) => { // newValue is the new state of i
         clearInterval(intervalId.value);
       }
       
-      console.log(`📸 Switching to interval mode for ${props.label || 'camera'} (interval: ${intervalValue}ms)`);
+      console.log(`📸 Switching to RTSP interval mode for ${props.label || 'camera'} (interval: ${intervalValue}ms)`);
       intervalId.value = setInterval(() => {
-        console.log(`📷 Mode-switch interval capture for ${props.label || 'camera'}`);
-        fetchCameraImage();
+        if (isCameraEnabled.value) {
+          console.log(`📷 Mode-switch interval capture for ${props.label || 'camera'}`);
+          fetchCameraImage();
+        } else {
+          console.log(`📷 Skipping mode-switch interval capture - camera disabled for ${props.label || 'camera'}`);
+        }
       }, intervalValue);
       await fetchCameraImage(); // Initial fetch for interval mode
     }
+  }
+};
+
+const handleCameraEnable = async (enabled) => {
+  if (props.cameraType === 'cctv') {
+    ls.set(`cameraEnabled_${props.cameraUrl}_${props.label || 'default'}`, enabled);
+    
+    if (enabled) {
+      // Camera enabled - restart based on current mode
+      console.log(`📹 Enabling camera: ${props.label || 'unnamed'}`);
+      message.value = 'Enabling camera...';
+      cameraStatus.value = true;
+      
+      if (selectedCaptureMode.value.value === 'rtsp' && isLiveModeActive.value) {
+        await nextTick();
+        startLiveStream();
+      } else {
+        const intervalValue = ls.get("interval") || 15000;
+        if (intervalId.value) {
+          clearInterval(intervalId.value);
+        }
+        intervalId.value = setInterval(() => {
+          if (isCameraEnabled.value) {
+            console.log(`📷 Enabled interval capture for ${props.label || 'camera'}`);
+            fetchCameraImage();
+          } else {
+            console.log(`📷 Skipping enabled interval capture - camera disabled for ${props.label || 'camera'}`);
+          }
+        }, intervalValue);
+        await fetchCameraImage();
+      }
+    } else {
+      // Camera disabled - stop all activities
+      console.log(`📹 Disabling camera: ${props.label || 'unnamed'}`);
+      
+      // Stop live stream if active
+      if (isLiveStreamEnabled.value) {
+        await stopLiveStream();
+      }
+      
+      // Clear interval if active
+      if (intervalId.value) {
+        clearInterval(intervalId.value);
+        intervalId.value = null;
+      }
+      
+      // Clear image and set disabled state
+      imageSrc.value = '';
+      message.value = 'Camera disabled';
+      cameraStatus.value = false;
+    }
+  }
+};
+
+// Handler untuk perubahan capture mode
+const handleCaptureModeChange = async (newMode) => {
+  console.log(`📸 Changing capture mode to: ${newMode.value} for ${props.label || 'camera'}`);
+  
+  // Save mode to localStorage
+  ls.set(`captureMode_${props.cameraUrl}_${props.label || 'default'}`, newMode.value);
+  
+  // Save to settings service based on camera type
+  try {
+    const cameraLabel = props.label?.toLowerCase() || '';
+    const updatePayload = {};
+    
+    if (cameraLabel.includes('plate')) {
+      updatePayload.PLATE_CAM_DEFAULT_MODE = newMode.value;
+    } else if (cameraLabel.includes('driver')) {
+      updatePayload.DRIVER_CAM_DEFAULT_MODE = newMode.value;
+    } else if (cameraLabel.includes('scanner')) {
+      updatePayload.SCANNER_CAM_DEFAULT_MODE = newMode.value;
+    }
+    
+    if (Object.keys(updatePayload).length > 0 && settingsService?.saveGateSettings) {
+      await settingsService.saveGateSettings(updatePayload);
+      console.log(`💾 Saved capture mode ${newMode.value} for ${cameraLabel} camera`);
+    }
+  } catch (error) {
+    console.warn('Failed to save capture mode to settings:', error);
+  }
+  
+  if (!isCameraEnabled.value) return;
+  
+  // Stop current activities
+  if (isLiveStreamEnabled.value) {
+    await stopLiveStream();
+  }
+  if (intervalId.value) {
+    clearInterval(intervalId.value);
+    intervalId.value = null;
+  }
+  
+  // Clear current image and show loading
+  imageSrc.value = '';
+  message.value = `Switching to ${newMode.label} mode...`;
+  
+  // Start appropriate mode
+  if (newMode.value === 'rtsp') {
+    // For RTSP mode, enable live toggle and start in snapshot mode by default
+    isLiveModeActive.value = false;
+    ls.set(`liveModeActive_${props.cameraUrl}_${props.label || 'default'}`, false);
+    
+    // Start interval for RTSP snapshot mode
+    const intervalValue = ls.get("interval") || 15000;
+    intervalId.value = setInterval(() => {
+      if (isCameraEnabled.value) {
+        console.log(`📷 RTSP interval capture for ${props.label || 'camera'}`);
+        fetchCameraImage();
+      }
+    }, intervalValue);
+    await fetchCameraImage();
+  } else {
+    // For snapshot and auto modes, disable live toggle and start interval
+    isLiveModeActive.value = false;
+    
+    const intervalValue = ls.get("interval") || 15000;
+    intervalId.value = setInterval(() => {
+      if (isCameraEnabled.value) {
+        console.log(`📷 ${newMode.label} interval capture for ${props.label || 'camera'}`);
+        fetchCameraImage();
+      }
+    }, intervalValue);
+    await fetchCameraImage();
   }
 };
 

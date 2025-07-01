@@ -188,10 +188,10 @@
           v-show="
             !componentStore.hideInputPlatNomor && !transaksiStore.isCheckedIn
           "
-          input-class="input-box  text-white text-weight-bolder"
+          input-class="input-box  text-black text-weight-bolder"
           class="input-box rounded-corner relative text-uppercase q-pa-md q-mb-xl bg-grey-2"
           input-style="height:90px;border:0"
-          label-color="grey-2 text-body1 q-pb-sm"
+          label-color="grey-9 text-body1 q-pb-sm"
           
           item-aligned
           borderless
@@ -239,7 +239,7 @@
           >
         </div>
         <div class="q-gutter-sm">
-          <q-btn color="grey-8" size="sm" label="Dashboard" to="/">
+          <q-btn color="grey-8" size="sm" label="Dashboard" @click="onClickDashboard">
             <q-badge
               color="primary"
               text-color="white"
@@ -288,33 +288,33 @@
               class="q-ml-xs"
             />
           </q-btn>
-          <q-btn
+          <!-- <q-btn
             color="red-9 "
             size="sm"
             @click="onClickEmergency()"
             label="Emergency"
-          >
+          > -->
             <!-- icon="settings" -->
-            <q-badge
+            <!-- <q-badge
               color="primary"
               text-color="white"
               label="F12"
               class="q-ml-xs"
             />
-          </q-btn>
+          </q-btn> -->
 
           <!-- Test button untuk melihat gambar CCTV -->
-          <ViewImagesButton
+          <!-- <ViewImagesButton
             v-if="transaksiStore.currentTransaction?.id"
             :transactionId="transaksiStore.currentTransaction.id"
             color="info"
             label="Lihat CCTV"
             icon="camera_alt"
             tooltip="Lihat gambar CCTV dari transaksi saat ini"
-          />
+          /> -->
 
           <!-- Test button untuk capture manual -->
-          <q-btn
+          <!-- <q-btn
             v-if="isAdmin"
             color="orange"
             size="sm"
@@ -323,10 +323,10 @@
             icon="camera"
           >
             <q-tooltip>Test capture gambar dari kedua kamera</q-tooltip>
-          </q-btn>
+          </q-btn> -->
 
           <!-- Test button untuk koneksi kamera -->
-          <q-btn
+          <!-- <q-btn
             v-if="isAdmin"
             color="purple"
             size="sm"
@@ -335,10 +335,10 @@
             icon="wifi"
           >
             <q-tooltip>Test koneksi ke kamera CCTV</q-tooltip>
-          </q-btn>
+          </q-btn> -->
 
           <!-- Test button untuk member card -->
-          <q-btn
+          <!-- <q-btn
             v-if="isAdmin"
             color="green"
             size="sm"
@@ -347,10 +347,10 @@
             icon="credit_card"
           >
             <q-tooltip>Test kartu member</q-tooltip>
-          </q-btn>
+          </q-btn> -->
 
           <!-- Reload camera config button -->
-          <q-btn
+          <!-- <q-btn
             v-if="isAdmin"
             color="blue"
             size="sm"
@@ -359,7 +359,7 @@
             icon="refresh"
           >
             <q-tooltip>Muat ulang konfigurasi kamera dari settings</q-tooltip>
-          </q-btn>
+          </q-btn> -->
 
           <!-- Dark Mode Toggle Button -->
          
@@ -503,6 +503,14 @@ const membershipStoreStatus = ref({
   membersLoaded: false,
   error: null
 });
+
+
+const onClickDashboard = () => {
+  // Navigate to the dashboard
+  componentStore.startingApp = false
+  router.push('/');
+
+};
 
 // Listen card reader event (mitt, for simulation/testing only)
 const initializeCardReader = async (retryCount = 0) => {
@@ -1537,8 +1545,6 @@ const onClickSettings = () => {
   // } else {
   const settingsDialog = $q.dialog({
     component: SettingsDialog,
-    persistent: true,
-    noEscDismiss: true,
   });
 
   settingsDialog.update();
@@ -2063,14 +2069,14 @@ onMounted(async () => {
 
   // Dark mode is already initialized before onMounted
   // Just ensure it's applied correctly
-  $q.dark.set(darkMode.value);
+  // $q.dark.set(darkMode.value);
   
-  // Watch for dark mode changes
-  watch(darkMode, (newValue) => {
-    $q.dark.set(newValue);
-    ls.set("darkMode", newValue);
-    console.log('🌙 Dark mode watcher triggered:', newValue);
-  }, { immediate: false }); // Don't trigger immediately since already initialized
+  // // Watch for dark mode changes
+  // watch(darkMode, (newValue) => {
+  //   $q.dark.set(newValue);
+  //   ls.set("darkMode", newValue);
+  //   console.log('🌙 Dark mode watcher triggered:', newValue);
+  // }, { immediate: false }); // Don't trigger immediately since already initialized
 
   // Watch for camera configuration changes
   watch([plateCameraCredentials, driverCameraCredentials], ([newPlateCredentials, newDriverCredentials], [oldPlateCredentials, oldDriverCredentials]) => {
@@ -2329,6 +2335,12 @@ html, body {
   overflow: hidden;
 }
 
+/* Light mode input styling */
+:deep(.input-box .q-field__native) {
+  font-weight: bold !important;
+  letter-spacing: 2px;
+}
+
 /* Ensure input container doesn't overflow */
 .input-box {
   max-width: 100% !important;
@@ -2349,60 +2361,4 @@ html, body {
   padding-left: 1rem;
 }
 
-/* Dark mode styles */
-.dark-mode {
-  background-color: var(--q-dark) !important;
-  color: var(--q-dark-page) !important;
-}
-
-.light-mode {
-  background-color: var(--q-primary) !important;
-  color: var(--q-primary-page) !important;
-}
-
-/* Dark mode specific overrides */
-body.body--dark {
-  background-color: #1d1d1d !important;
-}
-
-body.body--dark .bg-primary {
-  background-color: #1976d2 !important;
-}
-
-body.body--dark .bg-grey-5 {
-  background-color: #424242 !important;
-}
-
-body.body--dark .text-dark {
-  color: #ffffff !important;
-}
-
-body.body--dark .bg-dark {
-  background-color: #121212 !important;
-}
-
-body.body--dark .bg-grey-2 {
-  background-color: #303030 !important;
-}
-
-body.body--dark .bg-grey-3 {
-  background-color: #424242 !important;
-}
-
-body.body--dark .bg-secondary {
-  background-color: #424242 !important;
-}
-
-/* Light mode overrides */
-body.body--light .bg-primary {
-  background-color: #1976d2 !important;
-}
-
-body.body--light .bg-grey-5 {
-  background-color: #f5f5f5 !important;
-}
-
-body.body--light .text-dark {
-  color: #000000 !important;
-}
 </style>
