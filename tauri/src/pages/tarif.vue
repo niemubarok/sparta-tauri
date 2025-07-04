@@ -21,14 +21,14 @@
             unelevated
             class="q-mr-sm"
           />
-          <q-btn
+          <!-- <q-btn
             color="primary"
             icon="analytics"
             label="Statistik Tarif"
             @click="showStatistics = true"
             unelevated
             class="q-mr-sm"
-          />
+          /> -->
         </div>
       </div>
 
@@ -42,12 +42,12 @@
         align="justify"
         narrow-indicator
       >
-        <q-tab name="regular" label="Tarif Reguler" icon="schedule" />
-        <q-tab name="bertingkat" label="Tarif Bertingkat" icon="trending_up" />
+        <!-- <q-tab name="regular" label="Tarif Reguler" icon="schedule" />
+        <q-tab name="bertingkat" label="Tarif Bertingkat" icon="trending_up" /> -->
         <q-tab name="prepaid" label="Tarif Prepaid" icon="payments" />
-        <q-tab name="demo" label="Demo Bertingkat" icon="timeline" />
+        <!-- <q-tab name="demo" label="Demo Bertingkat" icon="timeline" />
         <q-tab name="inap" label="Tarif Inap" icon="nights_stay" />
-        <q-tab name="calculator" label="Kalkulator" icon="calculate" />
+        <q-tab name="calculator" label="Kalkulator" icon="calculate" /> -->
       </q-tabs>
 
       <q-separator />
@@ -55,14 +55,14 @@
       <!-- Tab Panels -->
       <q-tab-panels v-model="currentTab" animated>
         <!-- Regular Tariff Panel -->
-        <q-tab-panel name="regular" class="q-pa-none">
+        <!-- <q-tab-panel name="regular" class="q-pa-none">
           <DaftarTarif />
-        </q-tab-panel>
+        </q-tab-panel> -->
 
         <!-- Tariff Bertingkat Management Panel -->
-        <q-tab-panel name="bertingkat" class="q-pa-none">
+        <!-- <q-tab-panel name="bertingkat" class="q-pa-none">
           <TarifBertingkatManagement />
-        </q-tab-panel>
+        </q-tab-panel> -->
 
         <!-- Prepaid Tariff Management Panel -->
         <q-tab-panel name="prepaid" class="q-pa-none">
@@ -70,24 +70,24 @@
         </q-tab-panel>
 
         <!-- Demo Tariff Panel -->
-        <q-tab-panel name="demo" class="q-pa-none">
+        <!-- <q-tab-panel name="demo" class="q-pa-none">
           <DemoTarifBertingkat />
-        </q-tab-panel>
+        </q-tab-panel> -->
 
         <!-- Overnight Tariff Panel -->
-        <q-tab-panel name="inap" class="q-pa-none">
+        <!-- <q-tab-panel name="inap" class="q-pa-none">
           <TarifInap />
-        </q-tab-panel>
+        </q-tab-panel> -->
 
         <!-- Calculator Panel -->
-        <q-tab-panel name="calculator" class="q-pa-none">
+        <!-- <q-tab-panel name="calculator" class="q-pa-none">
           <CalculatorTarif />
-        </q-tab-panel>
-      </q-tab-panels>
+        </q-tab-panel>-->
+      </q-tab-panels> 
     </div>
 
     <!-- Statistics Dialog -->
-    <q-dialog v-model="showStatistics" position="right" full-height>
+    <!-- <q-dialog v-model="showStatistics" position="right" full-height>
       <q-card style="width: 400px">
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6">Statistik Tarif</div>
@@ -99,7 +99,7 @@
           <StatistikTarif />
         </q-card-section>
       </q-card>
-    </q-dialog>
+    </q-dialog> -->
   </q-page>
 </template>
 
@@ -118,7 +118,7 @@ import StatistikTarif from 'src/components/StatistikTarif.vue';
 const tarifStore = useTarifStore();
 
 // Reactive state
-const currentTab = ref('regular');
+const currentTab = ref('prepaid'); // Default to Prepaid Tariff
 const showStatistics = ref(false);
 
 // Lifecycle

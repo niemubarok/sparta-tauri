@@ -177,6 +177,7 @@ const onClickTicket = (type) => {
         ticketDialog.onOk((result) => {
           // result should contain the emitted data from 'printed' event
           console.log('Ticket printed successfully:', result);
+          
           onDialogOK({ 
             success: true, 
             isPrepaid: true, 

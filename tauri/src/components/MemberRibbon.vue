@@ -1,16 +1,23 @@
 <template>
   <div class="ribbon ribbon-top-right z-top">
     <span
-      :class="transaksiStore.isMemberExpired ? 'bg-red-10 text-white' : ''"
-      >{{ transaksiStore.isMemberExpired ? "Expired" : "Member" }}</span
+      :class="membershipStore.isExpired(endDate) ? 'bg-red-10 text-white' : ''"
+      >{{ membershipStore.isExpired(endDate) ? "Expired" : "Member" }}</span
     >
   </div>
 </template>
 
 <script setup>
-import { useTransaksiStore } from "src/stores/transaksi-store";
+import { useMembershipStore } from "src/stores/membership-store";
 
-const transaksiStore = useTransaksiStore();
+const propt= defineProps({
+  // nama: String,
+  // jenisMember: String,
+  endDate: String,
+  // isExpired: Boolean,
+});
+
+const membershipStore = useMembershipStore();
 </script>
 
 <style scoped>

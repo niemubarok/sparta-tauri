@@ -48,6 +48,11 @@ interface GateSetting {
   USE_EXTERNAL_ALPR: boolean;
   darkMode: boolean;
   LOCATION: string | null;
+  // CouchDB settings
+  COUCHDB_URL: string;
+  COUCHDB_USERNAME: string;
+  COUCHDB_PASSWORD: string;
+  COUCHDB_PORT: number;
 }
 
 const defaultGateSettings: Omit<GateSetting, '_id' | '_rev'> = {
@@ -90,6 +95,11 @@ const defaultGateSettings: Omit<GateSetting, '_id' | '_rev'> = {
   USE_EXTERNAL_ALPR: false,
   darkMode: false,
   LOCATION: null,
+  // CouchDB settings with defaults
+  COUCHDB_URL: 'localhost',
+  COUCHDB_USERNAME: 'admin',
+  COUCHDB_PASSWORD: 'admin',
+  COUCHDB_PORT: 5984,
 };
 
 export const useSettingsService = defineStore('settings-service', () => {
@@ -129,6 +139,14 @@ export const useSettingsService = defineStore('settings-service', () => {
       snapshotUrl: gateSettings.value.SCANNER_CAM_SNAPSHOT_URL || '',
       httpPort: gateSettings.value.SCANNER_CAM_HTTP_PORT || 80,
     },
+  }));
+  
+  const couchDbConfig = computed(() => ({
+    url: gateSettings.value.COUCHDB_URL || 'localhost',
+    username: gateSettings.value.COUCHDB_USERNAME || 'admin',
+    password: gateSettings.value.COUCHDB_PASSWORD || 'admin',
+    port: gateSettings.value.COUCHDB_PORT || 5984,
+    remoteUrl: `http://${gateSettings.value.COUCHDB_USERNAME || 'admin'}:${gateSettings.value.COUCHDB_PASSWORD || 'admin'}@${gateSettings.value.COUCHDB_URL || 'localhost'}:${gateSettings.value.COUCHDB_PORT || 5984}`
   }));
   
   // Computed properties for gate operation modes
@@ -414,6 +432,7 @@ export const useSettingsService = defineStore('settings-service', () => {
     isLoading: readonly(isLoading),
     error: readonly(error),
     cctvConfig: readonly(cctvConfig),
+    couchDbConfig: readonly(couchDbConfig),
     // Computed properties for operation modes
     isManlessMode: readonly(isManlessMode),
     isManualMode: readonly(isManualMode),

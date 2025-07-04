@@ -5,7 +5,7 @@ import ls from 'localstorage-slim';
 import { api } from 'src/boot/axios';
 import { useSettingsService } from './settings-service';
 import { useTarifStore } from './tarif-store';
-import { localDbs } from 'src/boot/pouchdb';
+import { localDbs, addTransaction, addTransactionAttachment } from 'src/boot/pouchdb';
 
 // Interface untuk transaksi parkir berdasarkan parkir_awal.sql
 export interface TransaksiParkir {
@@ -251,6 +251,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
   };
 
   const createEntryTransaction = async (isPrepaidMode: boolean = false): Promise<TransaksiParkir> => {
+    // Pastikan exit_pic kosong untuk transaksi entry
+    exit_pic.value = '';
+    
     // Dapatkan tarif entry berdasarkan mode pembayaran
     const entryFee = isPrepaidMode ? getEntryTarif() : 0;
     
@@ -268,7 +271,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       jenis_system: isPrepaidMode ? 'PREPAID' : 'MANLESS',
       tanggal: new Date().toISOString().split('T')[0],
       entry_pic: entry_pic.value,
-      exit_pic: exit_pic.value,
+      exit_pic: '', // Pastikan kosong untuk entry transaction
       sinkron: 0,
       upload: 0,
       manual: 0,
@@ -318,19 +321,53 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     return durationHours * hourlyRate;
   };
 
-  const saveTransactionToLocal = async (transaction: TransaksiParkir): Promise<void> => {
+  const saveTransactionToLocal = async (transaction: TransaksiParkir, immediateSync: boolean = false): Promise<void> => {
     try {
-      // Save to PouchDB using the internal db instance
-      const response = await db.post({
-        ...transaction,
-        _id: `transaction_${transaction.id}`,
-        type: 'parking_transaction'
-      });
+      if (immediateSync) {
+        // Use addTransaction from boot/pouchdb for immediate sync
+        console.log('💾 Saving transaction with immediate sync enabled:', transaction.id);
+        
+        const response = await addTransaction({
+          ...transaction,
+          _id: `transaction_${transaction.id}`,
+          type: 'parking_transaction'
+        }, true); // Enable immediate sync
 
-      // Save images as attachments if they exist
-      await saveTransactionAttachments(transaction.id, response.rev);
+        console.log('✅ Transaction saved with immediate sync response:', response);
 
-      console.log('Transaction saved locally:', response);
+        // Save images as attachments if they exist
+        await saveTransactionAttachments(transaction.id, response.rev);
+        
+        // Verify sync after a short delay
+        setTimeout(async () => {
+          try {
+            const { checkTransactionInRemote } = await import('src/boot/pouchdb');
+            const exists = await checkTransactionInRemote(`transaction_${transaction.id}`);
+            console.log(`🔍 Transaction ${transaction.id} exists in remote after immediate sync:`, exists);
+            
+            if (!exists) {
+              console.warn(`⚠️ Transaction ${transaction.id} not found in remote after immediate sync - triggering manual sync`);
+              const { forceSyncSpecificTransaction } = await import('src/boot/pouchdb');
+              await forceSyncSpecificTransaction(`transaction_${transaction.id}`);
+            }
+          } catch (verifyError) {
+            console.warn('⚠️ Could not verify transaction in remote:', verifyError);
+          }
+        }, 2000); // Check after 2 seconds
+        
+      } else {
+        // Save to PouchDB using the internal db instance (regular way)
+        const response = await db.post({
+          ...transaction,
+          _id: `transaction_${transaction.id}`,
+          type: 'parking_transaction'
+        });
+
+        // Save images as attachments if they exist
+        await saveTransactionAttachments(transaction.id, response.rev);
+
+        console.log('Transaction saved locally (regular sync):', response);
+      }
     } catch (error) {
       console.error('Error saving transaction locally:', error);
       throw error;
@@ -341,8 +378,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     try {
       let currentRev = rev;
       
-      // Save entrance image
-      if (entry_pic.value) {
+      // Save entrance image (hanya untuk transaksi entry)
+      if (entry_pic.value && entry_pic.value.trim() !== '') {
         const entryImageData = entry_pic.value.replace(/^data:image\/[a-z]+;base64,/, '');
         
         // Convert base64 to Blob using browser-compatible method
@@ -364,28 +401,28 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         console.log('Entry image saved as attachment');
       }
 
-      // Save exit image (if exists - for exit transactions)
-      if (exit_pic.value) {
-        const exitImageData = exit_pic.value.replace(/^data:image\/[a-z]+;base64,/, '');
+      // Save exit image (hanya untuk transaksi exit - ketika currentTransaction.status === 1)
+      // if (exit_pic.value && exit_pic.value.trim() !== '' && currentTransaction.value?.status === 1) {
+      //   const exitImageData = exit_pic.value.replace(/^data:image\/[a-z]+;base64,/, '');
         
-        // Convert base64 to Blob using browser-compatible method
-        const byteCharacters = atob(exitImageData);
-        const byteArray = new Uint8Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteArray[i] = byteCharacters.charCodeAt(i);
-        }
-        const blob = new Blob([byteArray], { type: 'image/jpeg' });
+      //   // Convert base64 to Blob using browser-compatible method
+      //   const byteCharacters = atob(exitImageData);
+      //   const byteArray = new Uint8Array(byteCharacters.length);
+      //   for (let i = 0; i < byteCharacters.length; i++) {
+      //     byteArray[i] = byteCharacters.charCodeAt(i);
+      //   }
+      //   const blob = new Blob([byteArray], { type: 'image/jpeg' });
         
-        const exitResponse = await db.putAttachment(
-          `transaction_${transactionId}`,
-          'exit_image.jpg',
-          currentRev,
-          blob,
-          'image/jpeg'
-        );
-        currentRev = exitResponse.rev;
-        console.log('Exit image saved as attachment');
-      }
+      //   const exitResponse = await db.putAttachment(
+      //     `transaction_${transactionId}`,
+      //     'exit_image.jpg',
+      //     currentRev,
+      //     blob,
+      //     'image/jpeg'
+      //   );
+      //   currentRev = exitResponse.rev;
+      //   console.log('Exit image saved as attachment');
+      // }
 
     } catch (error) {
       console.error('Error saving transaction attachments:', error);
@@ -464,16 +501,19 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
   const processEntryTransaction = async (isPrepaidMode: boolean = false): Promise<void> => {
     try {
+      // Pastikan exit_pic kosong sebelum memproses entry transaction
+      exit_pic.value = '';
+      console.log('🧹 Cleared exit_pic before processing entry transaction');
+      
       const transaction = await createEntryTransaction(isPrepaidMode);
       
-      // Save locally first
-      await saveTransactionToLocal(transaction);
-      
+      // Save locally with immediate sync to ensure data is available for exit gate
+      await saveTransactionToLocal(transaction, true); // Enable immediate sync
+      console.log('✅ Entry transaction saved with immediate sync for exit gate availability');
       
       // Add to history
       transactionHistory.value.unshift(transaction);
       
-    
     } catch (error) {
       console.error('Error processing entry transaction:', error);
       $q.notify({
@@ -488,8 +528,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     try {
       const transaction = await createExitTransaction();
       
-      // Save locally first
-      await saveTransactionToLocal(transaction);
+      // Save locally with immediate sync for real-time updates
+      await saveTransactionToLocal(transaction, true); // Enable immediate sync
+      console.log('✅ Exit transaction saved with immediate sync');
       
       // Try to save to server
       await saveTransactionToServer(transaction);
@@ -728,7 +769,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         jenis_system: 'MANUAL',
         tanggal: new Date().toISOString().split('T')[0],
         entry_pic: entry_pic.value,
-        exit_pic: exit_pic.value,// Store the simplified field
+        exit_pic: '', // Manual entry tidak memerlukan exit_pic
         sinkron: 0,
         upload: 0,
         manual: 1, // Mark as manual
@@ -737,7 +778,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         alasan: 'Manual gate open by operator'
       };
 
-      await saveTransactionToLocal(transaction);
+      await saveTransactionToLocal(transaction, true); // Enable immediate sync for manual gate
       await saveTransactionToServer(transaction);
       
       transactionHistory.value.unshift(transaction);
@@ -1144,7 +1185,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
             status: isMemberTransaction ? (doc.status === 'in' ? 0 : 1) : (doc.status || 0),
             tarif: doc.bayar_keluar || doc.bayar_masuk || doc.tarif || 0,
             petugas: doc.id_op_masuk || doc.created_by || '',
-            lokasi: doc.id_pintu_masuk || doc.lokasi || '',
+            lokasi: doc.lokasi || '',
             pic_plat_masuk: doc.pic_no_pol_masuk || '',
             pic_body_masuk: doc.pic_driver_masuk || '',
             pic_plat_keluar: doc.pic_no_pol_keluar || '',
@@ -1338,8 +1379,19 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
   const processManualExit = async (transactionId: string) => {
     try {
-      // Get transaction from local DB
-      const transaction = await db.get(transactionId) as any;
+      // Get transaction from local DB by _id, fallback to id field
+      let transaction: any;
+      try {
+        transaction = await db.get(transactionId) as any;
+      } catch (err) {
+        // Fallback: find by id field
+        const result = await (db as any).find({ selector: { id: transactionId }, limit: 1 });
+        if (result.docs && result.docs.length > 0) {
+          transaction = result.docs[0] as any;
+        } else {
+          throw new Error('Transaksi tidak ditemukan');
+        }
+      }
       
       if (!transaction) {
         throw new Error('Transaksi tidak ditemukan');
@@ -1363,8 +1415,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       const parkingFee = calculateParkingFeeForTransaction(exitTransaction);
       exitTransaction.bayar_keluar = parkingFee;
 
-      // Save to local DB
-      await db.put(exitTransaction);
+      // Save to local DB with immediate sync
+      const { addTransaction } = await import('src/boot/pouchdb');
+      await addTransaction(exitTransaction, true); // Enable immediate sync for exit transactions
 
       // Try to sync to server if available
       try {

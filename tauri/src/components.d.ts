@@ -49,6 +49,7 @@ declare module 'vue' {
     Logo: typeof import('./components/Logo.vue')['default']
     ManlessEntryGate: typeof import('./components/ManlessEntryGate.vue')['default']
     ManlessExitGate: typeof import('./components/ManlessExitGate.vue')['default']
+    ManualConnectivityTester: typeof import('./components/ManualConnectivityTester.vue')['default']
     ManualEntryGate: typeof import('./components/ManualEntryGate.vue')['default']
     MemberCard: typeof import('./components/MemberCard.vue')['default']
     MemberInputField: typeof import('./components/MemberInputField.vue')['default']
@@ -88,6 +89,7 @@ declare module 'vue' {
     TicketDialog: typeof import('./components/TicketDialog.vue')['default']
     TicketPrintDialog: typeof import('./components/TicketPrintDialog.vue')['default']
     TransactionImagesDialog: typeof import('./components/TransactionImagesDialog.vue')['default']
+    VehicleInsideDialog: typeof import('./components/VehicleInsideDialog.vue')['default']
     ViewImagesButton: typeof import('./components/ViewImagesButton.vue')['default']
   }
 }

@@ -133,20 +133,20 @@
               <div v-else-if="isPrepaidTransaction && !isTransactionPaid">
                 <!-- Mode Bayar Depan tapi belum bayar -->
                 <div class="text-caption">Tarif:</div>
-                <div class="text-h6 text-weight-bold text-orange">
+                <div class="text-h6 text-weight-bold text-orange-8">
                   {{ formatCurrency(currentTariff) }}
                 </div>
-                <div class="text-caption text-warning">⚠ BELUM LUNAS</div>
+                <div class="text-caption text-orange-8 text-weight-bold">⚠ BELUM LUNAS</div>
               </div>
               <div v-else>
                 <!-- Mode Bayar Belakang - Show message to pay at exit -->
-                <div class="text-caption text-warning">
+                <div class="text-caption text-dark text-weight-bold">
                   💳 Bayar di Pintu Keluar
                 </div>
-                <div class="text-caption">
+                <div class="text-caption text-dark">
                   Tarif akan dihitung berdasarkan durasi parkir
                 </div>
-                <div class="text-caption text-grey-6">
+                <div class="text-caption text-grey-8">
                   Tarif dasar: {{ formatCurrency(currentTariff) }}
                 </div>
               </div>
@@ -225,6 +225,8 @@ import { useDialogPluginComponent } from 'quasar';
 import { formatCurrency, formatDate, formatTime } from 'src/utils/format-utils';
 import { useTarifStore } from 'src/stores/tarif-store';
 import { useGateStore } from 'src/stores/gate-store';
+import { useTransaksiStore } from 'src/stores/transaksi-store';
+import { useMembershipStore } from 'src/stores/membership-store';
 import { invoke } from '@tauri-apps/api/core';
 import { useSettingsService } from 'src/stores/settings-service';
 import ls from 'localstorage-slim';
@@ -235,6 +237,8 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginC
 
 const tarifStore = useTarifStore();
 const gateStore = useGateStore();
+const transaksiStore = useTransaksiStore();
+const membershipStore = useMembershipStore();
 const settingsService = useSettingsService();
 
 const props = defineProps({
@@ -336,6 +340,34 @@ const operatorName = computed(() => {
 });
 
 // Methods
+const refreshStoreData = async () => {
+  try {
+    console.log('🔄 Refreshing store data after print...');
+    
+    // Refresh membership store
+    if (membershipStore.loadMembers) {
+      await membershipStore.loadMembers();
+      console.log('✅ Membership store refreshed');
+    }
+    
+    // Refresh tarif store 
+    if (tarifStore.loadTarifFromLocal) {
+      await tarifStore.loadTarifFromLocal();
+      console.log('✅ Tarif store refreshed');
+    }
+    
+    // Refresh transaksi counters
+    if (transaksiStore.getCountVehicleInToday) {
+      await transaksiStore.getCountVehicleInToday();
+      console.log('✅ Vehicle count refreshed');
+    }
+    
+    console.log('🎉 All stores refreshed successfully');
+  } catch (error) {
+    console.error('❌ Error refreshing store data:', error);
+  }
+};
+
 const onDialogShow = async () => {
   console.log('🎫 TicketPrintDialog shown, attempting to set focus...');
   
@@ -409,6 +441,9 @@ const onPrint = async () => {
     
     emit('printed', updatedTransaction);
     
+    // Refresh store data instead of reloading page
+    await refreshStoreData();
+    
     // For dialog usage, also call onDialogOK if available
     if (typeof onDialogOK === 'function') {
       onDialogOK(updatedTransaction);
@@ -417,6 +452,7 @@ const onPrint = async () => {
     console.error('Error printing ticket:', error);
   } finally {
     printing.value = false;
+    // window.location.reload() //- let parent handle refresh
   }
 };
 
@@ -639,6 +675,15 @@ onUnmounted(() => {
   font-size: 12px;
   max-width: 300px;
   margin: 0 auto;
+  color: #000000;
+}
+
+.ticket-preview .text-h6 {
+  color: #000000;
+}
+
+.ticket-preview .text-subtitle2 {
+  color: #000000;
 }
 
 .ticket-header {
@@ -656,6 +701,7 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: bold;
   letter-spacing: 2px;
+  color: #000000;
 }
 
 .barcode-lines {
@@ -686,19 +732,37 @@ onUnmounted(() => {
   margin: 15px 0;
 }
 
+.vehicle-info .text-caption,
+.time-info .text-caption,
+.payment-info .text-caption {
+  color: #666666;
+  font-weight: 500;
+}
+
+.vehicle-info .text-weight-bold,
+.time-info .text-weight-bold,
+.payment-info .text-weight-bold {
+  color: #000000;
+}
+
 .ticket-footer {
   border-top: 1px dashed #666;
   padding-top: 10px;
   margin-top: 15px;
 }
 
+.ticket-footer .text-caption {
+  color: #000000;
+}
+
 .text-caption {
-  color: #666;
+  color: #333333;
   font-size: 10px;
 }
 
 .text-weight-bold {
   font-weight: bold;
+  color: #000000;
 }
 
 .text-primary {
@@ -717,8 +781,16 @@ onUnmounted(() => {
   color: #ff9800;
 }
 
-.text-grey-6 {
-  color: #757575;
+.text-orange-8 {
+  color: #e65100;
+}
+
+.text-grey-8 {
+  color: #424242;
+}
+
+.text-dark {
+  color: #000000;
 }
 
 .q-separator {

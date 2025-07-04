@@ -19,7 +19,7 @@
   <div
     :key="componentStore.outGateKey"
     v-else
-    class="relative fixed-top window-height full-width overflow-hidden bg-grey-8"
+    class="relative fixed-top window-height full-width overflow-hidden bg-primary"
   >
     <div
       v-if="!transaksiStore.isCheckedIn"
@@ -95,7 +95,7 @@
         text-color="grey-3"
         :label="ls.get('shift')"
       />
-      <q-chip
+      <!-- <q-chip
       text-color="grey-3"
         class="bg-transparent"
         icon="place"
@@ -105,7 +105,20 @@
           ') ' +
           transaksiStore.lokasiPos.label
         "
-      />
+      /> -->
+      
+      <!-- Sync Status Indicator -->
+      <q-chip
+        v-if="isAdmin"
+        :color="syncStatusColor"
+        :text-color="syncStatusTextColor"
+        :icon="syncStatusIcon"
+        :label="syncStatusLabel"
+        class="text-caption"
+      >
+        <q-tooltip>{{ syncStatusTooltip }}</q-tooltip>
+      </q-chip>
+      
       <Clock />
     </div>
 
@@ -117,7 +130,7 @@
     <!-- </div> -->
 
     <!-- KAMERA -->
-    <div class="row justify-center items-center overflow-hidden">
+    <div class="row justify-center items-center overflow-hidden q-mt-lg">
       <div class="col-12">
         <div
           v-if="!transaksiStore.isCheckedIn"
@@ -180,7 +193,7 @@
     </div>
 
     <div
-      class="flex row justify-center fixed full-width no-wrap overflow-hidden bg-grey-8"
+      class="flex row justify-center fixed full-width no-wrap overflow-hidden bg-primary"
       style="bottom: 20px; max-width: 100vw;"
     >
       <div class="col-8 overflow-hidden">
@@ -199,13 +212,7 @@
           label="Masukkan Plat Nomor"
           ref="inputPlatNomorRef"
           autofocus
-          :rules="[
-            (val) =>
-              val
-                ? transaksiStore.platNomor.length <= 9 ||
-                  'Plat nomor terlalu banyak'
-                : true,
-          ]"
+        
           @update:model-value="() => onInputPlatNomor()"
           @keydown.enter="onPressEnterPlatNomor()"
         >
@@ -239,11 +246,20 @@
           >
         </div>
         <div class="q-gutter-sm">
-          <q-btn v-if="isAdmin" color="grey-8" size="sm" label="Dashboard" @click="onClickDashboard">
+          <q-btn v-if="isAdmin" color="grey-8" size="sm" label="Daftar Transaksi" @click="onClickDashboard">
             <q-badge
               color="primary"
               text-color="white"
               label="F2"
+              class="q-mx-xs"
+            />
+            <q-tooltip content-class="bg-primary">Dashboard Admin</q-tooltip>
+          </q-btn>
+          <q-btn v-if="isAdmin" color="grey-8" size="sm" label="Dashboard" @click="onClickDashboard">
+            <q-badge
+              color="primary"
+              text-color="white"
+              label="F3"
               class="q-mx-xs"
             />
             <q-tooltip content-class="bg-primary">Dashboard Admin</q-tooltip>
@@ -350,6 +366,18 @@
             <q-tooltip>Test kartu member</q-tooltip>
           </q-btn> -->
 
+          <!-- Test button untuk database sync -->
+          <!-- <q-btn
+            v-if="isAdmin"
+            color="purple"
+            size="sm"
+            @click="testDatabaseSync"
+            label="Test Sync"
+            icon="sync"
+          >
+            <q-tooltip>Test sinkronisasi database</q-tooltip>
+          </q-btn> -->
+
           <!-- Reload camera config button -->
           <!-- <q-btn
             v-if="isAdmin"
@@ -363,7 +391,28 @@
           </q-btn> -->
 
           <!-- Dark Mode Toggle Button -->
-         
+
+<!-- <q-btn
+  unelevated
+  color="purple"
+  text-color="white"
+  icon="sync"
+  label="Test Live Sync"
+  class="q-mr-sm q-mb-sm"
+  @click="testLiveSync"
+  title="Test apakah live sync berjalan tanpa manual trigger"
+/>
+
+<q-btn
+  unelevated
+  color="orange"
+  text-color="white"
+  icon="refresh"
+  label="Restart Sync"
+  class="q-mr-sm q-mb-sm"
+  @click="restartSyncInitialization"
+  title="Restart semua sync initialization seperti pertama kali buka app"
+/> -->
           <!-- Status Debug Panel (only for admin) -->
           <q-btn
             v-if="isAdmin"
@@ -375,6 +424,30 @@
           >
             <q-tooltip>Lihat status sistem dan komponen</q-tooltip>
           </q-btn>
+
+          <!-- Manual Sync Button (only for admin) -->
+          <!-- <q-btn
+            v-if="isAdmin"
+            color="purple"
+            size="sm"
+            @click="testManualSync"
+            label="Force Sync"
+            icon="sync"
+          >
+            <q-tooltip>Paksa sinkronisasi manual ke server</q-tooltip>
+          </q-btn> -->
+
+          <!-- Transaction Verification Button (only for admin) -->
+          <!-- <q-btn
+            v-if="isAdmin && transaksiStore.currentTransaction?.id"
+            color="indigo"
+            size="sm"
+            @click="testTransactionVerification"
+            label="Verify Transaction"
+            icon="verified"
+          >
+            <q-tooltip>Verifikasi transaksi terakhir di server</q-tooltip>
+          </q-btn> -->
         </div>
 
         <!-- <q-toggle
@@ -396,6 +469,12 @@
       :driverCameraRef="exitCameraRef"
     /> -->
   </div>
+
+  <!-- MemberCard dialog -->
+  <!-- <q-dialog v-model="showMemberDialog" >
+    <MemberCard :plate-number="transaksiStore.platNomor" :nama="currentMember.name" :jenis-member="currentMember.membershipType" :end-date="currentMember.end_date" @enter="focusEnter"/>
+   
+  </q-dialog> -->
 </template>
 
 <script setup>
@@ -414,6 +493,8 @@ import Logo from "src/components/Logo.vue";
 import ApiUrlDialog from "src/components/ApiUrlDialog.vue";
 import { getTime, checkSubscriptionExpiration } from "src/utils/time-util";
 import ls from "localstorage-slim";
+import { syncSingleDatabase, getSyncStatus, isSyncing, lastSyncStatus, lastSyncError, forceSyncAllDatabases, safeSyncTransaction, checkRemoteConnection, forceSyncAndVerifyTransaction } from "src/boot/pouchdb"
+import MemberCard from "src/components/MemberCard.vue";
 
 //Components
 import Clock from "../components/Clock.vue";
@@ -502,6 +583,9 @@ const membershipStoreStatus = ref({
   error: null
 });
 
+
+const currentMember = ref(null)
+const showMemberDialog = ref(false)
 
 const onClickDashboard = () => {
   // Only allow admin to access dashboard
@@ -648,12 +732,12 @@ const findMemberByCardNumber = (cardNumber) => {
 const cardTapping = ref(false)
 const processingMemberTransaction = ref(false)
 
-const handleMemberCardTap = async (cardNumber) => {
+const handleMemberCardTap = async (member) => {
   try {
     cardTapping.value = true
     processingMemberTransaction.value = true
-    
-    console.log('🎫 Member card tapped:', cardNumber);
+
+    console.log('🎫 Member card tapped:', member.card_number);
     console.log('� Card reader ready:', cardReaderStatus.value);
     console.log('�📊 Membership store state:', {
       membersLoaded: membershipStore.members.length,
@@ -666,15 +750,15 @@ const handleMemberCardTap = async (cardNumber) => {
     });
     
     // Pastikan system ready
-    if (!cardReaderStatus.value.ready) {
-      console.warn('⚠️ Card reader not ready, aborting...');
-      $q.notify({
-        type: 'warning',
-        message: 'System belum siap, silakan coba lagi',
-        position: 'top',
-      });
-      return;
-    }
+    // if (!cardReaderStatus.value.ready) {
+    //   console.warn('⚠️ Card reader not ready, aborting...');
+    //   $q.notify({
+    //     type: 'warning',
+    //     message: 'System belum siap, silakan coba lagi',
+    //     position: 'top',
+    //   });
+    //   return;
+    // }
     
     // Pastikan membership store sudah ter-load
     if (membershipStore.members.length === 0) {
@@ -694,7 +778,7 @@ const handleMemberCardTap = async (cardNumber) => {
     }
     
     // Cari member berdasarkan nomor kartu
-    const member = findMemberByCardNumber(cardNumber);
+    // const member = findMemberByCardNumber(cardNumber);
     if (!member) {
       $q.notify({
         type: 'negative',
@@ -751,21 +835,20 @@ const handleMemberCardTap = async (cardNumber) => {
     // Simpan transaksi ke database transactions
     await saveMemberTransaction(member);
     
-    // Buka gate otomatis
-    gateStore.writeToPort('entry', '*OPEN#');
+    // Show member details dialog instead of auto-opening gate
+    currentMember.value = member
     
-    $q.notify({
-      type: 'positive',
-      message: `Selamat datang, ${member.name}! Gate terbuka otomatis.`,
-      position: 'top',
-    });
-    
+    // showMemberDialog.value = true
+   
+
     // Reset form setelah small delay untuk memastikan semua proses selesai
     setTimeout(() => {
       resetFormState();
     }, 500);
     
     await updateStatistics();
+
+    await gateStore.openGate();
     
   } catch (error) {
     console.error('Error handleMemberCardTap:', error);
@@ -801,7 +884,7 @@ const saveMemberTransaction = async (member) => {
       member_id: member.member_id,
       name: member.name,
       card_number: member.card_number,
-      plat_nomor: transaksiStore.platNomor,
+      no_pol: transaksiStore.platNomor,
       entry_time: new Date().toISOString(),
       vehicle: member.vehicles?.[0] || null,
       jenis_kendaraan: transaksiStore.selectedJenisKendaraan || { id: 1, label: 'Motor' },
@@ -824,9 +907,9 @@ const saveMemberTransaction = async (member) => {
       has_image: trx.has_image
     });
     
-    // 1. Simpan transaksi dulu
-    const response = await addTransaction(trx);
-    console.log('✅ Member transaction saved successfully:', response);
+    // 1. Simpan transaksi dulu dengan immediate sync
+    const response = await addTransaction(trx, true); // Enable immediate sync
+    console.log('✅ Member transaction saved successfully with immediate sync:', response);
     
     // Debug: Check what ID was actually saved
     console.log('🆔 Transaction ID comparison:', {
@@ -834,6 +917,35 @@ const saveMemberTransaction = async (member) => {
       responseId: response.id,
       responseRev: response.rev
     });
+    
+    // 2. Try to verify sync with timeout
+    setTimeout(async () => {
+      try {
+        console.log('🔍 Verifying transaction sync to server...');
+        const syncSuccess = await safeSyncTransaction(response.id);
+        if (syncSuccess) {
+          console.log('✅ Transaction successfully synced to server');
+          $q.notify({
+            type: 'positive',
+            message: 'Transaksi berhasil disinkronisasi ke server',
+            position: 'top',
+            timeout: 2000,
+            icon: 'cloud_done'
+          });
+        } else {
+          console.warn('⚠️ Transaction sync verification failed');
+          $q.notify({
+            type: 'warning',
+            message: 'Transaksi tersimpan lokal, sync ke server akan dilakukan nanti',
+            position: 'top',
+            timeout: 3000,
+            icon: 'cloud_queue'
+          });
+        }
+      } catch (verifyError) {
+        console.error('❌ Sync verification error:', verifyError);
+      }
+    }, 2000); // Check sync after 2 seconds
     
     // 2. Simpan gambar sebagai attachment jika ada
     if (transaksiStore.entry_pic) {
@@ -890,7 +1002,7 @@ const saveMemberTransaction = async (member) => {
     }
     
   } catch (err) {
-    console.error('Gagal simpan transaksi member:', err);
+    console.error('❌ Error saving member transaction:', err);
     throw err;
   }
 };
@@ -899,6 +1011,7 @@ const saveMemberTransaction = async (member) => {
 import TicketDialog from "src/components/TicketDialog.vue";
 import KendaraanKeluarDialog from "src/components/KendaraanKeluarDialog.vue";
 import JenisKendaraanDialog from "src/components/JenisKendaraanDialog.vue";
+import VehicleInsideDialog from "src/components/VehicleInsideDialog.vue";
 
 // import FotoKendaraan from "../components/FotoKendaraan.vue";
 // import { useMorphStore } from "src/stores/morph-store";
@@ -1037,7 +1150,7 @@ const cameraOutRef = ref(null);
 const router = useRouter();
 
 const inputPlatNomorRef = ref(null);
-const prefix = ref(ls.get("prefix"));
+const prefix = ref(ls.get("prefix")) || 'B';
 
 const onClickKendaraanKeluar = () => {
   const dialog = $q.dialog({
@@ -1056,17 +1169,17 @@ const onClickKendaraanKeluar = () => {
           transaksiStore.currentTransaction = entryTransaction;
           transaksiStore.platNomor = exitData.plateNumber;
           
-          // Capture exit images
-          await captureExitImages();
+          // // Capture exit images
+          // await captureExitImages();
           
-          // Process exit transaction
-          await transaksiStore.processExitTransaction();
+          // // Process exit transaction
+          // await transaksiStore.processExitTransaction();
           
           // Update statistics
-          await updateStatistics();
+          // await updateStatistics();
           
           // Open gate for exit
-          componentStore.openGate();
+          // componentStore.openGate();
           
         } else {
           $q.notify({
@@ -1092,6 +1205,10 @@ const captureExitImages = async () => {
   try {
     console.log('📸 Capturing exit images from exit camera...');
     
+    // Clear any existing entry image to prevent contamination
+    transaksiStore.entry_pic = null;
+    console.log('🧹 Cleared entry_pic before exit capture');
+    
     // Check if exit camera ref exists and is available
     if (!exitCameraRef.value) {
       console.warn('⚠️ Exit camera ref not available, continuing without exit image');
@@ -1107,10 +1224,20 @@ const captureExitImages = async () => {
     }
     
     // Capture exit image with error handling
+    console.log('📷 Attempting to capture exit image from exitCameraRef...');
     const exitImageData = await exitCameraRef.value?.getImage();
+    
+    console.log('📷 Exit capture result:', {
+      hasData: !!exitImageData,
+      dataType: typeof exitImageData,
+      dataLength: exitImageData?.length || 0
+    });
+    
     if (exitImageData && typeof exitImageData === 'string') {
       transaksiStore.exit_pic = exitImageData;
-      console.log('✅ Exit image captured');
+      console.log('✅ Exit image captured and saved to exit_pic');
+      console.log('📊 Debug: exit_pic set to:', transaksiStore.exit_pic ? 'Base64 image data' : 'null');
+      console.log('📊 Debug: entry_pic is:', transaksiStore.entry_pic ? 'Base64 image data' : 'null');
       
       $q.notify({
         type: 'positive',
@@ -1121,6 +1248,8 @@ const captureExitImages = async () => {
     } else {
       console.warn('⚠️ No exit image data received, continuing without image');
       transaksiStore.exit_pic = null;
+      console.log('📊 Debug: exit_pic set to null');
+      console.log('📊 Debug: entry_pic is:', transaksiStore.entry_pic ? 'Base64 image data' : 'null');
       
       // $q.notify({
       //   type: 'info',
@@ -1130,11 +1259,23 @@ const captureExitImages = async () => {
       // });
     }
     
+    // Final debug check
+    console.log('📊 Final image state after exit capture:', {
+      hasEntryPic: !!transaksiStore.entry_pic,
+      hasExitPic: !!transaksiStore.exit_pic,
+      entryPicLength: transaksiStore.entry_pic?.length || 0,
+      exitPicLength: transaksiStore.exit_pic?.length || 0
+    });
+    
     console.log('✅ Exit image capture process completed');
     
   } catch (error) {
     console.error('❌ Error capturing exit images:', error);
     transaksiStore.exit_pic = null;
+    transaksiStore.entry_pic = null; // Also clear entry pic on error
+    console.log('📊 Debug: Both images set to null (error case)');
+    console.log('📊 Debug: entry_pic is:', transaksiStore.entry_pic ? 'Base64 image data' : 'null');
+    console.log('📊 Debug: exit_pic is:', transaksiStore.exit_pic ? 'Base64 image data' : 'null');
     
     // $q.notify({
     //   type: 'info',
@@ -1156,29 +1297,29 @@ const resetFormState = () => {
 };
 
 // Handle payment completion (called from PaymentCard)
-const onPaymentCompleted = async () => {
-  try {
-    // Update statistics after payment
-    await updateStatistics();
+// const onPaymentCompleted = async () => {
+//   try {
+//     // Update statistics after payment
+//     await updateStatistics();
     
-    // Reset form state
-    resetFormState();
+//     // Reset form state
+//     resetFormState();
     
-    $q.notify({
-      type: 'positive',
-      message: 'Transaksi berhasil diselesaikan',
-      position: 'top'
-    });
-  } catch (error) {
-    console.error('Error completing payment:', error);
-  }
-};
+//     $q.notify({
+//       type: 'positive',
+//       message: 'Transaksi berhasil diselesaikan',
+//       position: 'top'
+//     });
+//   } catch (error) {
+//     console.error('Error completing payment:', error);
+//   }
+// };
 
 const onInputPlatNomor = () => {
   if (transaksiStore.platNomor.length >= 3) {
     const firstCharacter = transaksiStore.platNomor?.charAt(0);
 
-    if (!isNaN(firstCharacter)) {
+    if (!isNaN(firstCharacter) && prefix.value && transaksiStore.platNomor.length < 6) {
       transaksiStore.platNomor =
         prefix.value + transaksiStore.platNomor?.toUpperCase();
     } else {
@@ -1201,7 +1342,7 @@ const onClickBukaManual = async () => {
     const success = await transaksiStore.setManualOpenGate(gateId);
     
     if (success) {
-      componentStore.openGate();
+      gateStore.writeToPort('entry', "open");
       await updateStatistics();
       
       $q.notify({
@@ -1263,9 +1404,7 @@ const onClickEmergency = async () => {
 };
 
 const onPressEnterPlatNomor = async () => {
-  if (transaksiStore.platNomor.length > 9) {
-    return
-  }
+
   if (transaksiStore.platNomor.length < 4) {
     $q.notify({
       type: "negative",
@@ -1277,48 +1416,123 @@ const onPressEnterPlatNomor = async () => {
   }
 
   try {
-    // Show loading indicator for better UX
-    const loadingNotify = $q.notify({
-      type: 'ongoing',
-      message: 'Memproses plat nomor...',
-      position: 'top',
-      timeout: 0, // Don't auto-dismiss
-      spinner: true
-    });
+    // const loadingNotify = $q.notify({
+    //   type: 'ongoing',
+    //   message: 'Mengecek status member...',
+    //   position: 'center',
+    //   timeout: 0,
+    //   spinner: true
+    // });
 
+    // Cek apakah plat nomor adalah member
+    await membershipStore.loadMembers();
+    const member = membershipStore.getMemberByPlatOrCard(transaksiStore.platNomor);
+    // console.log("🚀 ~ onPressEnterPlatNomor ~ member:", member)
+    
+    let platNomorToCheck = transaksiStore.platNomor.toUpperCase().trim();
+    if(member && member.vehicles && member.vehicles.length > 0) {
+      // Jika member memiliki kendaraan, gunakan plat nomor kendaraan pertama
+      platNomorToCheck = member.vehicles[0].plate_number || member.vehicles[0].license_plate || platNomorToCheck;
+    }
+    console.log("🚀 ~ onPressEnterPlatNomor ~ platNomorToCheck:", platNomorToCheck)
+    // Cek apakah plat nomor sudah ada di dalam parkiran
+    const existingTransactions = await transaksiStore.searchTransactionByPlateNumber(platNomorToCheck);
+    console.log("🚀 ~ onPressEnterPlatNomor ~ existingTransactions:", existingTransactions)
+    // return
+    const activeTransactions = existingTransactions.filter(trx => {
+      const isActive = trx.status === 0 || trx.status === 'in';
+      return isActive;
+    });
+    if (activeTransactions.length > 0) {
+      // loadingNotify();
+      const activeTransaction = activeTransactions[0];
+      const transactionType = activeTransaction.type === 'member_entry' ? 'Member' : 'Parkir';
+      // $q.notify({
+      //   type: "warning",
+      //   message: `Plat nomor ${platNomorToCheck} sudah ada di dalam parkiran (${transactionType})`,
+      //   position: "center",
+      //   timeout: 3000,
+      // });
+
+      $q.dialog({
+        // title: 'Plat Nomor Sudah Ada',
+        // message: `Plat nomor <strong>${platNomorToCheck}</strong> sudah ada di dalam parkiran (${transactionType}).`,
+        // ok: {
+          // label: 'Tutup',
+          component:VehicleInsideDialog,
+          componentProps: {
+            plateNumber: platNomorToCheck,
+          },
+          // handler: () => {
+          //   // Handle OK button click
+          // }
+        
+      }).onOk(async () => {
+        console.log("🚀 ~ onPressEnterPlatNomor ~ onOk:")
+        // Fokus kembali ke input plat nomor setelah dialog ditutup
+        await gateStore.openGate()
+        setTimeout(() => {
+          inputPlatNomorRef.value?.focus && inputPlatNomorRef.value.focus();
+        }, 100);
+      });
+      return;
+    }
+
+    // Jika ditemukan member
+    if (member && member.member_id) {
+      // console.log("🚀 ~ onPressEnterPlatNomor ~ member:", member)
+      // Set data member ke currentMember dan tampilkan dialog
+      currentMember.value = member;
+      // showMemberDialog.value = true;
+      // loadingNotify();
+       $q.dialog({
+      component: MemberCard,
+      componentProps: {
+        // plateNumber: transaksiStore.platNomor,
+        nama: member.name,
+        jenisMember: member.membership_type || 'Umum',
+        endDate: member.end_date ? member.end_date : 'Tidak diketahui',
+        plateNumber: platNomorToCheck || 'Tidak diketahui'
+      },
+      // persistent: true,
+      transitionShow: 'slide-up',
+      transitionHide: 'slide-down',
+    }).onOk(() => {
+        // console.log("🚀 ~ onPressEnterPlatNomor ~ onOk:")
+        // Fokus kembali ke input plat nomor setelah dialog ditutup
+        handleMemberCardTap(member);
+        setTimeout(() => {
+          inputPlatNomorRef.value?.focus && inputPlatNomorRef.value.focus();
+        }, 100);
+      });
+      // Tidak langsung proses entry, tunggu operator klik Enter di dialog
+      return;
+    }
+
+    // Jika bukan member, proses seperti umum
+    // loadingNotify();
+    // Proses umum seperti biasa
     // Start image capture in fast mode (non-blocking for speed)
-    const capturePromise = captureEntryImages(true); // true = fast mode
-    
+    const capturePromise = captureEntryImages(true);
     // Get customer data in parallel with image capture
-    const customerPromise = transaksiStore.getCustomerByNopol();
-    
-    // Wait for customer data (usually faster than camera)
-    await customerPromise;
-    const dataCustomer = transaksiStore.dataCustomer;
-    
-    // Dismiss loading notification
-    loadingNotify();
-    
-    // Continue with dialog flow immediately
-    // Check operation mode from settings service
+    // const customerPromise = transaksiStore.getCustomerByNopol();
+    // await customerPromise;
+    // const dataCustomer = transaksiStore.dataCustomer;
+
     if (settingsService.isPrepaidMode) {
-      // Prepaid mode - show vehicle selection with immediate payment
       const _jenisKendaraanDialog = $q.dialog({
         component: JenisKendaraanDialog,
         componentProps: {
           isPrepaidMode: true,
-          customerData: dataCustomer
+          // customerData: dataCustomer
         }
       });
-
       _jenisKendaraanDialog.onOk(() => {
-        // Payment completed in prepaid mode - process entry
-        processEntry(true); // true = prepaid mode
+        console.log("🚀 ~ _jenisKendaraanDialog.onOk ~ onOk:")
+        processEntry(true);
       });
     } else if (settingsService.isPostpaidMode) {
-      // Postpaid mode - traditional flow
       if (!dataCustomer) {
-        // No customer found - show jenis kendaraan dialog
         const _jenisKendaraanDialog = $q.dialog({
           component: JenisKendaraanDialog,
           componentProps: {
@@ -1326,21 +1540,16 @@ const onPressEnterPlatNomor = async () => {
             customerData: null
           }
         });
-
         _jenisKendaraanDialog.onOk(() => {
-          processEntry(false); // false = postpaid mode
+          processEntry(false);
         });
       } else {
-        // Customer found - use existing vehicle type
         const jenis_kendaraan = {
           id: dataCustomer.id_jenis_kendaraan,
           label: dataCustomer.jenis_kendaraan,
         };
         transaksiStore.selectedJenisKendaraan = jenis_kendaraan;
-        
-        // Check subscription expiration
         const expiration = checkSubscriptionExpiration(dataCustomer.akhir);
-        
         const _ticketDialog = $q.dialog({
           component: TicketDialog,
           componentProps: {
@@ -1350,29 +1559,23 @@ const onPressEnterPlatNomor = async () => {
             expiration: expiration,
           },
         });
-
         _ticketDialog.onOk(() => {
-          processEntry(false); // false = postpaid mode
+          console.log("🚀 ~ _ticketDialog.onOk ~ onOk:")
+          processEntry(false);
         });
       }
     }
-    
   } catch (error) {
     console.error('Error processing plate number:', error);
-    
-    // Show quick error notification
     $q.notify({
       type: 'info',
       message: 'Memproses transaksi...',
       position: 'top',
       timeout: 1500
     });
-    
-    // Still try to continue with transaction even if camera fails
     try {
       await transaksiStore.getCustomerByNopol();
       const dataCustomer = transaksiStore.dataCustomer;
-      
       if (settingsService.isPrepaidMode) {
         const _jenisKendaraanDialog = $q.dialog({
           component: JenisKendaraanDialog,
@@ -1423,6 +1626,9 @@ const onPressEnterPlatNomor = async () => {
   }
 };
 
+
+
+
 // Process entry transaction
 const processEntry = async (isPrepaidMode = false) => {
   // Prevent duplicate processing
@@ -1434,6 +1640,8 @@ const processEntry = async (isPrepaidMode = false) => {
     transaksiStore.isProcessing = true;
     
     await transaksiStore.processEntryTransaction(isPrepaidMode);
+
+    syncSingleDatabase('transactions')
     
     // Update statistics
     await updateStatistics();
@@ -1508,18 +1716,80 @@ const logout = async () => {
 
 const isAdmin = ref(ls.get("isAdmin")) || false;
 
-const handleKeyDown = (event) => {
-  // console.log(event.key);
-  if (componentStore.currentPage == "outgate") {
-    if (event.key === "F1") {
-      event.preventDefault();
-      inputPlatNomorRef.value.focus();
-    } else if (event.key === "F4") {
-      event.preventDefault();
-      onClickKendaraanKeluar();
-    } else if (event.key === "F2") {
-      event.preventDefault();
-      if (isAdmin.value) {
+// Computed properties for sync status indicator
+const syncStatusColor = computed(() => {
+  if (!isSyncing.value) {
+    switch (lastSyncStatus.value) {
+      case 'complete':
+      case 'paused':
+        return 'positive';
+      case 'error':
+      case 'denied':
+        return 'negative';
+      case 'active':
+        return 'warning';
+      default:
+        return 'grey';
+    }
+  }
+  return 'warning';
+});
+
+const syncStatusTextColor = computed(() => {
+  return syncStatusColor.value === 'grey' ? 'black' : 'white';
+});
+
+const syncStatusIcon = computed(() => {
+  if (isSyncing.value) {
+    return 'sync';
+  }
+  
+  switch (lastSyncStatus.value) {
+    case 'complete':
+      return 'cloud_done';
+    case 'paused':
+      return 'cloud_queue';
+    case 'error':
+    case 'denied':
+      return 'cloud_off';
+    case 'active':
+      return 'sync';
+    default:
+      return 'cloud';
+  }
+});
+
+const syncStatusLabel = computed(() => {
+  if (isSyncing.value) {
+    return 'Syncing...';
+  }
+  
+  switch (lastSyncStatus.value) {
+    case 'complete':
+      return 'Synced';
+    case 'paused':
+      return 'Paused';
+    case 'error':
+      return 'Error';
+    case 'denied':
+      return 'Denied';
+    case 'active':
+      return 'Active';
+    default:
+      return 'Unknown';
+  }
+});
+
+const syncStatusTooltip = computed(() => {
+  let status = `Status: ${syncStatusLabel.value}`;
+  if (lastSyncError.value) {
+    status += `\nError: ${lastSyncError.value.message || lastSyncError.value}`;
+  }
+  return status;
+});
+
+const goToDaftarTransaksi = ()=>{
+   if (isAdmin.value) {
         componentStore.currentPage = "daftar-transaksi";
         router.push("/daftar-transaksi");
       } else {
@@ -1529,6 +1799,24 @@ const handleKeyDown = (event) => {
           position: "bottom",
         });
       }
+}
+
+const handleKeyDown = (event) => {
+  // console.log(event.key);
+  if (componentStore.currentPage == "outgate") {
+    if (event.key === "F1") {
+      event.preventDefault();
+      inputPlatNomorRef.value.focus();
+    // } else if (event.key === "F4") {
+    //   event.preventDefault();
+    //   onClickKendaraanKeluar();
+    }else if (event.key === "F3") {
+      console.log("🚀 ~ handleKeyDown ~ event.key:", event.key)
+      event.preventDefault();
+      onClickDashboard();
+    } else if (event.key === "F2") {
+      event.preventDefault();
+      goToDaftarTransaksi()
     // } else if (event.shiftKey === true && event.key === "R") {
     //   event.preventDefault();
     //   onClickKendaraanKeluar();
@@ -1610,6 +1898,10 @@ const captureEntryImage = async (timeoutMs = 2000) => {
   try {
     console.log('📷 Attempting to capture entry image with timeout:', timeoutMs + 'ms');
     
+    // Clear any existing exit image to prevent contamination
+    transaksiStore.exit_pic = null;
+    console.log('🧹 Cleared exit_pic before entry capture');
+    
     // Check if camera ref exists and is available
     if (!entryCameraRef.value) {
       console.warn('⚠️ Entry camera ref not available, continuing without image');
@@ -1656,15 +1948,21 @@ const captureEntryImage = async (timeoutMs = 2000) => {
         
         transaksiStore.entry_pic = imageBase64;
         console.log('✅ Blob image converted and saved to entry_pic');
+        console.log('📊 Debug: entry_pic set to:', transaksiStore.entry_pic ? 'Base64 image data' : 'null');
+        console.log('📊 Debug: exit_pic is:', transaksiStore.exit_pic ? 'Base64 image data' : 'null');
       }
     } else {
       console.warn('⚠️ No image data received from camera, continuing without image');
       transaksiStore.entry_pic = null;
+      console.log('📊 Debug: entry_pic set to null');
+      console.log('📊 Debug: exit_pic is:', transaksiStore.exit_pic ? 'Base64 image data' : 'null');
     }
   } catch (error) {
     console.error('❌ Error capturing entry image:', error.message);
     console.log('📝 Setting entry_pic to null and continuing without image');
     transaksiStore.entry_pic = null;
+    console.log('📊 Debug: entry_pic set to null (error case)');
+    console.log('📊 Debug: exit_pic is:', transaksiStore.exit_pic ? 'Base64 image data' : 'null');
     
     // Don't throw error, just continue without image
     if (error.message !== 'Camera timeout') {
@@ -1895,6 +2193,46 @@ const reloadCameraConfig = async () => {
 };
 
 // Test function untuk kartu member
+// Test function untuk sinkronisasi database
+const testDatabaseSync = async () => {
+  try {
+    $q.notify({
+      type: 'info',
+      message: 'Testing sinkronisasi database...',
+      position: 'top',
+      timeout: 2000
+    });
+
+    const { forceSyncAllDatabases, getSyncStatus, checkTransactionInRemote } = await import('src/boot/pouchdb');
+    
+    // Check current sync status
+    const currentStatus = getSyncStatus();
+    console.log('📊 Current sync status:', currentStatus);
+    
+    // Force manual sync
+    console.log('🔄 Starting forced sync...');
+    await forceSyncAllDatabases();
+    
+    // Verify recent transactions are synced
+    const recentTransactions = transaksiStore.transactionHistory.slice(0, 3);
+    console.log('🔍 Checking recent transactions in remote database...');
+    
+    for (const transaction of recentTransactions) {
+      const exists = await checkTransactionInRemote(transaction.id);
+      console.log(`Transaction ${transaction.id} in remote:`, exists ? '✅ Found' : '❌ Not found');
+    }
+    
+    $q.notify({
+      type: 'positive',
+      message: 'Test sinkronisasi selesai, lihat console untuk detail',
+      position: 'top',
+      });
+     
+  } catch (error) {
+    console.error('❌ Error testing database sync:', error);
+  }
+};
+
 const testMemberCard = async () => {
   try {
     $q.notify({
@@ -1942,9 +2280,11 @@ const initializeSerialPort = async (retryCount = 0) => {
     console.log(`� Initializing serial port (attempt ${retryCount + 1}/${maxRetries + 1})...`);
     
     const portConfig = {
-      portName: "COM10",
+      portName: gateSettings.value?.SERIAL_PORT || "COM1",
       type: 'entry'
     };
+    console.log("🚀 ~ initializeSerialPort ~ portConfig.gateSettings.value?.SERIAL_PORT:", gateSettings)
+    console.log("🚀 ~ initializeSerialPort ~ gateSettings.SERIAL_PORT :", gateSettings.value?.SERIAL_PORT)
     
     await gateStore.initializeSerialPort(portConfig);
     
@@ -2229,6 +2569,112 @@ onMounted(async () => {
   console.log('✅ Component mounting completed');
 });
 
+
+// Tambahkan function setelah testSyncConnectivity_
+
+const testLiveSync = async () => {
+  console.log('🧪 Testing live sync functionality...');
+  
+  $q.notify({
+    type: 'info',
+    message: 'Testing live sync, tunggu 30 detik...',
+    position: 'top',
+    timeout: 2000
+  });
+  
+  try {
+    const { activeSyncHandlers, syncSingleDatabase } = await import('src/boot/pouchdb');
+    
+    // Check active sync handlers
+    const activeCount = activeSyncHandlers.size;
+    const expectedCount = Object.keys(await import('src/boot/pouchdb').then(m => m.localDbs)).length;
+    
+    console.log(`📊 Active sync handlers: ${activeCount}/${expectedCount}`);
+    
+    if (activeCount < expectedCount) {
+      console.warn('⚠️ Some sync handlers missing, restarting...');
+      
+      // Restart missing handlers
+      const { localDbs } = await import('src/boot/pouchdb');
+      Object.keys(localDbs).forEach(dbName => {
+        if (!activeSyncHandlers.has(dbName)) {
+          console.log(`🔄 Restarting sync for ${dbName}...`);
+          syncSingleDatabase(dbName);
+        }
+      });
+    }
+    
+    // Create test transaction untuk test live sync
+    const testTransaction = {
+      _id: `test-live-sync-${Date.now()}`,
+      type: 'parking_transaction', 
+      test_data: true,
+      created_at: new Date().toISOString(),
+      status: 0
+    };
+    
+    console.log('🧪 Creating test transaction for live sync test...');
+    const { addTransaction } = await import('src/boot/pouchdb');
+    await addTransaction(testTransaction, false); // No immediate sync
+    
+    console.log('✅ Test transaction created, live sync should handle it automatically');
+    console.log('⏰ Wait 30 seconds and check CouchDB admin panel for the test transaction');
+    
+    $q.notify({
+      type: 'positive',
+      message: 'Live sync test started - cek console dan CouchDB panel',
+      position: 'top',
+      timeout: 5000
+    });
+    
+  } catch (error) {
+    console.error('❌ Live sync test failed:', error);
+    
+    $q.notify({
+      type: 'negative',
+      message: `Live sync test error: ${error.message}`,
+      position: 'top',
+      timeout: 5000
+    });
+  }
+};
+
+// Function untuk restart sync initialization
+const restartSyncInitialization = async () => {
+  console.log('🔄 Starting sync initialization restart...');
+  
+  try {
+    $q.notify({
+      type: 'info',
+      message: 'Restarting sync initialization...',
+      position: 'top',
+      timeout: 3000
+    });
+    
+    const { restartSyncInitialization: restartSync } = await import('src/boot/pouchdb');
+    await restartSync();
+    
+    console.log('✅ Sync initialization restarted successfully');
+    
+    $q.notify({
+      type: 'positive',
+      message: 'Sync initialization restarted successfully!',
+      position: 'top',
+      timeout: 5000
+    });
+    
+  } catch (error) {
+    console.error('❌ Restart sync initialization failed:', error);
+    
+    $q.notify({
+      type: 'negative',
+      message: `Restart sync failed: ${error.message}`,
+      position: 'top',
+      timeout: 5000
+    });
+  }
+};
+
 onUnmounted(() => {
   console.log('🧹 Cleaning up component...');
   
@@ -2276,6 +2722,7 @@ onUnmounted(() => {
 
 // Function untuk menampilkan status sistem
 const showSystemStatus = () => {
+  const syncStatus = getSyncStatus();
   const status = {
     darkMode: darkMode.value,
     cardReader: cardReaderStatus.value,
@@ -2293,13 +2740,19 @@ const showSystemStatus = () => {
       driverCameraType: driverCameraType.value,
       plateCameraMode: gateSettings.value?.PLATE_CAM_MODE || 'Not Set',
       driverCameraMode: gateSettings.value?.DRIVER_CAM_MODE || 'Not Set'
-    }
+    },
+    sync: syncStatus
   };
 
   $q.dialog({
     title: '🔍 System Status',
     message: `
       <div style="text-align: left; font-family: monospace; font-size: 12px;">
+        <h6>☁️ Database Sync Status</h6>
+        <p>Is Syncing: ${status.sync.isSyncing ? '🔄 Yes' : '✅ No'}</p>
+        <p>Last Status: ${status.sync.lastSyncStatus}</p>
+        <p>Last Error: ${status.sync.lastSyncError?.message || 'None'}</p>
+        
         <h6>🌙 Dark Mode</h6>
         <p>Status: ${status.darkMode ? '✅ Dark' : '☀️ Light'}</p>
         
@@ -2332,10 +2785,128 @@ const showSystemStatus = () => {
     `,
     html: true,
     ok: {
-      label: 'OK',
+      label: 'Close',
       color: 'primary'
+    },
+    cancel: {
+      label: 'Test Sync',
+      color: 'positive',
+      handler: () => {
+        testManualSync();
+      }
     }
   });
+};
+
+// Test manual sync dengan connection check
+const testManualSync = async () => {
+  try {
+    const loadingNotify = $q.notify({
+      type: 'ongoing',
+      message: 'Mengecek koneksi dan memulai sync manual...',
+      position: 'top',
+      timeout: 0,
+      spinner: true
+    });
+
+    // Check remote connection first
+    const isConnected = await checkRemoteConnection();
+    if (!isConnected) {
+      loadingNotify();
+      $q.notify({
+        type: 'negative',
+        message: 'Tidak dapat terhubung ke server database',
+        position: 'top',
+        timeout: 5000,
+        icon: 'cloud_off'
+      });
+      return;
+    }
+
+    // Update loading message
+    loadingNotify({
+      type: 'ongoing',
+      message: 'Koneksi berhasil, melakukan sync...',
+      position: 'top',
+      timeout: 0,
+      spinner: true
+    });
+
+    await forceSyncAllDatabases();
+    
+    loadingNotify();
+    $q.notify({
+      type: 'positive',
+      message: 'Sync manual berhasil diselesaikan',
+      position: 'top',
+      timeout: 3000,
+      icon: 'cloud_done'
+    });
+  } catch (error) {
+    console.error('❌ Manual sync error:', error);
+    $q.notify({
+      type: 'negative',
+      message: `Error sync manual: ${error.message || error}`,
+      position: 'top',
+      timeout: 5000,
+      icon: 'error'
+    });
+  }
+};
+
+// Test transaction verification
+const testTransactionVerification = async () => {
+  try {
+    // Get the latest transaction ID from store
+    if (!transaksiStore.currentTransaction?.id) {
+      $q.notify({
+        type: 'warning',
+        message: 'Tidak ada transaksi aktif untuk diverifikasi',
+        position: 'top'
+      });
+      return;
+    }
+
+    const transactionId = `transaction_${transaksiStore.currentTransaction.id}`;
+    
+    const loadingNotify = $q.notify({
+      type: 'ongoing',
+      message: 'Memverifikasi transaksi di server...',
+      position: 'top',
+      timeout: 0,
+      spinner: true
+    });
+
+    const exists = await forceSyncAndVerifyTransaction(transactionId);
+    
+    loadingNotify();
+    
+    if (exists) {
+      $q.notify({
+        type: 'positive',
+        message: 'Transaksi berhasil disinkronisasi ke server',
+        position: 'top',
+        timeout: 3000,
+        icon: 'cloud_done'
+      });
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Transaksi tidak ditemukan di server setelah sync',
+        position: 'top',
+        timeout: 5000,
+        icon: 'cloud_off'
+      });
+    }
+  } catch (error) {
+    console.error('Transaction verification failed:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Verifikasi transaksi gagal: ' + (error.message || error),
+      position: 'top',
+      timeout: 5000
+    });
+  }
 };
 
 // ...existing functions...

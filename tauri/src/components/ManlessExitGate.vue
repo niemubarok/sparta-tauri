@@ -612,7 +612,7 @@ const driverCameraCredentials = computed(() => {
     gateSettings.value?.DRIVER_CAM_IP
   );
 });
-const exitGatePort = ref(ls.get('serialPortExit') || ''); // Specific serial port for exit gate
+const exitGatePort = computed(() => gateSettings.value?.SERIAL_PORT || ls.get('serialPortExit') || 'COM1'); // Use settings service first, fallback to localStorage
 
 // Exit Gate Specific State
 const showQRScanner = ref(false);
@@ -1006,7 +1006,7 @@ const openSettings = () => {
     driverCameraUrl.value = ls.get('driverCameraUrl') || '';
     plateCameraType.value = ls.get('plateCameraType') || (ls.get('plateCameraDevice') ? 'usb' : 'cctv');
     driverCameraType.value = ls.get('driverCameraType') || (ls.get('driverCameraDevice') ? 'usb' : 'cctv');
-    exitGatePort.value = ls.get('serialPortExit') || '';
+    // exitGatePort is now computed from gateSettings, no need to update from localStorage
     addActivityLog('Settings updated. Re-initializing components if necessary.');
     // Potentially re-initialize cameras or serial connections if critical settings changed
     // Example: if (exitGatePort.value && !gateStore.isPortOpen('exit')) initializeExitSerialPort();

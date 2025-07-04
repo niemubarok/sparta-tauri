@@ -228,11 +228,11 @@ const getDefaultCaptureMode = () => {
       const settings = settingsService.gateSettings;
       const cameraLabel = props.label?.toLowerCase() || '';
       
-      if (cameraLabel.includes('plate') && settings.PLATE_CAM_DEFAULT_MODE) {
+      if ((cameraLabel.includes('plate') || cameraLabel.includes('masuk')) && settings.PLATE_CAM_DEFAULT_MODE) {
         return settings.PLATE_CAM_DEFAULT_MODE;
-      } else if (cameraLabel.includes('driver') && settings.DRIVER_CAM_DEFAULT_MODE) {
+      } else if ((cameraLabel.includes('driver') || cameraLabel.includes('keluar')) && settings.DRIVER_CAM_DEFAULT_MODE) {
         return settings.DRIVER_CAM_DEFAULT_MODE;
-      } else if (cameraLabel.includes('scanner') && settings.SCANNER_CAM_DEFAULT_MODE) {
+      } else if ((cameraLabel.includes('scanner') || cameraLabel.includes('scan')) && settings.SCANNER_CAM_DEFAULT_MODE) {
         return settings.SCANNER_CAM_DEFAULT_MODE;
       }
     }
@@ -402,8 +402,21 @@ const fetchCameraImage = async () => {
       try {
         const config = settingsService?.cctvConfig;
         
-        if (config && cameraLabel.includes('plate') && config.PLATE) {
-          return {
+        // Enhanced debug logging
+        console.log('🔧 Camera config debug:', {
+          cameraLabel,
+          hasSettingsService: !!settingsService,
+          hasConfig: !!config,
+          configStructure: config ? Object.keys(config) : 'no config',
+          plateConfig: config?.PLATE ? {
+            snapshotUrl: config.PLATE.snapshotUrl,
+            hasSnapshotUrl: !!config.PLATE.snapshotUrl,
+            snapshotUrlLength: config.PLATE.snapshotUrl?.length || 0
+          } : 'no PLATE config'
+        });
+        
+        if (config && (cameraLabel.includes('plate') || cameraLabel.includes('masuk')) && config.PLATE) {
+          const plateConfig = {
             username: config.PLATE.username || props.username,
             password: config.PLATE.password || props.password,
             ipAddress: config.PLATE.ipAddress || props.ipAddress,
@@ -411,8 +424,10 @@ const fetchCameraImage = async () => {
             snapshotUrl: config.PLATE.snapshotUrl || props.snapshotUrl,
             httpPort: config.PLATE.httpPort || props.httpPort || 80,
           };
-        } else if (config && cameraLabel.includes('driver') && config.DRIVER) {
-          return {
+          console.log('📸 Using PLATE config with snapshotUrl:', plateConfig.snapshotUrl);
+          return plateConfig;
+        } else if (config && (cameraLabel.includes('driver') || cameraLabel.includes('keluar')) && config.DRIVER) {
+          const driverConfig = {
             username: config.DRIVER.username || props.username,
             password: config.DRIVER.password || props.password,
             ipAddress: config.DRIVER.ipAddress || props.ipAddress,
@@ -420,8 +435,10 @@ const fetchCameraImage = async () => {
             snapshotUrl: config.DRIVER.snapshotUrl || props.snapshotUrl,
             httpPort: config.DRIVER.httpPort || props.httpPort || 80,
           };
-        } else if (config && cameraLabel.includes('scanner') && config.SCANNER) {
-          return {
+          console.log('📸 Using DRIVER config with snapshotUrl:', driverConfig.snapshotUrl);
+          return driverConfig;
+        } else if (config && (cameraLabel.includes('scanner') || cameraLabel.includes('scan')) && config.SCANNER) {
+          const scannerConfig = {
             username: config.SCANNER.username || props.username,
             password: config.SCANNER.password || props.password,
             ipAddress: config.SCANNER.ipAddress || props.ipAddress,
@@ -429,13 +446,15 @@ const fetchCameraImage = async () => {
             snapshotUrl: config.SCANNER.snapshotUrl || props.snapshotUrl,
             httpPort: config.SCANNER.httpPort || props.httpPort || 80,
           };
+          console.log('📸 Using SCANNER config with snapshotUrl:', scannerConfig.snapshotUrl);
+          return scannerConfig;
         }
       } catch (error) {
         console.warn('Error accessing camera config from settings, using props:', error);
       }
       
       // Fallback to props if no specific config found or error occurred
-      return {
+      const fallbackConfig = {
         username: props.username,
         password: props.password,
         ipAddress: props.ipAddress,
@@ -443,9 +462,29 @@ const fetchCameraImage = async () => {
         snapshotUrl: props.snapshotUrl,
         httpPort: props.httpPort || 80,
       };
+      console.log('📸 Using fallback config with snapshotUrl:', fallbackConfig.snapshotUrl);
+      return fallbackConfig;
     };
     
     const cameraConfig = getCameraConfig();
+    
+    // Debug logging untuk config
+    console.log('📸 Camera config loaded:', {
+      label: props.label,
+      ipAddress: cameraConfig.ipAddress,
+      snapshotUrl: cameraConfig.snapshotUrl,
+      username: cameraConfig.username,
+      httpPort: cameraConfig.httpPort,
+      rtspStreamPath: cameraConfig.rtspStreamPath
+    });
+    
+    // Additional debug for settings service state
+    console.log('🔧 Settings service state:', {
+      isLoading: settingsService?.isLoading,
+      hasGateSettings: !!settingsService?.gateSettings,
+      gateId: settingsService?.gateSettings?.gateId,
+      plateSnapshotFromSettings: settingsService?.gateSettings?.PLATE_CAM_SNAPSHOT_URL
+    });
     
     // Validate required parameters first
     if (!cameraConfig.ipAddress || cameraConfig.ipAddress === '192.168.10.25') {
@@ -473,7 +512,14 @@ const fetchCameraImage = async () => {
         timeout_seconds: props.timeoutSeconds || 10
       };
 
-      console.log('📸 Auto-detecting best capture method for:', cameraConfig.ipAddress);
+      // console.log('📸 Auto-detecting best capture method for:', cameraConfig.ipAddress);
+      // console.log('📸 Auto-detect args:', {
+      //   ip_address: args.ip_address,
+      //   snapshot_url: args.snapshot_url,
+      //   port: args.port,
+      //   username: args.username,
+      //   timeout_seconds: args.timeout_seconds
+      // });
       
       response = await Promise.race([
         invoke('capture_cctv_image_auto_detect', { args }),
@@ -499,6 +545,14 @@ const fetchCameraImage = async () => {
       } else if (currentMode === 'snapshot') {
         args.snapshot_url = cameraConfig.snapshotUrl;
         args.port = cameraConfig.httpPort || 80;
+        
+        // Debug logging untuk snapshot mode
+        console.log('📸 Snapshot mode args:', {
+          snapshot_url: args.snapshot_url,
+          port: args.port,
+          from_settings: cameraConfig.snapshotUrl,
+          ip_address: args.ip_address
+        });
       }
 
       console.log(`📸 Capturing CCTV image in ${currentMode} mode:`, {
@@ -514,12 +568,12 @@ const fetchCameraImage = async () => {
       ]);
     }
     
-    console.log('📸 CCTV capture response:', {
-      is_success: response?.is_success,
-      has_base64: response?.base64 ? 'yes' : 'no',
-      message: response?.message,
-      mode_used: currentMode
-    });
+    // console.log('📸 CCTV capture response:', {
+    //   is_success: response?.is_success,
+    //   has_base64: response?.base64 ? 'yes' : 'no',
+    //   message: response?.message,
+    //   mode_used: currentMode
+    // });
     
     if (response && response.is_success && response.base64) {
       imageSrc.value = response.base64;
@@ -660,21 +714,21 @@ const startLiveStream = async () => {
       try {
         const config = settingsService?.cctvConfig;
         
-        if (config && cameraLabel.includes('plate') && config.PLATE) {
+        if (config && (cameraLabel.includes('plate') || cameraLabel.includes('masuk')) && config.PLATE) {
           return {
             username: config.PLATE.username || props.username,
             password: config.PLATE.password || props.password,
             ipAddress: config.PLATE.ipAddress || props.ipAddress,
             rtspStreamPath: config.PLATE.rtspStreamPath || props.rtspStreamPath,
           };
-        } else if (config && cameraLabel.includes('driver') && config.DRIVER) {
+        } else if (config && (cameraLabel.includes('driver') || cameraLabel.includes('keluar')) && config.DRIVER) {
           return {
             username: config.DRIVER.username || props.username,
             password: config.DRIVER.password || props.password,
             ipAddress: config.DRIVER.ipAddress || props.ipAddress,
             rtspStreamPath: config.DRIVER.rtspStreamPath || props.rtspStreamPath,
           };
-        } else if (config && cameraLabel.includes('scanner') && config.SCANNER) {
+        } else if (config && (cameraLabel.includes('scanner') || cameraLabel.includes('scan')) && config.SCANNER) {
           return {
             username: config.SCANNER.username || props.username,
             password: config.SCANNER.password || props.password,
@@ -855,11 +909,11 @@ watch(() => settingsService?.gateSettings, (newSettings) => {
     let defaultMode = 'auto';
     
     try {
-      if (cameraLabel.includes('plate') && newSettings.PLATE_CAM_DEFAULT_MODE) {
+      if ((cameraLabel.includes('plate') || cameraLabel.includes('masuk')) && newSettings.PLATE_CAM_DEFAULT_MODE) {
         defaultMode = newSettings.PLATE_CAM_DEFAULT_MODE;
-      } else if (cameraLabel.includes('driver') && newSettings.DRIVER_CAM_DEFAULT_MODE) {
+      } else if ((cameraLabel.includes('driver') || cameraLabel.includes('keluar')) && newSettings.DRIVER_CAM_DEFAULT_MODE) {
         defaultMode = newSettings.DRIVER_CAM_DEFAULT_MODE;
-      } else if (cameraLabel.includes('scanner') && newSettings.SCANNER_CAM_DEFAULT_MODE) {
+      } else if ((cameraLabel.includes('scanner') || cameraLabel.includes('scan')) && newSettings.SCANNER_CAM_DEFAULT_MODE) {
         defaultMode = newSettings.SCANNER_CAM_DEFAULT_MODE;
       }
       
@@ -1126,11 +1180,11 @@ const handleCaptureModeChange = async (newMode) => {
     const cameraLabel = props.label?.toLowerCase() || '';
     const updatePayload = {};
     
-    if (cameraLabel.includes('plate')) {
+    if (cameraLabel.includes('plate') || cameraLabel.includes('masuk')) {
       updatePayload.PLATE_CAM_DEFAULT_MODE = newMode.value;
-    } else if (cameraLabel.includes('driver')) {
+    } else if (cameraLabel.includes('driver') || cameraLabel.includes('keluar')) {
       updatePayload.DRIVER_CAM_DEFAULT_MODE = newMode.value;
-    } else if (cameraLabel.includes('scanner')) {
+    } else if (cameraLabel.includes('scanner') || cameraLabel.includes('scan')) {
       updatePayload.SCANNER_CAM_DEFAULT_MODE = newMode.value;
     }
     

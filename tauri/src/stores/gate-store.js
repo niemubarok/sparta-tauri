@@ -97,6 +97,13 @@ export const useGateStore = defineStore('gate', {
         console.error('Error writing to serial port:', err);
       }
     },
+
+    async openGate() {
+      await this.writeToPort('entry', 'open');
+      this.playAudio('open_gate').catch((error) => {
+        console.error("Error playing audio:", error);
+      });
+    },
     onPushLoop1() {
       this.loop1 = !this.loop1;
       if (this.loop1) {

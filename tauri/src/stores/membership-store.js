@@ -67,6 +67,16 @@ export const useMembershipStore = defineStore('membership', {
       return grouped
     },
 
+    getMemberByPlatOrCard: (state) => (value) => {
+      const searchValue = value?.toLowerCase?.() || ''
+      return state.members.find(member =>
+        member.card_number?.toLowerCase() === searchValue ||
+        member.vehicles?.some(vehicle =>
+          vehicle.license_plate?.toLowerCase() === searchValue
+        )
+      )
+    },
+
     // Get member by ID
     getMemberById: (state) => (id) => {
       return state.members.find(member => member._id === id)
@@ -75,6 +85,11 @@ export const useMembershipStore = defineStore('membership', {
     // Get member by member_id (public ID)
     getMemberByMemberId: (state) => (memberId) => {
       return state.members.find(member => member.member_id === memberId)
+    },
+
+    // Get member by card number
+    getMemberByCardNumber: (state) => (cardNumber) => {
+      return state.members.find(member => member.card_number === cardNumber)
     },
 
     // Get membership type by ID
@@ -91,7 +106,7 @@ export const useMembershipStore = defineStore('membership', {
       const now = new Date()
       return end < now
     },
-    // Check if member is expiring soon (within 30 days)
+    // Check if member is expiring soon (within 7 days)
     isExpiringSoon: (state) => (endDate) => {
       if (!endDate) return false
       
@@ -99,10 +114,10 @@ export const useMembershipStore = defineStore('membership', {
       end.setHours(23, 59, 59, 999) // End of day
       
       const now = new Date()
-      const thirtyDaysFromNow = new Date()
-      thirtyDaysFromNow.setDate(now.getDate() + 30)
+      const sevenDaysFromNow = new Date()
+      sevenDaysFromNow.setDate(now.getDate() + 7)
       
-      return end > now && end <= thirtyDaysFromNow
+      return end > now && end <= sevenDaysFromNow
     },
 
     // Calculate days until membership expiry
@@ -493,6 +508,56 @@ export const useMembershipStore = defineStore('membership', {
       } catch (error) {
         console.error('❌ Failed to add membership type:', error)
         throw error
+      }
+    },
+
+    // Renew membership for a member
+    async renewMembership(memberId, duration_months) {
+      try {
+      const member = await localDbs.members.get(memberId)
+      const membershipType = this.membershipTypes.find(
+        t => t._id === member.membership_type_id
+      )
+      if (!membershipType) {
+        throw new Error('Membership type not found')
+      }
+
+      // Determine new start date
+      let newStartDate
+      const currentEnd = new Date(member.end_date || new Date())
+      const now = new Date()
+      newStartDate = currentEnd > now ? new Date(currentEnd.getTime() + 24 * 60 * 60 * 1000) : now
+
+      // Calculate new end date
+      const months = duration_months || membershipType.duration_months
+      const newEndDate = new Date(newStartDate)
+      newEndDate.setMonth(newEndDate.getMonth() + months)
+
+      // Update member fields
+      const updatedMember = {
+        ...member,
+        start_date: newStartDate.toISOString().split('T')[0],
+        end_date: newEndDate.toISOString().split('T')[0],
+        active: true,
+        updatedAt: new Date().toISOString()
+      }
+
+      // Save to database
+      const result = await localDbs.members.put(updatedMember)
+      updatedMember._rev = result.rev
+
+      // Update local state
+      const index = this.members.findIndex(m => m._id === memberId)
+      if (index !== -1) {
+        this.members[index] = updatedMember
+      }
+      this.updateStatistics()
+
+      console.log('✅ Membership renewed successfully:', updatedMember.name)
+      return updatedMember
+      } catch (error) {
+      console.error('❌ Failed to renew membership:', error)
+      throw error
       }
     },
 

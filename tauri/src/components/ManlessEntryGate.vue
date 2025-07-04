@@ -724,7 +724,7 @@ const handleSerialData = async (data) => {
 // Add setup serial listener function
 const setupSerialListener = () => {
   const portConfig = {
-    portName : gateSettings.value.SERIAL_PORT,
+    portName : gateSettings.value?.SERIAL_PORT || "COM1",
     type: 'entry'
   }
   gateStore.initializeSerialPort(portConfig)

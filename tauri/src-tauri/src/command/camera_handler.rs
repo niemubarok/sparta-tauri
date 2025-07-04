@@ -66,11 +66,88 @@ use std::os::windows::process::CommandExt;
 // Fungsi untuk capture via HTTP snapshot
 async fn capture_via_snapshot(args: &CaptureCctvImageArgs) -> Result<CctvResponse, String> {
     println!("📸 Capturing via HTTP snapshot mode");
+    println!("📸 Args received: snapshot_url={:?}, ip_address={}, port={:?}", 
+             args.snapshot_url, args.ip_address, args.port);
     
     let snapshot_url = if let Some(url) = &args.snapshot_url {
-        url.clone()
+        if !url.is_empty() {
+            // Gunakan URL kustom dari settings jika tersedia dan tidak kosong
+            println!("📸 Using custom snapshot URL from settings: {}", url);
+            
+            // Cek apakah URL sudah lengkap (mengandung http://) atau masih path relatif
+            if url.starts_with("http://") || url.starts_with("https://") {
+                // URL sudah lengkap, gunakan langsung
+                url.clone()
+            } else {
+                // URL adalah path relatif, konstruksi URL lengkap dengan IP, port, dan credentials
+                let port = args.port.unwrap_or(80);
+                
+                // Konstruksi URL dengan credentials jika tersedia
+                let base_url = if let (Some(username), Some(password)) = (&args.username, &args.password) {
+                    if !username.is_empty() && !password.is_empty() {
+                        // Sertakan credentials dalam URL untuk kamera yang membutuhkannya
+                        if port == 80 {
+                            format!("http://{}:{}@{}", username, password, args.ip_address)
+                        } else {
+                            format!("http://{}:{}@{}:{}", username, password, args.ip_address, port)
+                        }
+                    } else {
+                        // Tanpa credentials
+                        if port == 80 {
+                            format!("http://{}", args.ip_address)
+                        } else {
+                            format!("http://{}:{}", args.ip_address, port)
+                        }
+                    }
+                } else {
+                    // Tanpa credentials
+                    if port == 80 {
+                        format!("http://{}", args.ip_address)
+                    } else {
+                        format!("http://{}:{}", args.ip_address, port)
+                    }
+                };
+                
+                // Pastikan path dimulai dengan slash
+                let path = if url.starts_with('/') {
+                    url.clone()
+                } else {
+                    format!("/{}", url)
+                };
+                
+                let full_url = format!("{}{}", base_url, path);
+                println!("📸 Constructed full URL from custom path: {}", full_url.replace(&args.password.as_deref().unwrap_or(""), "***"));
+                full_url
+            }
+        } else {
+            // URL kosong, gunakan default path
+            println!("📸 Custom snapshot URL is empty, using default paths");
+            let port = args.port.unwrap_or(80);
+            let base_url = if port == 80 {
+                format!("http://{}", args.ip_address)
+            } else {
+                format!("http://{}:{}", args.ip_address, port)
+            };
+            
+            // Path snapshot umum untuk berbagai merek CCTV
+            let default_paths = vec![
+                "/cgi-bin/snapshot.cgi",           // Hikvision, Dahua
+                "/ISAPI/Streaming/channels/101/picture", // Hikvision modern
+                "/tmpfs/auto.jpg",                 // Beberapa IP camera
+                "/snapshot.jpg",                   // Generic
+                "/cgi-bin/currentpic.cgi",        // Axis cameras
+                "/jpeg/image.cgi",                 // Kamera lama
+                "/snapshot/view0.jpg",             // Kamera modern
+                "/image.jpg",
+                "/Snapshot/1/RemoteImageCapture?ImageFormat=2" //glenz                      // Path sederhana
+            ];
+            
+            // Gunakan path default pertama
+            format!("{}{}", base_url, default_paths[0])
+        }
     } else {
-        // Konstruksi URL snapshot default jika tidak disediakan
+        // Tidak ada parameter snapshot_url sama sekali, konstruksi URL default
+        println!("📸 No custom snapshot URL provided, constructing default URL");
         let port = args.port.unwrap_or(80);
         let base_url = if port == 80 {
             format!("http://{}", args.ip_address)
@@ -97,18 +174,44 @@ async fn capture_via_snapshot(args: &CaptureCctvImageArgs) -> Result<CctvRespons
 
     println!("🔗 Snapshot URL: {}", snapshot_url.replace(&args.password.as_deref().unwrap_or(""), "***"));
 
-    let timeout = Duration::from_secs(args.timeout_seconds.unwrap_or(10));
+    let timeout = Duration::from_secs(args.timeout_seconds.unwrap_or(30)); // Increase timeout to 30 seconds
     let client = reqwest::Client::builder()
         .timeout(timeout)
         .danger_accept_invalid_certs(true) // Terima sertifikat self-signed
+        .redirect(reqwest::redirect::Policy::limited(3)) // Allow redirects
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
-    let mut request = client.get(&snapshot_url);
+    // Always use clean URL without embedded credentials and rely on basic auth headers
+    let clean_url = if snapshot_url.contains("@") {
+        // Remove credentials from URL - reqwest handles auth better via headers
+        let url_parts: Vec<&str> = snapshot_url.split("@").collect();
+        if url_parts.len() == 2 {
+            let protocol_and_creds = url_parts[0];
+            let host_and_path = url_parts[1];
+            
+            // Extract just the protocol part
+            if let Some(protocol_pos) = protocol_and_creds.rfind("://") {
+                let protocol = &protocol_and_creds[..protocol_pos + 3];
+                let clean_url = format!("{}{}", protocol, host_and_path);
+                println!("📸 Using clean URL without embedded credentials: {}", clean_url);
+                clean_url
+            } else {
+                snapshot_url.clone()
+            }
+        } else {
+            snapshot_url.clone()
+        }
+    } else {
+        snapshot_url.clone()
+    };
 
-    // Tambahkan autentikasi jika disediakan
+    let mut request = client.get(&clean_url);
+
+    // Always add basic auth headers
     if let (Some(username), Some(password)) = (&args.username, &args.password) {
         if !username.is_empty() && !password.is_empty() {
+            println!("📸 Adding basic auth headers for user: {}", username);
             request = request.basic_auth(username, Some(password));
         }
     }
@@ -116,23 +219,77 @@ async fn capture_via_snapshot(args: &CaptureCctvImageArgs) -> Result<CctvRespons
     // Set header umum untuk kamera CCTV
     request = request
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-        .header("Accept", "image/jpeg,image/*,*/*")
-        .header("Connection", "close");
+        .header("Accept", "image/jpeg,image/png,image/*,*/*")
+        .header("Connection", "close")
+        .header("Cache-Control", "no-cache")
+        .header("Pragma", "no-cache");
 
+    println!("📸 Sending HTTP request to camera at: {}", clean_url);
+    
+    // Try a quick HEAD request first to test connectivity
+    let test_request = client.head(&clean_url);
+    let test_request = if let (Some(username), Some(password)) = (&args.username, &args.password) {
+        if !username.is_empty() && !password.is_empty() {
+            test_request.basic_auth(username, Some(password))
+        } else {
+            test_request
+        }
+    } else {
+        test_request
+    };
+    
+    match test_request.send().await {
+        Ok(test_response) => {
+            println!("📸 HEAD request test - Status: {}", test_response.status());
+        }
+        Err(e) => {
+            println!("⚠️ HEAD request test failed: {}", e);
+            // Continue with GET request anyway
+        }
+    }
+    
     let response = request.send().await
-        .map_err(|e| format!("HTTP request failed: {}", e))?;
+        .map_err(|e| {
+            println!("❌ HTTP request failed: {}", e);
+            if e.is_timeout() {
+                format!("Camera connection timeout ({}s) - check network connectivity", args.timeout_seconds.unwrap_or(30))
+            } else if e.is_connect() {
+                format!("Cannot connect to camera - check IP address and network")
+            } else if e.is_request() {
+                format!("Invalid request - check camera URL and settings")
+            } else {
+                format!("HTTP request failed: {}", e)
+            }
+        })?;
 
+    println!("📸 Response received - Status: {} ({})", response.status(), response.status().as_u16());
+    
     if !response.status().is_success() {
+        let status_code = response.status().as_u16();
+        let error_msg = match status_code {
+            401 => "Authentication failed - check username and password".to_string(),
+            403 => "Access forbidden - camera may not allow snapshot access".to_string(),
+            404 => "Snapshot URL not found - check camera model and URL path".to_string(),
+            408 => "Request timeout - camera took too long to respond".to_string(),
+            500..=599 => "Camera internal error - camera may be busy or malfunctioning".to_string(),
+            _ => format!("HTTP error: {} - {}", response.status(), response.status().canonical_reason().unwrap_or("Unknown error"))
+        };
+        
+        println!("❌ HTTP error: {}", error_msg);
         return Ok(CctvResponse {
             is_success: false,
             base64: None,
             time_stamp: Utc::now().to_rfc3339(),
-            message: Some(format!("HTTP error: {} - {}", response.status(), response.status().canonical_reason().unwrap_or("Unknown error"))),
+            message: Some(error_msg),
         });
     }
 
+    println!("📸 Reading response body...");
     let image_data = response.bytes().await
-        .map_err(|e| format!("Failed to read image data: {}", e))?;
+        .map_err(|e| {
+            println!("❌ Failed to read response body: {}", e);
+            format!("Failed to read image data: {}", e)
+        })?;
 
     if image_data.is_empty() {
         return Ok(CctvResponse {
@@ -280,14 +437,67 @@ pub async fn capture_cctv_image(args: CaptureCctvImageArgs) -> Result<CctvRespon
 #[tauri::command]
 pub async fn capture_cctv_image_auto_detect(args: CaptureCctvImageArgs) -> Result<CctvResponse, String> {
     println!("📸 Auto-detect CCTV capture called for IP: {}", args.ip_address);
+    println!("📸 Auto-detect args: snapshot_url={:?}, port={:?}", args.snapshot_url, args.port);
     
     if args.ip_address.is_empty() {
         return Err("IP address cannot be empty".to_string());
     }
 
-    // Jika snapshot_url disediakan, gunakan langsung
-    if args.snapshot_url.is_some() {
-        return capture_via_snapshot(&args).await;
+    // Jika snapshot_url disediakan dan tidak kosong, gunakan langsung
+    if let Some(ref url) = args.snapshot_url {
+        if !url.is_empty() {
+            println!("📸 Auto-detect: Using custom snapshot URL: {}", url);
+            
+            // Cek apakah URL sudah lengkap atau masih path relatif
+            if url.starts_with("http://") || url.starts_with("https://") {
+                // URL sudah lengkap, gunakan langsung
+                return capture_via_snapshot(&args).await;
+            } else {
+                // URL adalah path relatif, konstruksi URL lengkap dengan credentials
+                let port = args.port.unwrap_or(80);
+                
+                let base_url = if let (Some(username), Some(password)) = (&args.username, &args.password) {
+                    if !username.is_empty() && !password.is_empty() {
+                        // Sertakan credentials dalam URL
+                        if port == 80 {
+                            format!("http://{}:{}@{}", username, password, args.ip_address)
+                        } else {
+                            format!("http://{}:{}@{}:{}", username, password, args.ip_address, port)
+                        }
+                    } else {
+                        if port == 80 {
+                            format!("http://{}", args.ip_address)
+                        } else {
+                            format!("http://{}:{}", args.ip_address, port)
+                        }
+                    }
+                } else {
+                    if port == 80 {
+                        format!("http://{}", args.ip_address)
+                    } else {
+                        format!("http://{}:{}", args.ip_address, port)
+                    }
+                };
+                
+                let path = if url.starts_with('/') {
+                    url.clone()
+                } else {
+                    format!("/{}", url)
+                };
+                
+                let full_url = format!("{}{}", base_url, path);
+                println!("📸 Auto-detect: Constructed full URL from custom path: {}", full_url.replace(&args.password.as_deref().unwrap_or(""), "***"));
+                
+                // Buat args baru dengan URL lengkap untuk capture
+                let mut custom_args = args.clone();
+                custom_args.snapshot_url = Some(full_url);
+                return capture_via_snapshot(&custom_args).await;
+            }
+        } else {
+            println!("📸 Auto-detect: Custom snapshot URL is empty, trying default paths");
+        }
+    } else {
+        println!("📸 Auto-detect: No custom snapshot URL provided, trying default paths");
     }
 
     // Coba berbagai URL snapshot untuk merek CCTV yang berbeda

@@ -67,6 +67,71 @@
                 </q-card-section>
               </q-card>
 
+              <!-- CouchDB Settings Card -->
+              <q-card class="settings-card q-mb-lg" flat bordered>
+                <q-card-section>
+                  <div class="settings-section-title">
+                    <q-icon name="storage" class="q-mr-sm" />
+                    Pengaturan CouchDB
+                  </div>
+                  
+                  <div class="row q-col-gutter-md q-mt-md">
+                    <div class="col-12 col-sm-6">
+                      <q-input
+                        v-model="couchDbUrl"
+                        label="CouchDB Host/IP"
+                        placeholder="localhost"
+                        outlined
+                        dense
+                      />
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <q-input
+                        v-model="couchDbPort"
+                        label="CouchDB Port"
+                        placeholder="5984"
+                        type="number"
+                        outlined
+                        dense
+                      />
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <q-input
+                        v-model="couchDbUsername"
+                        label="Username"
+                        placeholder="admin"
+                        outlined
+                        dense
+                      />
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <q-input
+                        v-model="couchDbPassword"
+                        label="Password"
+                        placeholder="admin"
+                        type="password"
+                        outlined
+                        dense
+                      />
+                    </div>
+                    <div class="col-12">
+                      <div class="text-caption text-grey-6">
+                        Current connection: {{ couchDbConnectionString }}
+                      </div>
+                      <q-btn
+                        class="q-mt-sm"
+                        color="primary"
+                        size="sm"
+                        label="Test Connection"
+                        icon="sync"
+                        @click="testCouchDbConnection"
+                        :loading="testingCouchDbConnection"
+                      />
+                    </div>
+                  </div>
+                </q-card-section>
+              </q-card>
+
               <!-- Gate Settings Card -->
               <q-card class="settings-card q-mb-lg" flat bordered>
                 <q-card-section>
@@ -689,6 +754,13 @@ console.log('Cameras ref initialized:', cameras.value);
 const wsUrl = ref(""); // Ganti dari backendUrl ke wsUrl
 const useExternalAlpr = ref(false); // Tambahkan toggle ALPR mode
 
+// CouchDB settings
+const couchDbUrl = ref("");
+const couchDbPort = ref(5984);
+const couchDbUsername = ref("");
+const couchDbPassword = ref("");
+const testingCouchDbConnection = ref(false);
+
 const componentStore = useComponentStore();
 // const settingsStore = useSettingsStore(); // Tidak digunakan lagi, digantikan settingsService
 const transaksiStore = useTransaksiStore();
@@ -824,6 +896,14 @@ const scannerCameraType = computed(() => {
   return null
 })
 
+// CouchDB connection string computed property
+const couchDbConnectionString = computed(() => {
+  const url = couchDbUrl.value || 'localhost';
+  const port = couchDbPort.value || 5984;
+  const username = couchDbUsername.value || 'admin';
+  return `http://${username}:***@${url}:${port}`;
+});
+
 // Additional refs that need to be declared before the watcher
 const selectedLocation = ref(null)
 const parkingLocations = ref([])
@@ -889,6 +969,12 @@ watch(gateSettings, (newSettings) => {
     wsUrl.value = newSettings.WS_URL || 'ws://localhost:8765';
     useExternalAlpr.value = newSettings.USE_EXTERNAL_ALPR || false;
     selectedLocation.value = newSettings.LOCATION || null;
+    
+    // CouchDB settings
+    couchDbUrl.value = newSettings.COUCHDB_URL || 'localhost';
+    couchDbPort.value = newSettings.COUCHDB_PORT || 5984;
+    couchDbUsername.value = newSettings.COUCHDB_USERNAME || 'admin';
+    couchDbPassword.value = newSettings.COUCHDB_PASSWORD || 'admin';
   }
 }, { immediate: true, deep: true });
 
@@ -1380,6 +1466,12 @@ const onSaveSettings = async () => {
       WS_URL: wsUrl.value || 'ws://localhost:8765',
       USE_EXTERNAL_ALPR: useExternalAlpr.value || false,
       LOCATION: selectedLocation.value,
+      
+      // CouchDB settings
+      COUCHDB_URL: couchDbUrl.value || 'localhost',
+      COUCHDB_PORT: parseInt(couchDbPort.value, 10) || 5984,
+      COUCHDB_USERNAME: couchDbUsername.value || 'admin',
+      COUCHDB_PASSWORD: couchDbPassword.value || 'admin',
     };
     
     console.log('Saving consolidated settings:', settingsToSave);
@@ -1400,6 +1492,16 @@ const onSaveSettings = async () => {
     ls.set('prefix', prefix.value);
     
     console.log('Settings saved successfully');
+    
+    // Update CouchDB connections if settings changed
+    try {
+      const { updateRemoteUrl, reinitializeRemoteDatabases } = await import('src/boot/pouchdb');
+      updateRemoteUrl();
+      await reinitializeRemoteDatabases();
+      console.log('CouchDB connections updated successfully');
+    } catch (dbError) {
+      console.warn('Failed to update CouchDB connections:', dbError);
+    }
     
     // Show success notification
     $q.notify({
@@ -1566,6 +1668,59 @@ const updateExternalAlprSetting = (val) => {
 const updateLocation = (val) => {
   transaksiStore.lokasiPos = val
 }
+
+// CouchDB functions
+const testCouchDbConnection = async () => {
+  testingCouchDbConnection.value = true;
+  
+  try {
+    const testUrl = `http://${couchDbUrl.value || 'localhost'}:${couchDbPort.value || 5984}`;
+    const username = couchDbUsername.value || 'admin';
+    const password = couchDbPassword.value || 'admin';
+    
+    // Create Basic Authentication header
+    const credentials = btoa(`${username}:${password}`);
+    
+    // Test connection using fetch with Authorization header
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      Notify.create({
+        type: 'positive',
+        message: `CouchDB Connection Successful! Version: ${data.version}`,
+        timeout: 3000
+      });
+      
+      // Update remote databases with new settings
+      const { reinitializeRemoteDatabases } = await import('src/boot/pouchdb');
+      await reinitializeRemoteDatabases();
+      
+      Notify.create({
+        type: 'positive',
+        message: 'Database connections updated successfully!',
+        timeout: 2000
+      });
+    } else {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('CouchDB connection test failed:', error);
+    Notify.create({
+      type: 'negative',
+      message: `Connection failed: ${error.message}`,
+      timeout: 5000
+    });
+  } finally {
+    testingCouchDbConnection.value = false;
+  }
+};
 
 onMounted(async () => {
   console.log('SettingsDialog onMounted started');

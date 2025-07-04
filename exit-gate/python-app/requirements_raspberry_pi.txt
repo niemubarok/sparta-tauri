@@ -1,0 +1,49 @@
+# Requirements for Python Exit Gate System on Raspberry Pi (Python 3.10+)
+
+# Core dependencies
+flask==2.3.3
+werkzeug==2.3.7
+jinja2==3.1.2
+markupsafe==2.1.3
+click==8.1.7
+itsdangerous==2.1.2
+
+# Database
+couchdb==1.2
+requests==2.31.0
+urllib3==2.0.4
+
+# GPIO and Serial for Raspberry Pi
+pyserial==3.5
+RPi.GPIO==0.7.1
+
+# Camera libraries for Raspberry Pi
+# Primary (recommended for Python 3.10+)
+picamera2==0.3.12
+libcamera==0.0.5
+
+# Alternative camera support
+opencv-python==4.8.1.78
+numpy==1.24.3
+
+# Image processing
+pillow==10.0.0
+
+# Audio
+pygame==2.5.2
+
+# Utilities
+configparser==5.3.0
+typing-extensions==4.7.1
+
+# Development
+gunicorn==21.2.0
+
+# System dependencies to install with apt:
+# sudo apt update
+# sudo apt install -y python3-picamera2 python3-libcamera python3-rpi.gpio
+# sudo apt install -y python3-opencv python3-numpy python3-pil
+# sudo apt install -y python3-pygame
+
+# Enable camera:
+# sudo raspi-config -> Interface Options -> Camera -> Enable

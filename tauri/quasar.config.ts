@@ -87,6 +87,9 @@ export default configure((/* ctx */) => {
             // analyze: true,
             env: {
         API_URL: "http://127.0.0.1:80/api",
+        DB_USER: "admin",
+        DB_PASSWORD:"admin",
+        DB_URL:"localhost",
         COMPANY_NAME:"TABAROKTA",
         ALPR_SERVICE_URL:"http://localhost:8000",
       },

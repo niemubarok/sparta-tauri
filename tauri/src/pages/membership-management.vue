@@ -483,9 +483,11 @@
             </div>
 
             <!-- Emergency Contact -->
-            <div class="text-h6 text-primary q-mb-md q-mt-lg">Kontak Darurat</div>
-            <div class="row q-col-gutter-md">
-              <q-input
+             <div v-if="memberForm.emergency_contact">
+
+               <div class="text-h6 text-primary q-mb-md q-mt-lg">Kontak Darurat</div>
+               <div class="row q-col-gutter-md">
+                 <q-input
                 v-model="memberForm.emergency_contact.name"
                 class="col-xs-12 col-md-4"
                 label="Nama"
@@ -498,11 +500,12 @@
                 outlined
               />
               <q-input
-                v-model="memberForm.emergency_contact.relationship"
-                class="col-xs-12 col-md-4"
-                label="Hubungan"
-                outlined
+              v-model="memberForm.emergency_contact.relationship"
+              class="col-xs-12 col-md-4"
+              label="Hubungan"
+              outlined
               />
+            </div>
             </div>
           </q-form>
         </q-card-section>
@@ -1293,6 +1296,7 @@ const viewMember = (member) => {
 }
 
 const editMember = (member) => {
+  console.log("🚀 ~ editMember ~ member:", member)
   isEditing.value = true
   memberForm.value = { ...member }
   showAddNewMemberDialog.value = true
@@ -1345,6 +1349,7 @@ const saveNewType = async () => {
 }
 
 const renewMembership = async (member) => {
+  console.log("🚀 ~ renewMembership ~ member:", member)
   $q.dialog({
     title: 'Perpanjang Membership',
     message: `Perpanjang membership ${member.name} selama berapa bulan?`,
@@ -1355,6 +1360,7 @@ const renewMembership = async (member) => {
     cancel: true,
     persistent: true
   }).onOk(async (months) => {
+    console.log("🚀 ~ renewMembership ~ months:", months)
     try {
       await membershipStore.renewMembership(member._id, parseInt(months))
       $q.notify({
