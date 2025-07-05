@@ -175,7 +175,7 @@ class CameraService(object):
             driver_config = CameraConfig("driver")
             driver_config.ip = config.get('camera', 'driver_camera_ip', '192.168.1.101')
             driver_config.username = config.get('camera', 'driver_camera_username', 'admin')
-            driver_config.password = config.get('camera', 'driver_camera_password', 'admin123')
+            driver_config.password = config.get('camera', 'driver_camera_password', 'Admin1234')
             driver_config.brand = config.get('camera', 'driver_camera_brand', 'auto')
             driver_config.enabled = True
             self.cameras['driver'] = driver_config

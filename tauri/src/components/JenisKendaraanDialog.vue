@@ -77,10 +77,11 @@
 
 <script setup>
 import { useDialogPluginComponent, useQuasar } from "quasar";
-// import SuccessCheckMark from "./SuccessCheckMark.vue";
 import { onMounted, onBeforeUnmount, onBeforeMount, ref } from "vue";
 import { useTransaksiStore } from "src/stores/transaksi-store";
 import { useTarifStore } from "src/stores/tarif-store";
+import { useGateStore } from "src/stores/gate-store";
+import { invoke } from '@tauri-apps/api/core';
 import MemberCard from "./MemberCard.vue";
 import PlatNomor from "./PlatNomor.vue";
 import { useComponentStore } from "src/stores/component-store";
@@ -93,6 +94,7 @@ import ls from "localstorage-slim";
 const transaksiStore = useTransaksiStore();
 const componentStore = useComponentStore();
 const tarifStore = useTarifStore();
+const gateStore = useGateStore();
 const $q = useQuasar();
 
 const props = defineProps({
@@ -130,8 +132,7 @@ const defaultJenisKendaraan = ref(ls.get("defaultJenisKendaraan"));
 const defaultShortcut = ref("C");
 const matchingDefaultOption = ref(null);
 
-const onClickTicket = (type) => {
-
+const onClickTicket = async (type) => {
   // Remove keydown event listener before proceeding
   window.removeEventListener("keydown", handleKeydownOnJenisKendaraan);
 
@@ -143,58 +144,79 @@ const onClickTicket = (type) => {
     const prepaidTariff = tarifStore.activeTarifPrepaid.find(t => t.id_mobil === vehicleId);
     const tarifAmount = prepaidTariff?.tarif_prepaid || transaksiStore.selectedJenisKendaraan.tarif || 0;
     
+    // Generate ticket number
+    const now = new Date();
+    const gate = ls.get('lokasiPos')?.value || '01';
+    const time = now.toTimeString().slice(0, 8).replace(/:/g, '');
+    const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+    const ticketNumber = `${time}${sequence}`;
+    
     // Buat transaction data untuk prepaid
     const prepaidTransaction = {
       id: 'PREPAID-' + Date.now(),
       no_pol: transaksiStore.platNomor,
       plat_nomor: transaksiStore.platNomor,
-      id_kendaraan: vehicleId, // Keep this for transaction compatibility
-      id_mobil: vehicleId, // Add this for tarif store compatibility
+      id_kendaraan: vehicleId,
+      id_mobil: vehicleId,
       jenis_kendaraan: transaksiStore.selectedJenisKendaraan.label,
       is_prepaid: true,
       is_paid: true,
       bayar_masuk: tarifAmount,
       tarif: tarifAmount,
       waktu_masuk: new Date().toISOString(),
-      status: 0 // entry
+      status: 0,
+      ticket_number: ticketNumber,
+      barcode: ticketNumber
     };
-    
-    // Close this dialog first to ensure proper cleanup
-    dialogRef.value.hide();
-    
-    // Small delay to ensure the dialog is fully hidden before opening new one
-    setTimeout(() => {
-      // Open ticket print dialog directly
-      const ticketDialog = $q.dialog({
-        component: TicketPrintDialog,
-        componentProps: {
-          transaction: prepaidTransaction
-        }
+
+    try {
+      // Prepare ticket data for thermal printer - SEMUA FIELD HARUS camelCase sesuai serde
+      const ticketData = {
+        ticketNumber: ticketNumber,           // ✅ ticket_number
+        platNomor: transaksiStore.platNomor,  // ✅ plat_nomor
+        jenisKendaraan: transaksiStore.selectedJenisKendaraan.label, // ✅ jenis_kendaraan  
+        waktuMasuk: new Date().toISOString(),  // ✅ waktu_masuk
+        tarif: tarifAmount,                    // ✅ tarif
+        companyName: ls.get('companyName') || 'SISTEM PARKIR SPARTA',  // ✅ company_name
+        gateLocation: ls.get('lokasiPos')?.label || 'PINTU MASUK',     // ✅ gate_location
+        operatorName: ls.get('pegawai')?.nama || 'OPERATOR',           // ✅ operator_name
+        isPaid: true,                          // ✅ is_paid
+        barcodeData: ticketNumber              // ✅ barcode_data
+      };
+
+      // Print thermal ticket
+      await invoke('print_thermal_ticket', { 
+        printerName: null, // will use default printer
+        ticketData
       });
       
-      // Add delay before handling dialog events to ensure proper rendering
-      setTimeout(() => {
-        ticketDialog.onOk((result) => {
-          // result should contain the emitted data from 'printed' event
-          console.log('Ticket printed successfully:', result);
-          
-          onDialogOK({ 
-            success: true, 
-            isPrepaid: true, 
-            transaction: result || prepaidTransaction,
-            ticketPrinted: true 
-          });
-        }).onCancel(() => {
-          // Emitted from 'cancelled' event
-          console.log('Ticket printing cancelled');
-          $q.notify({
-            type: 'info',
-            message: 'Cetak tiket dibatalkan',
-            position: 'top'
-          });
-        });
-      }, 100);
-    }, 200);
+      // Open gate after successful print
+      await gateStore.writeToPort('entry', '*open#');
+      
+      // Notify success
+      $q.notify({
+        type: 'positive',
+        message: 'Tiket berhasil dicetak',
+        position: 'top'
+      });
+
+      // Close dialog and return transaction data
+      dialogRef.value.hide();
+      onDialogOK({ 
+        success: true, 
+        isPrepaid: true, 
+        transaction: prepaidTransaction,
+        ticketPrinted: true 
+      });
+
+    } catch (error) {
+      console.error('Error printing ticket:', error);
+      $q.notify({
+        type: 'negative',
+        message: 'Gagal mencetak tiket',
+        position: 'top'
+      });
+    }
   } else {
     // Postpaid mode - traditional flow
     transaksiStore.isCheckedIn = true;

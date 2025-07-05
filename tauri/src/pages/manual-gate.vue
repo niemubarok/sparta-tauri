@@ -1440,7 +1440,8 @@ const onPressEnterPlatNomor = async () => {
     console.log("🚀 ~ onPressEnterPlatNomor ~ existingTransactions:", existingTransactions)
     // return
     const activeTransactions = existingTransactions.filter(trx => {
-      const isActive = trx.status === 0 || trx.status === 'in';
+      // trx.status === 0 dan waktu_masuk masih di hari yang sama
+      const isActive = trx.waktu_masuk && (new Date(trx.waktu_masuk)).toDateString() === (new Date()).toDateString();
       return isActive;
     });
     if (activeTransactions.length > 0) {

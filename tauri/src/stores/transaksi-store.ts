@@ -269,9 +269,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       kategori: dataCustomer.value ? 'MEMBER' : 'UMUM',
       status_transaksi: '0', // Normal transaction
       jenis_system: isPrepaidMode ? 'PREPAID' : 'MANLESS',
-      tanggal: new Date().toISOString().split('T')[0],
-      entry_pic: entry_pic.value,
-      exit_pic: '', // Pastikan kosong untuk entry transaction
+      tanggal: new Date().toISOString().split('T')[0], // Pastikan kosong untuk entry transaction
       sinkron: 0,
       upload: 0,
       manual: 0,
@@ -392,7 +390,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         
         const entryResponse = await db.putAttachment(
           `transaction_${transactionId}`,
-          'entry_image.jpg',
+          'entry.jpg',
           currentRev,
           blob,
           'image/jpeg'
@@ -445,11 +443,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
             const base64Data = `data:${att.content_type};base64,${att.data}`;
             
             switch (fileName) {
-              case 'entry_image.jpg':
               case 'entry.jpg': // Handle member transaction naming
                 attachments.entryImage = base64Data;
                 break;
-              case 'exit_image.jpg':
               case 'exit.jpg': // Handle member transaction naming
                 attachments.exitImage = base64Data;
                 break;
@@ -890,7 +886,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         },
         by_no_pol: {
           map: `function (doc) {
-            if (doc.type === 'parking_transaction') {
+            if (doc.type === 'parking_transaction' || doc.type === 'member_entry') {
               emit(doc.no_pol, doc);
             }
           }`

@@ -234,28 +234,32 @@
       <template v-slot:body-cell-images="props">
         <q-td :props="props">
           <div class="q-gutter-xs">
-            <q-chip
+            <q-btn
               v-if="hasImages(props.row)"
-              :color="getImageCount(props.row) === 2 ? 'green' : 'orange'"
-              text-color="white"
-              icon="camera_alt"
-              :label="getImageCount(props.row)"
-              size="sm"
-              clickable
+              round
+              flat
+              dense
+              color="primary"
+              icon="photo_library"
               @click="viewDetail(props.row)"
             >
-              <q-tooltip>{{ getImageCount(props.row) }} gambar tersedia ({{ getImageCount(props.row) === 2 ? 'Masuk & Keluar' : getImageCount(props.row) === 1 ? 'Masuk saja' : 'Lengkap' }}) - Klik untuk lihat detail</q-tooltip>
-            </q-chip>
-            <q-chip
+              <q-tooltip>
+                {{ getImageCount(props.row) }} Foto
+              </q-tooltip>
+            </q-btn>
+            <q-btn
               v-else
-              color="grey-5"
-              text-color="white"
+              round
+              flat
+              dense
+              color="grey"
               icon="no_photography"
-              label="0"
-              size="sm"
+              disable
             >
-              <q-tooltip>Tidak ada gambar</q-tooltip>
-            </q-chip>
+              <q-tooltip>
+                Tidak ada foto
+              </q-tooltip>
+            </q-btn>
           </div>
         </q-td>
       </template>
@@ -447,138 +451,58 @@
           </div>
 
           <!-- Images Section -->
-          <div v-if="hasImages(selectedTransaction)" class="q-mt-md">
-            <q-separator class="q-mb-md" />
-            
-            <!-- Header dengan informasi gambar -->
-            <div class="row items-center justify-between q-mb-md">
-              <div class="text-subtitle1 text-weight-medium">
-                <q-icon name="camera_alt" class="q-mr-sm" />
-                Dokumentasi CCTV Transaksi
-              </div>
-              <q-chip 
-                color="blue" 
-                text-color="white" 
-                icon="info"
-                :label="`${getImageCount(selectedTransaction)} Gambar`"
-                size="sm"
-              />
-            </div>
+          <!-- Images Section -->
+<div v-if="hasImages(selectedTransaction)" class="q-mt-md">
+  <q-separator class="q-mb-md" />
+  
+  <!-- Header dengan informasi gambar -->
+  <div class="row items-center justify-between q-mb-md">
+    <div class="text-h6">Foto CCTV</div>
+    <div class="text-caption">Total: {{ getImageCount(selectedTransaction) }} foto</div>
+  </div>
 
-            <!-- Foto Masuk -->
-            <div v-if="selectedTransaction.entry_pic" class="q-mb-lg">
-              <div class="text-subtitle2 q-mb-md text-positive">
-                <q-icon name="login" class="q-mr-xs" />
-                Foto Saat Masuk Parkir
-                <q-badge v-if="selectedTransaction.is_member" color="purple" class="q-ml-sm">
-                  Member
-                </q-badge>
+  <!-- List semua gambar -->
+  <div class="row q-col-gutter-md">
+    <div 
+      v-for="(image, index) in getImageList(selectedTransaction)" 
+      :key="index"
+      class="col-12 col-md-6"
+    >
+      <q-card class="image-card cursor-pointer" @click="showImage('', image)">
+        <q-card-section>
+          <div class="text-subtitle2 q-mb-sm">{{ image.label }}</div>
+          <q-img
+            :src="image.src"
+            style="height: 200px"
+            fit="contain"
+            class="rounded-borders"
+            spinner-color="primary"
+            spinner-size="lg"
+          >
+            <template v-slot:loading>
+              <div class="text-subtitle1 text-grey-6">
+                Memuat gambar...
               </div>
-              <div class="row justify-center">
-                <div class="col-md-8 col-xs-12">
-                  <q-card flat bordered class="image-card">
-                    <q-card-section class="q-pa-sm">
-                      <div class="text-caption text-weight-medium q-mb-xs text-blue-8 text-center">
-                        <q-icon name="camera_alt" class="q-mr-xs" size="sm" />
-                        Foto Kamera Masuk
-                      </div>
-                      
-                      <!-- Loading state for member transactions -->
-                      <div v-if="loadingEntryImage" class="flex flex-center q-pa-xl">
-                        <q-spinner-hourglass size="50px" color="primary" />
-                        <div class="text-caption q-ml-md">Memuat gambar...</div>
-                      </div>
-                      
-                      <!-- Image display -->
-                      <q-img
-                        v-else
-                        :src="getImageSrc(selectedTransaction, 'entry')"
-                        style="height: 300px; max-width: 100%"
-                        class="rounded-borders cursor-pointer image-hover"
-                        @click="showImage(getImageSrc(selectedTransaction, 'entry'))"
-                        fit="contain"
-                        spinner-color="primary"
-                        loading="lazy"
-                      >
-                        <div class="absolute-bottom text-subtitle2 text-center bg-dark text-white q-pa-xs">
-                          Klik untuk memperbesar
-                        </div>
-                        <template v-slot:error>
-                          <div class="absolute-full flex flex-center bg-grey-3 text-grey-7">
-                            <div class="text-center">
-                              <q-icon name="broken_image" size="md" />
-                              <div class="text-caption">Gambar tidak dapat dimuat</div>
-                            </div>
-                          </div>
-                        </template>
-                      </q-img>
-                    </q-card-section>
-                  </q-card>
-                </div>
+            </template>
+            <template v-slot:error>
+              <div class="text-subtitle1 text-grey-6">
+                Gagal memuat gambar
               </div>
-            </div>
+            </template>
+          </q-img>
+        </q-card-section>
+      </q-card>
+    </div>
+  </div>
+</div>
 
-            <!-- Foto Keluar -->
-            <div v-if="selectedTransaction.exit_pic">
-              <div class="text-subtitle2 q-mb-md text-negative">
-                <q-icon name="logout" class="q-mr-xs" />
-                Foto Saat Keluar Parkir
-                <q-badge v-if="selectedTransaction.is_member" color="purple" class="q-ml-sm">
-                  Member
-                </q-badge>
-              </div>
-              <div class="row justify-center">
-                <div class="col-md-8 col-xs-12">
-                  <q-card flat bordered class="image-card">
-                    <q-card-section class="q-pa-sm">
-                      <div class="text-caption text-weight-medium q-mb-xs text-red-8 text-center">
-                        <q-icon name="camera_alt" class="q-mr-xs" size="sm" />
-                        Foto Kamera Keluar
-                      </div>
-                      
-                      <!-- Loading state for member transactions -->
-                      <div v-if="loadingExitImage" class="flex flex-center q-pa-xl">
-                        <q-spinner-hourglass size="50px" color="primary" />
-                        <div class="text-caption q-ml-md">Memuat gambar...</div>
-                      </div>
-                      
-                      <!-- Image display -->
-                      <q-img
-                        v-else
-                        :src="getImageSrc(selectedTransaction, 'exit')"
-                        style="height: 300px; max-width: 100%"
-                        class="rounded-borders cursor-pointer image-hover"
-                        @click="showImage(getImageSrc(selectedTransaction, 'exit'))"
-                        fit="contain"
-                        spinner-color="primary"
-                        loading="lazy"
-                      >
-                        <div class="absolute-bottom text-subtitle2 text-center bg-dark text-white q-pa-xs">
-                          Klik untuk memperbesar
-                        </div>
-                        <template v-slot:error>
-                          <div class="absolute-full flex flex-center bg-grey-3 text-grey-7">
-                            <div class="text-center">
-                              <q-icon name="broken_image" size="md" />
-                              <div class="text-caption">Gambar tidak dapat dimuat</div>
-                            </div>
-                          </div>
-                        </template>
-                      </q-img>
-                    </q-card-section>
-                  </q-card>
-                </div>
-              </div>
-            </div>
-
-            <!-- Info jika tidak ada gambar -->
-            <div v-if="!hasImages(selectedTransaction)" class="text-center q-pa-lg">
-              <q-icon name="no_photography" size="lg" color="grey-5" />
-              <div class="text-caption text-grey-6 q-mt-sm">
-                Tidak ada dokumentasi gambar untuk transaksi ini
-              </div>
-            </div>
-          </div>
+<!-- Info jika tidak ada gambar -->
+<div v-if="!hasImages(selectedTransaction)" class="text-center q-pa-lg">
+  <q-icon name="no_photography" size="lg" color="grey-5" />
+  <div class="text-caption text-grey-6 q-mt-sm">
+    Tidak ada foto tersedia
+  </div>
+</div>
         </q-card-section>
 
         <q-card-actions align="right">
@@ -726,6 +650,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useTransaksiStore } from 'src/stores/transaksi-store'
+import { invoke } from '@tauri-apps/api/core'
 import { getTransactionAttachment } from 'src/boot/pouchdb'
 import ls from 'localstorage-slim'
 
@@ -761,12 +686,6 @@ const exitTransaction = ref(null)
 const showDetailDialog = ref(false)
 const showImageModal = ref(false)
 const showExitDialog = ref(false)
-
-// Image loading states for member transactions
-const loadingEntryImage = ref(false)
-const loadingExitImage = ref(false)
-const entryImageData = ref('')
-const exitImageData = ref('')
 
 // Computed statistics based on current filtered data
 const computedStatistics = computed(() => {
@@ -875,13 +794,19 @@ const memberOptions = [
 ]
 
 // Table columns
+const getDisplayId = (transaction) => {
+  // Tampilkan ID tanpa prefix 'transaction_' jika ada
+  const id = transaction._id || transaction.id || ''
+  return id.startsWith('transaction_') ? id.replace('transaction_', '') : id
+}
+
 const columns = [
   {
     name: 'id',
     required: true,
     label: 'ID',
     align: 'left',
-    field: 'id',
+    field: row => getDisplayId(row),
     sortable: true,
     style: 'width: 80px'
   },
@@ -1110,26 +1035,41 @@ const refreshData = () => {
 
 const viewDetail = async (transaction) => {
   selectedTransaction.value = transaction
+  showDetailDialog.value = true
   
   // Load attachment images if they exist
   if (transaction._attachments) {
     const imageList = getImageList(transaction)
     
-    for (const image of imageList) {
+    // Load all images in parallel
+    const loadPromises = imageList.map(async (image) => {
       if (image.isAttachment && !image.src) {
         try {
           const attachmentUrl = await loadAttachmentImage(image.transactionId, image.attachmentName)
           if (attachmentUrl) {
             image.src = attachmentUrl
+            return { ...image, src: attachmentUrl }
           }
         } catch (error) {
           console.error('Error loading attachment for detail view:', error)
         }
       }
+      return image
+    })
+    
+    // Wait for all images to load
+    try {
+      const loadedImages = await Promise.all(loadPromises)
+      // Update the images in the list with their loaded sources
+      imageList.forEach((image, index) => {
+        if (loadedImages[index] && loadedImages[index].src) {
+          image.src = loadedImages[index].src
+        }
+      })
+    } catch (error) {
+      console.error('Error loading images:', error)
     }
   }
-  
-  showDetailDialog.value = true
 }
 
 const showImage = async (imageSrc, imageObj = null) => {
@@ -1140,109 +1080,72 @@ const showImage = async (imageSrc, imageObj = null) => {
   if (imageObj) {
     // If imageObj is provided, find by object reference
     index = imageList.findIndex(img => img === imageObj)
-    
-    // Load attachment if needed
-    if (imageObj.isAttachment && !imageObj.src) {
-      try {
-        const attachmentUrl = await loadAttachmentImage(imageObj.transactionId, imageObj.attachmentName)
-        if (attachmentUrl) {
-          imageObj.src = attachmentUrl
-          imageSrc = attachmentUrl
-        }
-      } catch (error) {
-        console.error('Error loading attachment for image view:', error)
-        $q.notify({
-          type: 'negative',
-          message: 'Gagal memuat gambar attachment',
-          position: 'top'
-        })
-        return
-      }
-    }
+    console.log('Opening image with src:', imageObj.src)
+    selectedImage.value = imageObj.src // Use the existing src from the card
   } else {
     // Find by src
     index = imageList.findIndex(img => img.src === imageSrc)
+    console.log('Opening image with imageSrc:', imageSrc)
+    selectedImage.value = imageSrc
   }
   
-  selectedImage.value = imageSrc
+  console.log('Selected image value:', selectedImage.value)
   currentImageIndex.value = index >= 0 ? index : 0
   showImageModal.value = true
 }
 
 // Get list of all images for current transaction
 const getImageList = (transaction) => {
-  if (!transaction) return []
-  
+  if (!transaction || !transaction._attachments) return []
+
   const images = []
-  
-  // Handle old format (direct fields)
-  if (transaction.entry_pic) {
+  const attachmentNames = Object.keys(transaction._attachments)
+  const storedUrls = transaction._cachedImageUrls || {}
+
+  // Add entry attachment if exists
+  if (attachmentNames.includes('entry.jpg')) {
     images.push({
-      src: transaction.entry_pic,
+      src: storedUrls['entry.jpg'] || '', // Use cached URL if available
       label: 'Foto Masuk',
       type: 'entry',
-      isAttachment: false
+      isAttachment: true,
+      attachmentName: 'entry.jpg',
+      transactionId: transaction._id
     })
   }
-  
-  if (transaction.exit_pic) {
+
+  // Add exit attachment if exists
+  if (attachmentNames.includes('exit.jpg')) {
     images.push({
-      src: transaction.exit_pic,
+      src: storedUrls['exit.jpg'] || '', // Use cached URL if available
       label: 'Foto Keluar',
       type: 'exit',
-      isAttachment: false
+      isAttachment: true,
+      attachmentName: 'exit.jpg',
+      transactionId: transaction._id
     })
   }
-  
-  // Handle new format (attachments) - placeholder for now
-  if (transaction._attachments) {
-    const attachmentNames = Object.keys(transaction._attachments)
-    
-    // Add entry attachment if exists
-    if (attachmentNames.includes('entry.jpg')) {
+
+  // Add other image attachments
+  attachmentNames.forEach(name => {
+    if (name !== 'entry.jpg' && name !== 'exit.jpg' &&
+        (name.includes('.jpg') || name.includes('.jpeg') || name.includes('.png'))) {
+      let label = 'Gambar'
+      if (name.includes('plate')) label = 'Foto Plat'
+      else if (name.includes('driver')) label = 'Foto Driver'
+      else if (name.includes('vehicle')) label = 'Foto Kendaraan'
+
       images.push({
         src: '', // Will be loaded async
-        label: 'Foto Masuk',
-        type: 'entry',
+        label,
+        type: 'other',
         isAttachment: true,
-        attachmentName: 'entry.jpg',
+        attachmentName: name,
         transactionId: transaction._id
       })
     }
-    
-    // Add exit attachment if exists
-    if (attachmentNames.includes('exit.jpg')) {
-      images.push({
-        src: '', // Will be loaded async
-        label: 'Foto Keluar',
-        type: 'exit',
-        isAttachment: true,
-        attachmentName: 'exit.jpg',
-        transactionId: transaction._id
-      })
-    }
-    
-    // Add other image attachments
-    attachmentNames.forEach(name => {
-      if (name !== 'entry.jpg' && name !== 'exit.jpg' && 
-          (name.includes('.jpg') || name.includes('.jpeg') || name.includes('.png'))) {
-        let label = 'Gambar'
-        if (name.includes('plate')) label = 'Foto Plat'
-        else if (name.includes('driver')) label = 'Foto Driver'
-        else if (name.includes('vehicle')) label = 'Foto Kendaraan'
-        
-        images.push({
-          src: '', // Will be loaded async
-          label,
-          type: 'other',
-          isAttachment: true,
-          attachmentName: name,
-          transactionId: transaction._id
-        })
-      }
-    })
-  }
-  
+  })
+
   return images
 }
 
@@ -1251,6 +1154,15 @@ const loadAttachmentImage = async (transactionId, attachmentName) => {
   try {
     const blob = await getTransactionAttachment(transactionId, attachmentName)
     const url = URL.createObjectURL(blob)
+    
+    // Cache the URL in the transaction object
+    if (selectedTransaction.value && selectedTransaction.value._id === transactionId) {
+      if (!selectedTransaction.value._cachedImageUrls) {
+        selectedTransaction.value._cachedImageUrls = {}
+      }
+      selectedTransaction.value._cachedImageUrls[attachmentName] = url
+    }
+    
     return url
   } catch (error) {
     console.error('Error loading attachment:', error)
@@ -1386,9 +1298,51 @@ const deleteTransaction = async (transaction) => {
   })
 }
 
-const printTicket = (transaction) => {
-  // Implement print functionality
-  transaksiStore.printTicket(transaction)
+const printTicket = async (transaction) => {
+  try {
+    // Generate ticket number if not exists
+    const ticketNumber = transaction.ticket_number || (() => {
+      const now = new Date();
+      const time = now.toTimeString().slice(0, 8).replace(/:/g, '');
+      const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+      return `${time}${sequence}`;
+    })();
+
+    // Prepare ticket data for thermal printer - SEMUA FIELD HARUS camelCase sesuai serde
+    const ticketData = {
+      ticketNumber: ticketNumber,           // ✅ ticket_number
+      platNomor: transaction.plat_nomor || transaction.no_pol,  // ✅ plat_nomor
+      jenisKendaraan: transaction.jenis_kendaraan, // ✅ jenis_kendaraan  
+      waktuMasuk: transaction.waktu_masuk,  // ✅ waktu_masuk
+      tarif: transaction.tarif,             // ✅ tarif
+      companyName: ls.get('companyName') || 'SISTEM PARKIR SPARTA',  // ✅ company_name
+      gateLocation: ls.get('lokasiPos')?.label || 'PINTU MASUK',     // ✅ gate_location
+      operatorName: ls.get('pegawai')?.nama || 'OPERATOR',           // ✅ operator_name
+      isPaid: transaction.is_paid || transaction.bayar_masuk > 0,    // ✅ is_paid
+      barcodeData: ticketNumber              // ✅ barcode_data
+    };
+
+    // Print thermal ticket
+    await invoke('print_thermal_ticket', { 
+      printerName: null, // will use default printer
+      ticketData
+    });
+    
+    // Notify success
+    $q.notify({
+      type: 'positive',
+      message: 'Tiket berhasil dicetak',
+      position: 'top'
+    });
+
+  } catch (error) {
+    console.error('Error printing ticket:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal mencetak tiket',
+      position: 'top'
+    });
+  }
 }
 
 const exportData = async () => {
@@ -1678,12 +1632,7 @@ const loadMemberTransactionImages = async (transaction) => {
       entryImageData.value = imageData
     }
     
-    // Load exit image if it has attachment marker
-    if (transaction.exit_pic && transaction.exit_pic.startsWith('ATTACHMENT:')) {
-      loadingExitImage.value = true
-      const imageData = await transaksiStore.getTransactionImageData(transaction.id, 'exit')
-      exitImageData.value = imageData
-    }
+  // exit_pic diabaikan, hanya attachment
   } catch (error) {
     console.error('Error loading member transaction images:', error)
     $q.notify({
@@ -1697,47 +1646,41 @@ const loadMemberTransactionImages = async (transaction) => {
   }
 }
 
-// Get the actual image source (for both parking and member transactions)
+// Get the actual image source from attachments
 const getImageSrc = (transaction, imageType) => {
-  if (!transaction) return ''
-  
-  const imageField = imageType === 'entry' ? 'entry_pic' : 'exit_pic'
-  const imageValue = transaction[imageField]
-  
-  if (!imageValue) return ''
-  
-  // If it's a member transaction with attachment marker, use loaded image data
-  if (transaction.is_member && imageValue.startsWith('ATTACHMENT:')) {
-    return imageType === 'entry' ? entryImageData.value : exitImageData.value
+  if (!transaction || !transaction._attachments) return ''
+
+  const attachmentNames = Object.keys(transaction._attachments)
+  let attachmentKey = ''
+  if (imageType === 'entry' && attachmentNames.includes('entry.jpg')) {
+    attachmentKey = 'entry.jpg'
+  } else if (imageType === 'exit' && attachmentNames.includes('exit.jpg')) {
+    attachmentKey = 'exit.jpg'
   }
   
-  // For parking transactions, return the direct image data
-  return imageValue
+  if (attachmentKey) {
+    const imageList = getImageList(transaction)
+    const found = imageList.find(img => img.attachmentName === attachmentKey)
+    if (found && found.src) return found.src
+  }
+  
+  return ''
 }
 
 // Helper functions for images
 const hasImages = (transaction) => {
-  if (!transaction) return false
+  if (!transaction || !transaction._attachments) return false
   
-  // Check for direct image data (parking transactions)
-  const hasDirectImages = !!(transaction.entry_pic && !transaction.entry_pic.startsWith('ATTACHMENT:')) || 
-                         !!(transaction.exit_pic && !transaction.exit_pic.startsWith('ATTACHMENT:'))
-  
-  // Check for attachment markers (member transactions)
-  const hasAttachmentMarkers = !!(transaction.entry_pic && transaction.entry_pic.startsWith('ATTACHMENT:')) ||
-                              !!(transaction.exit_pic && transaction.exit_pic.startsWith('ATTACHMENT:'))
-  
-  return hasDirectImages || hasAttachmentMarkers
+  const names = Object.keys(transaction._attachments)
+  return names.some(name => name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png'))
 }
 
 const getImageCount = (transaction) => {
-  if (!transaction) return 0
+  if (!transaction || !transaction._attachments) return 0
+  const names = Object.keys(transaction._attachments)
   let count = 0
-  
-  // Count direct images (parking transactions) or attachment markers (member transactions)
-  if (transaction.entry_pic) count++
-  if (transaction.exit_pic) count++
-  
+  if (names.includes('entry.jpg')) count++
+  if (names.includes('exit.jpg')) count++
   return count
 }
 
@@ -1794,13 +1737,6 @@ onMounted(() => {
   loadTransaksi()
 })
 
-// Auto-load member transaction images when transaction is selected
-watch(() => selectedTransaction.value, async (newTransaction) => {
-  if (newTransaction && newTransaction.is_member) {
-    console.log('🖼️ Auto-loading member transaction images for:', newTransaction._id)
-    await loadMemberTransactionImages(newTransaction)
-  }
-}, { immediate: true })
 </script>
 
 <style scoped>

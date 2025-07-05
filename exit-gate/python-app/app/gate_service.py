@@ -175,20 +175,22 @@ class GateService(object):
         # GPIO configuration with fallbacks
         if CONFIG_AVAILABLE:
             self.gpio_config = {
-                'gate_pin': config.getint('gpio', 'gate_pin', 24),  # Changed default to 24
+                'gate_pin': config.getint('gpio', 'gate_pin', 24),  # Trigger 1 - GPIO 24 for gate control 
+                'live_pin': config.getint('gpio', 'live_pin', 25),  # LED Live - GPIO 25
                 'active_high': config.getboolean('gpio', 'active_high', True),
-                'power_pin': config.getint('gpio', 'power_pin', 16),
-                'busy_pin': config.getint('gpio', 'busy_pin', 20),
-                'live_pin': config.getint('gpio', 'live_pin', 21),
+                'trigger2_pin': config.getint('gpio', 'trigger2_pin', 23),  # Trigger 2 - GPIO 23
+                'loop1_pin': config.getint('gpio', 'loop1_pin', 18),  # Loop 1 - GPIO 18
+                'loop2_pin': config.getint('gpio', 'loop2_pin', 27),  # Loop 2 - GPIO 27
                 'pulse_duration': config.getfloat('gpio', 'pulse_duration', 0.5)
             }
         else:
             self.gpio_config = {
-                'gate_pin': 24,  # Default gate pin
+                'gate_pin': 24,  # Trigger 1 - GPIO 24 for gate control
+                'live_pin': 25,  # LED Live - GPIO 25
                 'active_high': True,
-                'power_pin': 16,
-                'busy_pin': 20,
-                'live_pin': 21,
+                'trigger2_pin': 23,  # Trigger 2 - GPIO 23
+                'loop1_pin': 18,  # Loop 1 - GPIO 18
+                'loop2_pin': 27,  # Loop 2 - GPIO 27
                 'pulse_duration': 0.5
             }
         
@@ -302,26 +304,41 @@ class GateService(object):
             GPIO.output(pin, initial_state)
             logger.info(f"GPIO {pin} initialized to {'LOW' if initial_state == GPIO.LOW else 'HIGH'} (gate CLOSED)")
             
-            # Setup indicator pins if configured
-            if self.gpio_config.get('power_pin'):
-                GPIO.setup(self.gpio_config['power_pin'], GPIO.OUT)
-                GPIO.output(self.gpio_config['power_pin'], GPIO.HIGH)  # Power on
-                logger.debug(f"Power indicator pin {self.gpio_config['power_pin']} set to HIGH")
-            
+            # Setup live LED pin
             if self.gpio_config.get('live_pin'):
                 GPIO.setup(self.gpio_config['live_pin'], GPIO.OUT)
                 GPIO.output(self.gpio_config['live_pin'], GPIO.HIGH)  # System live
-                logger.debug(f"Live indicator pin {self.gpio_config['live_pin']} set to HIGH")
+                logger.debug(f"Live LED pin {self.gpio_config['live_pin']} set to HIGH")
             
-            if self.gpio_config.get('busy_pin'):
-                GPIO.setup(self.gpio_config['busy_pin'], GPIO.OUT)
-                GPIO.output(self.gpio_config['busy_pin'], GPIO.LOW)  # Not busy
-                logger.debug(f"Busy indicator pin {self.gpio_config['busy_pin']} set to LOW")
+            # Setup trigger2 output pin
+            if self.gpio_config.get('trigger2_pin'):
+                GPIO.setup(self.gpio_config['trigger2_pin'], GPIO.OUT)
+                GPIO.output(self.gpio_config['trigger2_pin'], GPIO.LOW)  # Initially low
+                logger.debug(f"Trigger 2 pin {self.gpio_config['trigger2_pin']} set to LOW")
             
-            # Test GPIO functionality
-            self._test_gpio_pin(pin)
+            # Setup loop1 input pin (pull-up since active low)
+            if self.gpio_config.get('loop1_pin'):
+                GPIO.setup(self.gpio_config['loop1_pin'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+                logger.debug(f"Loop 1 input pin {self.gpio_config['loop1_pin']} initialized with pull-up")
             
-            logger.info("✅ GPIO pins configured and tested successfully")
+            # Setup loop2 input pin (pull-up since active low)  
+            if self.gpio_config.get('loop2_pin'):
+                GPIO.setup(self.gpio_config['loop2_pin'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+                logger.debug(f"Loop 2 input pin {self.gpio_config['loop2_pin']} initialized with pull-up")
+            
+            # Test LED pin functionality only (don't test gate_pin)
+            if self.gpio_config.get('live_pin'):
+                self._test_gpio_pin(self.gpio_config['live_pin'])
+            
+            # Verifikasi final state gate_pin (harus LOW)
+            gate_pin = self.gpio_config['gate_pin']
+            if GPIO.input(gate_pin) != GPIO.LOW:
+                logger.error(f"Gate pin {gate_pin} not in LOW state after initialization!")
+                GPIO.output(gate_pin, GPIO.LOW)
+                if GPIO.input(gate_pin) != GPIO.LOW:
+                    raise Exception(f"Failed to force gate pin {gate_pin} to LOW state")
+            
+            logger.info("✅ GPIO pins configured and verified successfully")
             return True
             
         except Exception as e:
@@ -460,6 +477,34 @@ class GateService(object):
         """Close the gate with enhanced error handling and logging"""
         with self.lock:
             try:
+                # Record the operation
+                self._record_operation('close')
+                self._set_status(GateStatus.CLOSING)
+                
+                # Execute close based on control mode
+                if self.control_mode == ControlMode.GPIO:
+                    result = self._gpio_close_gate()
+                elif self.control_mode == ControlMode.SERIAL:
+                    result = self._serial_close_gate()
+                else:  # Simulation mode
+                    result = self._simulation_close_gate()
+                
+                if result:
+                    self._set_status(GateStatus.CLOSED)
+                    self.diagnostic_info['successful_operations'] += 1
+                else:
+                    self._set_status(GateStatus.ERROR)
+                    self.diagnostic_info['failed_operations'] += 1
+                
+                return result
+                
+            except Exception as e:
+                logger.error(f"Close gate failed: {e}")
+                self.last_error = str(e)
+                self.error_count += 1
+                self._set_status(GateStatus.ERROR)
+                self.diagnostic_info['failed_operations'] += 1
+
                 logger.info("🔒 Closing gate...")
                 self._set_status(GateStatus.CLOSING)
                 self._record_operation("close_gate")
@@ -500,58 +545,111 @@ class GateService(object):
         """Open gate using GPIO with enhanced logging and error handling"""
         if not GPIO_AVAILABLE or not GPIO:
             raise Exception("GPIO not available")
-        
         try:
             pin = self.gpio_config['gate_pin']
-            
             # Set busy indicator
             if self.gpio_config.get('busy_pin'):
                 GPIO.output(self.gpio_config['busy_pin'], GPIO.HIGH)
                 logger.debug(f"Busy indicator pin {self.gpio_config['busy_pin']} set to HIGH")
-            
             # Open gate = HIGH (relay ON, gate opens)
             active_state = GPIO.HIGH if self.gpio_config['active_high'] else GPIO.LOW
             GPIO.output(pin, active_state)
-            
             state_name = "HIGH" if active_state == GPIO.HIGH else "LOW"
             logger.info(f"🔆 GPIO gate OPEN signal sent to pin {pin} ({state_name} - Gate Opening)")
-            
-            # Hold for pulse duration if specified
+            # Jika pulse mode, hanya ON sebentar lalu OFF
             if self.gpio_config.get('pulse_duration', 0) > 0:
                 time.sleep(self.gpio_config['pulse_duration'])
-                # Return to inactive state for pulse mode
+                # OFF relay setelah pulse
                 inactive_state = GPIO.LOW if self.gpio_config['active_high'] else GPIO.HIGH
                 GPIO.output(pin, inactive_state)
-                logger.debug(f"Pulse completed - pin {pin} returned to inactive state")
-            
+                logger.debug(f"Pulse completed - pin {pin} returned to inactive state (relay OFF)")
             return True
-            
         except Exception as e:
             logger.error("GPIO gate open failed: {}".format(str(e)))
             raise
+    
+    def force_gate_gpio_low(self):
+        """Force gate GPIO pin to LOW state"""
+        if not GPIO_AVAILABLE or not GPIO:
+            logger.error("GPIO not available")
+            return False
+            
+        try:
+            pin = self.gpio_config['gate_pin']
+            # Force LOW
+            GPIO.output(pin, GPIO.LOW)
+            time.sleep(0.1)  # Tunggu sebentar
+            
+            # Verifikasi state
+            current_state = GPIO.input(pin)
+            if current_state != GPIO.LOW:
+                logger.error(f"Failed to force GPIO LOW - current state: {current_state}")
+                # Coba lagi
+                GPIO.output(pin, GPIO.LOW)
+                time.sleep(0.1)
+                current_state = GPIO.input(pin)
+                if current_state != GPIO.LOW:
+                    raise Exception("GPIO pin stuck HIGH")
+            
+            logger.info(f"Successfully forced GPIO pin {pin} LOW (verified)")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to force GPIO LOW: {e}")
+            return False
+            
+    def force_gate_gpio_high(self):
+        """Force gate GPIO pin to HIGH state"""
+        if not GPIO_AVAILABLE or not GPIO:
+            logger.error("GPIO not available")
+            return False
+            
+        try:
+            pin = self.gpio_config['gate_pin']
+            GPIO.output(pin, GPIO.HIGH)
+            logger.info(f"Forced GPIO pin {pin} HIGH")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to force GPIO HIGH: {e}")
+            return False
     
     def _gpio_close_gate(self):
         """Close gate using GPIO with enhanced logging and error handling"""
         if not GPIO_AVAILABLE or not GPIO:
             raise Exception("GPIO not available")
-        
         try:
             pin = self.gpio_config['gate_pin']
             
-            # Close gate = LOW (relay OFF, gate closes)
-            inactive_state = GPIO.LOW if self.gpio_config['active_high'] else GPIO.HIGH
-            GPIO.output(pin, inactive_state)
+            # SELALU force ke LOW untuk menutup gate (karena active high)
+            GPIO.output(pin, GPIO.LOW)
+            logger.debug(f"GPIO pin {pin} forced to LOW state for CLOSE using RPi.GPIO")
+            
+            # Backup mechanism: directly write to sysfs
+            try:
+                # Write LOW (0) directly to GPIO value file
+                with open(f'/sys/class/gpio/gpio{pin}/value', 'w') as f:
+                    f.write('0')
+                logger.debug(f"GPIO pin {pin} forced to LOW state via sysfs backup mechanism")
+            except Exception as e:
+                logger.warning(f"Sysfs backup mechanism failed: {e}")
+            
+            # Verifikasi bahwa pin benar-benar LOW
+            current_state = GPIO.input(pin)
+            if current_state != GPIO.LOW:
+                logger.error(f"GPIO pin {pin} failed to set LOW - current state: {current_state}")
+                # Coba sekali lagi
+                GPIO.output(pin, GPIO.LOW)
+                time.sleep(0.1)  # Tunggu sebentar
+                current_state = GPIO.input(pin)
+                if current_state != GPIO.LOW:
+                    raise Exception(f"Failed to set GPIO pin {pin} to LOW")
             
             # Clear busy indicator
             if self.gpio_config.get('busy_pin'):
                 GPIO.output(self.gpio_config['busy_pin'], GPIO.LOW)
                 logger.debug(f"Busy indicator pin {self.gpio_config['busy_pin']} set to LOW")
             
-            state_name = "LOW" if inactive_state == GPIO.LOW else "HIGH"
-            logger.info(f"🔅 GPIO gate CLOSE signal sent to pin {pin} ({state_name} - Gate Closing)")
-            
+            logger.info(f"🔅 GPIO gate CLOSE signal confirmed - pin {pin} is LOW")
             return True
-            
         except Exception as e:
             logger.error("GPIO gate close failed: {}".format(str(e)))
             raise
@@ -640,7 +738,7 @@ class GateService(object):
                 original_status = self.current_status
                 
                 logger.debug("Testing GPIO functionality...")
-                pin = self.gpio_config['gate_pin']
+                pin = self.gpio_config['live_pin']
                 active_state = GPIO.HIGH if self.gpio_config['active_high'] else GPIO.LOW
                 inactive_state = GPIO.LOW if self.gpio_config['active_high'] else GPIO.HIGH
                 

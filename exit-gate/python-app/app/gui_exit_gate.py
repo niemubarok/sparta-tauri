@@ -6,15 +6,8 @@ Simple Tkinter GUI untuk Exit Gate System
 Compatible dengan Python 2.7
 """
 
-from __future__ import print_function
-try:
-    # Python 2.7
-    import Tkinter as tk
-    import tkFont
-except ImportError:
-    # Python 3.x
-    import tkinter as tk
-    import tkinter.font as tkFont
+import tkinter as tk
+import tkinter.font as tkFont
 import threading
 import time
 import logging
@@ -78,18 +71,18 @@ class ExitGateGUI(object):
     
     def setup_gui(self):
         """Setup GUI components"""
-        # Title - larger for fullscreen
-        title_font = tkFont.Font(family="Arial", size=32, weight="bold")
+        # Title - smaller for small screens
+        title_font = tkFont.Font(family="Arial", size=16, weight="bold")
         title_label = tk.Label(self.root, text="EXIT GATE SYSTEM", 
                               font=title_font, bg='#2c3e50', fg='white')
-        title_label.pack(pady=30)
+        title_label.pack(pady=10)
         
         # Status Frame
         status_frame = tk.Frame(self.root, bg='#34495e', relief=tk.RAISED, bd=2)
         status_frame.pack(fill=tk.X, padx=20, pady=10)
         
-        # Gate Status - larger fonts for fullscreen
-        status_font = tkFont.Font(family="Arial", size=20, weight="bold")
+        # Gate Status - smaller fonts for small screens
+        status_font = tkFont.Font(family="Arial", size=10, weight="bold")
         tk.Label(status_frame, text="Gate Status:", font=status_font, 
                 bg='#34495e', fg='white').grid(row=0, column=0, sticky=tk.W, padx=15, pady=8)
         
@@ -113,18 +106,18 @@ class ExitGateGUI(object):
                                          bg='#34495e', fg='#27ae60')
         self.transaction_label.grid(row=2, column=1, sticky=tk.W, padx=15, pady=8)
         
-        # Barcode Input Field - larger for fullscreen
+        # Barcode Input Field - smaller for small screens
         input_frame = tk.Frame(self.root, bg='#2c3e50')
-        input_frame.pack(fill=tk.X, padx=30, pady=15)
+        input_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        input_font = tkFont.Font(family="Arial", size=18, weight="bold")
+        input_font = tkFont.Font(family="Arial", size=10, weight="bold")
         tk.Label(input_frame, text="Barcode Input (Auto-Focus):", font=input_font,
                 bg='#2c3e50', fg='white').pack(anchor=tk.W)
         
-        # Entry field for barcode input - larger
-        self.barcode_entry = tk.Entry(input_frame, font=input_font, width=30,
-                                     bg='#ecf0f1', fg='#2c3e50', relief=tk.RAISED, bd=3)
-        self.barcode_entry.pack(fill=tk.X, pady=8)
+        # Entry field for barcode input - smaller
+        self.barcode_entry = tk.Entry(input_frame, font=input_font, width=20,
+                                     bg='#ecf0f1', fg='#2c3e50', relief=tk.RAISED, bd=2)
+        self.barcode_entry.pack(fill=tk.X, pady=4)
         
         # Bind Enter key to process barcode
         self.barcode_entry.bind('<Return>', self.on_barcode_entry)
@@ -139,7 +132,7 @@ class ExitGateGUI(object):
         
         # Camera title
         tk.Label(camera_frame, text="Camera Preview:", font=status_font, 
-                bg='#34495e', fg='white').pack(anchor=tk.W, padx=15, pady=5)
+                bg='#34495e', fg='white').pack(anchor=tk.W, padx=5, pady=2)
         
         # Camera preview and controls container
         camera_container = tk.Frame(camera_frame, bg='#34495e')
@@ -155,87 +148,87 @@ class ExitGateGUI(object):
         self.camera_status_label.pack(side=tk.LEFT, padx=10)
         
         # Camera control buttons (horizontal layout)
-        camera_btn_font = tkFont.Font(family="Arial", size=10, weight="bold")
-        
+        camera_btn_font = tkFont.Font(family="Arial", size=8, weight="bold")
+
         capture_exit_btn = tk.Button(camera_controls_frame, text="Capture Exit", font=camera_btn_font,
-                                     bg='#3498db', fg='white', width=12, height=1,
+                                     bg='#3498db', fg='white', width=8, height=1,
                                      command=lambda: self.capture_camera_image('exit'))
-        capture_exit_btn.pack(side=tk.LEFT, padx=5)
-        
+        capture_exit_btn.pack(side=tk.LEFT, padx=2)
+
         capture_driver_btn = tk.Button(camera_controls_frame, text="Capture Driver", font=camera_btn_font,
-                                      bg='#9b59b6', fg='white', width=12, height=1,
+                                      bg='#9b59b6', fg='white', width=8, height=1,
                                       command=lambda: self.capture_camera_image('driver'))
-        capture_driver_btn.pack(side=tk.LEFT, padx=5)
-        
+        capture_driver_btn.pack(side=tk.LEFT, padx=2)
+
         capture_both_btn = tk.Button(camera_controls_frame, text="Capture All", font=camera_btn_font,
-                                    bg='#e67e22', fg='white', width=12, height=1,
+                                    bg='#e67e22', fg='white', width=8, height=1,
                                     command=self.capture_exit_images)
-        capture_both_btn.pack(side=tk.LEFT, padx=5)
-        
+        capture_both_btn.pack(side=tk.LEFT, padx=2)
+
         test_cameras_btn = tk.Button(camera_controls_frame, text="Test Cameras", font=camera_btn_font,
-                                    bg='#16a085', fg='white', width=12, height=1,
+                                    bg='#16a085', fg='white', width=8, height=1,
                                     command=self.test_all_cameras)
-        test_cameras_btn.pack(side=tk.LEFT, padx=5)
+        test_cameras_btn.pack(side=tk.LEFT, padx=2)
         
         # Camera preview (bottom - full width)
         preview_frame = tk.Frame(camera_container, bg='#2c3e50', relief=tk.SUNKEN, bd=2)
         preview_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, pady=5)
         
         self.camera_preview_label = tk.Label(preview_frame, text="Camera Preview\n(No Image)", 
-                                           font=('Arial', 16), bg='#2c3e50', fg='#bdc3c7',
+                                           font=('Arial', 8), bg='#2c3e50', fg='#bdc3c7',
                                            justify=tk.CENTER)
-        self.camera_preview_label.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.camera_preview_label.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         
-        # Control Buttons - larger for fullscreen
+        # Control Buttons - smaller for small screens
         button_frame = tk.Frame(self.root, bg='#2c3e50')
-        button_frame.pack(pady=30)
+        button_frame.pack(pady=8)
         
-        button_font = tkFont.Font(family="Arial", size=14, weight="bold")
+        button_font = tkFont.Font(family="Arial", size=8, weight="bold")
         
         open_btn = tk.Button(button_frame, text="OPEN GATE", font=button_font,
-                            bg='#27ae60', fg='white', width=12, height=3,
+                            bg='#27ae60', fg='white', width=8, height=1,
                             command=self.manual_open_gate)
-        open_btn.grid(row=0, column=0, padx=15)
+        open_btn.grid(row=0, column=0, padx=4)
         
         close_btn = tk.Button(button_frame, text="CLOSE GATE", font=button_font,
-                             bg='#e74c3c', fg='white', width=12, height=3,
+                             bg='#e74c3c', fg='white', width=8, height=1,
                              command=self.manual_close_gate)
-        close_btn.grid(row=0, column=1, padx=15)
+        close_btn.grid(row=0, column=1, padx=4)
         
         test_btn = tk.Button(button_frame, text="TEST SCAN", font=button_font,
-                            bg='#3498db', fg='white', width=12, height=3,
+                            bg='#3498db', fg='white', width=8, height=1,
                             command=self.test_barcode_scan)
-        test_btn.grid(row=0, column=2, padx=15)
+        test_btn.grid(row=0, column=2, padx=4)
         
         # Database Test Button
         db_test_btn = tk.Button(button_frame, text="DB TEST", font=button_font,
-                               bg='#8e44ad', fg='white', width=12, height=3,
+                               bg='#8e44ad', fg='white', width=8, height=1,
                                command=self.test_database)
-        db_test_btn.grid(row=0, column=3, padx=15)
+        db_test_btn.grid(row=0, column=3, padx=4)
         
         # Gate Test Button - NEW
         gate_test_btn = tk.Button(button_frame, text="GATE TEST", font=button_font,
-                                 bg='#e67e22', fg='white', width=12, height=3,
+                                 bg='#e67e22', fg='white', width=8, height=1,
                                  command=self.test_gate_functionality)
-        gate_test_btn.grid(row=0, column=4, padx=15)
+        gate_test_btn.grid(row=0, column=4, padx=4)
         
         # Debug Toggle Button
         self.debug_btn = tk.Button(button_frame, text="DEBUG: ON" if self.debug_mode else "DEBUG: OFF", 
                                   font=button_font,
                                   bg='#f39c12' if self.debug_mode else '#95a5a6', 
-                                  fg='white', width=12, height=3,
+                                  fg='white', width=8, height=1,
                                   command=self.toggle_debug_mode)
-        self.debug_btn.grid(row=0, column=5, padx=15)
+        self.debug_btn.grid(row=0, column=5, padx=4)
         
         # Fullscreen Toggle Button
         fullscreen_btn = tk.Button(button_frame, text="EXIT FULL", font=button_font,
-                                  bg='#9b59b6', fg='white', width=12, height=3,
+                                  bg='#9b59b6', fg='white', width=8, height=1,
                                   command=self.toggle_fullscreen)
-        fullscreen_btn.grid(row=0, column=6, padx=15)
+        fullscreen_btn.grid(row=0, column=6, padx=4)
         
         # Log Display
         log_frame = tk.Frame(self.root, bg='#2c3e50')
-        log_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        log_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=4)
         
         tk.Label(log_frame, text="System Log:", font=status_font,
                 bg='#2c3e50', fg='white').pack(anchor=tk.W)
@@ -245,7 +238,7 @@ class ExitGateGUI(object):
         text_frame.pack(fill=tk.BOTH, expand=True)
         
         self.log_text = tk.Text(text_frame, bg='#1a1a1a', fg='#00ff00',
-                               font=('Courier', 10), wrap=tk.WORD)
+                               font=('Courier', 7), wrap=tk.WORD)
         scrollbar = tk.Scrollbar(text_frame, orient=tk.VERTICAL, command=self.log_text.yview)
         self.log_text.configure(yscrollcommand=scrollbar.set)
         
@@ -256,7 +249,7 @@ class ExitGateGUI(object):
         status_text = "Ready - [ESC/F11: Toggle Fullscreen] [Enter: Process Barcode]"
         self.status_bar = tk.Label(self.root, text=status_text, 
                                   relief=tk.SUNKEN, anchor=tk.W,
-                                  bg='#34495e', fg='white')
+                                  bg='#34495e', fg='white', font=('Arial', 7))
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         
         self.log("GUI Setup completed")
@@ -521,131 +514,113 @@ class ExitGateGUI(object):
             logger.error(error_msg)
     
     def process_vehicle_exit(self, barcode):
-        """Process vehicle exit"""
-        try:
-            self.log("=== PROCESSING VEHICLE EXIT ===")
-            self.log("Barcode: {}".format(barcode))
-            self.log("Debug mode: {}".format("ENABLED" if self.debug_mode else "DISABLED"))
-            
-            # Automatically capture exit images
-            if self.camera_service:
-                self.log("Capturing exit images...")
-                self.root.after(0, self.capture_exit_images_async, barcode)
-            
-            gate_opened = False
-            
-            # Check database for transaction
-            transaction_found = False
-            if self.db_service:
-                try:
-                    # Use stored exit image data if available
-                    exit_image_data = self.last_exit_image_data or self.last_plate_image_data
-                    
-                    result = self.db_service.process_vehicle_exit(barcode, "SYSTEM", "EXIT_GATE_01", exit_image_data)
-                    if result.get('success'):
-                        self.log("✅ Valid transaction found in database")
-                        transaction_found = True
-                        
-                        # Clear stored image data after use
-                        self.last_exit_image_data = None
-                        self.last_plate_image_data = None
-                        self.last_driver_image_data = None
-                    else:
-                        self.log("❌ No transaction found in database: {}".format(result.get('message', 'Unknown error')))
-                        transaction_found = False
-                except Exception as db_error:
-                    self.log("Database error: {}".format(str(db_error)))
-                    transaction_found = False
-            else:
-                self.log("No database service available")
-                transaction_found = False
-            
-            # Decision logic based on debug mode
-            if transaction_found:
-                # Always open gate for valid transactions
-                self.log("Opening gate - Valid transaction")
-                gate_opened = True
-            elif self.debug_mode:
-                # Debug mode: open gate even without valid transaction
-                self.log("DEBUG MODE: Opening gate despite no transaction found")
-                gate_opened = True
-            else:
-                # Normal mode: deny access for unknown barcode
-                self.log("ACCESS DENIED: No transaction found and debug mode disabled")
+        """Process vehicle exit asynchronously (non-blocking UI)"""
+        def worker():
+            try:
+                self.log("=== PROCESSING VEHICLE EXIT ===")
+                self.log("Barcode: {}".format(barcode))
+                self.log("Debug mode: {}".format("ENABLED" if self.debug_mode else "DISABLED"))
+
+                # Automatically capture exit images (asinkron juga)
+                if self.camera_service:
+                    self.log("Capturing exit images...")
+                    self.root.after(0, self.capture_exit_images_async, barcode)
+
                 gate_opened = False
-            
-            # Open gate if decision was made to open
-            if gate_opened:
-                if self.gate_service:
-                    self.log("Gate service available - triggering open")
-                    gate_result = self.gate_service.open_gate()  # No auto close - gate will handle it
-                    
-                    if gate_result:
+                transaction_found = False
+                if self.db_service:
+                    try:
+                        exit_image_data = self.last_exit_image_data or self.last_plate_image_data
+                        result = self.db_service.process_vehicle_exit(barcode, "SYSTEM", "EXIT_GATE_01", exit_image_data)
+                        if result.get('success'):
+                            self.log("✅ Valid transaction found in database")
+                            transaction_found = True
+                            self.last_exit_image_data = None
+                            self.last_plate_image_data = None
+                            self.last_driver_image_data = None
+                        else:
+                            self.log("❌ No transaction found in database: {}".format(result.get('message', 'Unknown error')))
+                            transaction_found = False
+                    except Exception as db_error:
+                        self.log("Database error: {}".format(str(db_error)))
+                        transaction_found = False
+                else:
+                    self.log("No database service available")
+                    transaction_found = False
+
+                # Decision logic based on debug mode
+                if transaction_found:
+                    self.log("Opening gate - Valid transaction")
+                    gate_opened = True
+                elif self.debug_mode:
+                    self.log("DEBUG MODE: Opening gate despite no transaction found")
+                    gate_opened = True
+                else:
+                    self.log("ACCESS DENIED: No transaction found and debug mode disabled")
+                    gate_opened = False
+
+                # Open gate if decision was made to open
+                if gate_opened:
+                    if self.gate_service:
+                        self.log("Gate service available - triggering open")
+                        
+                        # Buka gate (GPIO HIGH)
+                        if hasattr(self.gate_service, 'force_gate_gpio_high'):
+                            self.gate_service.force_gate_gpio_high()
+                            self.log("Gate opening - GPIO HIGH")
+                        
+                        # Tunggu 1 detik sebelum menutup gate (GPIO LOW)
+                        time.sleep(1)
+                        if hasattr(self.gate_service, 'force_gate_gpio_low'):
+                            self.gate_service.force_gate_gpio_low()
+                            self.log("Gate closing - GPIO LOW")
+                            self.gate_status = "CLOSED"
+                            self.update_gate_status()
+                        
+                        # Update counter dan play sound
                         self.transaction_count += 1
-                        self.update_transaction_count()
-                        self.log("✅ GATE OPENED SUCCESSFULLY by barcode scan!")
-                        
-                        # Play gate open sound
+                        self.root.after(0, self.update_transaction_count)
                         if self.audio_service:
                             self.audio_service.play_gate_open_sound()
-                        
-                        # Auto close gate after 1 second
-                        self.root.after(1000, self.auto_close_gate)
                     else:
-                        self.log("❌ FAILED to open gate")
-                        # Play error sound for gate failure
-                        if self.audio_service:
-                            self.audio_service.play_error_sound()
-                else:
-                    # Simulate gate operation when service not available
-                    self.log("SIMULATION: Gate opened by barcode scan (no gate service)")
-                    self.transaction_count += 1
-                    self.update_transaction_count()
-                    self.gate_status = "OPEN"
-                    self.update_gate_status()
-                    self.log("✅ GATE OPENED SUCCESSFULLY (simulated)")
-                    
-                    # Play gate open sound for simulation
-                    if self.audio_service:
-                        self.audio_service.play_gate_open_sound()
-                    
-                    # Auto close gate after 1 second (simulation)
-                    self.root.after(1000, self.auto_close_gate_simulation)
-            elif not gate_opened:
-                self.log("Gate NOT opened - access denied")
-                # Play error sound for access denied
-                if self.audio_service:
-                    self.audio_service.play_error_sound()
-            else:
-                self.log("❌ ERROR: Unexpected condition")
-                
-        except Exception as e:
-            error_msg = "Exit processing error: {}".format(str(e))
-            self.log("ERROR: " + error_msg)
-            logger.error(error_msg)
-            
-            # In debug mode, open gate even on error
-            if self.debug_mode:
-                if self.gate_service:
-                    self.log("DEBUG MODE: Opening gate despite processing error")
-                    gate_result = self.gate_service.open_gate()  # No auto close
-                    if gate_result:
-                        # Play gate open sound in debug mode
+                        # Simulasi mode
+                        self.log("SIMULATION: Gate opened by barcode scan (no gate service)")
+                        self.gate_status = "OPEN"
+                        self.root.after(0, self.update_gate_status)
+                        self.transaction_count += 1
+                        self.root.after(0, self.update_transaction_count)
                         if self.audio_service:
                             self.audio_service.play_gate_open_sound()
-                        # Auto close gate after 1 second in debug mode too
-                        self.root.after(1000, self.auto_close_gate)
-                else:
-                    self.log("DEBUG MODE: Simulating gate open despite processing error")
-                    self.gate_status = "OPEN"
-                    self.update_gate_status()
-                    self.transaction_count += 1
-                    self.update_transaction_count()
-                    # Play gate open sound for debug simulation
+                        self.root.after(1000, self.auto_close_gate_simulation)
+                elif not gate_opened:
+                    self.log("Gate NOT opened - access denied")
                     if self.audio_service:
-                        self.audio_service.play_gate_open_sound()
-                    # Auto close gate after 1 second (simulation)
-                    self.root.after(1000, self.auto_close_gate_simulation)
+                        self.audio_service.play_error_sound()
+                else:
+                    self.log("❌ ERROR: Unexpected condition")
+            except Exception as e:
+                error_msg = "Exit processing error: {}".format(str(e))
+                self.log("ERROR: " + error_msg)
+                logger.error(error_msg)
+                if self.debug_mode:
+                    if self.gate_service:
+                        self.log("DEBUG MODE: Opening gate despite processing error")
+                        gate_result = self.gate_service.open_gate()
+                        if gate_result:
+                            if self.audio_service:
+                                self.audio_service.play_gate_open_sound()
+                            self.root.after(1000, self.auto_close_gate)
+                    else:
+                        self.log("DEBUG MODE: Simulating gate open despite processing error")
+                        self.gate_status = "OPEN"
+                        self.root.after(0, self.update_gate_status)
+                        self.transaction_count += 1
+                        self.root.after(0, self.update_transaction_count)
+                        if self.audio_service:
+                            self.audio_service.play_gate_open_sound()
+                        self.root.after(1000, self.auto_close_gate_simulation)
+
+        threading.Thread(target=worker, daemon=True).start()
     
     def on_gate_status_change(self, status):
         """Handle gate status changes"""
@@ -702,64 +677,113 @@ class ExitGateGUI(object):
         print("Debug mode {}".format("enabled" if self.debug_mode else "disabled"))
     
     def manual_open_gate(self):
-        """Manual gate open"""
-        try:
-            if self.gate_service:
-                result = self.gate_service.open_gate()
-                self.log("Manual gate open: {}".format("Success" if result else "Failed"))
-                if result:
-                    self.transaction_count += 1
-                    self.update_transaction_count()
-                    # Play gate open sound for manual operation
-                    if self.audio_service:
-                        self.audio_service.play_gate_open_sound()
+        """Manual gate open (non-blocking, threaded, with status update and force sync)"""
+        def worker():
+            try:
+                if self.gate_service:
+                    # Set status to OPENING immediately
+                    def set_opening():
+                        self.gate_status = "OPENING"
+                        self.update_gate_status()
+                        self.log("Opening gate...")
+                        # Ensure GPIO HIGH for opening
+                        if hasattr(self.gate_service, 'force_gate_gpio_high'):
+                            if self.gate_service.force_gate_gpio_high():
+                                self.log("✅ GPIO set HIGH for opening")
+                            else:
+                                self.log("⚠️ Failed to set GPIO HIGH")
+                    self.root.after(0, set_opening)
+                    
+                    # Buka gate (GPIO HIGH)
+                    if hasattr(self.gate_service, 'force_gate_gpio_high'):
+                        self.gate_service.force_gate_gpio_high()
+                        self.log("Gate opening - GPIO HIGH")
+                    
+                    # Tunggu 1 detik sebelum menutup (GPIO LOW)
+                    time.sleep(1)
+                    if hasattr(self.gate_service, 'force_gate_gpio_low'):
+                        self.gate_service.force_gate_gpio_low()
+                        self.log("Gate closing - GPIO LOW")
+                        self.gate_status = "CLOSED"
+                        self.update_gate_status()
+                    
+                    def on_success():
+                        if True:  # Selalu increment counter
+                            self.transaction_count += 1
+                            self.update_transaction_count()
+                            if self.audio_service:
+                                self.audio_service.play_gate_open_sound()
+                        else:
+                            self.log("Failed to open gate")
+                            # Reset status to CLOSED if open failed
+                            self.gate_status = "CLOSED"
+                            self.update_gate_status()
+                            if self.audio_service:
+                                self.audio_service.play_error_sound()
+                    self.root.after(0, on_success)
                 else:
-                    # Play error sound for failed manual operation
+                    def on_simulation():
+                        self.gate_status = "OPEN"
+                        self.update_gate_status()
+                        self.transaction_count += 1
+                        self.update_transaction_count()
+                        self.log("SIMULATION: Gate opened manually")
+                        if self.audio_service:
+                            self.audio_service.play_gate_open_sound()
+                        # Schedule auto-close after 1 second in simulation mode
+                        self.root.after(1000, self.auto_close_gate_simulation)
+                    self.root.after(0, on_simulation)
+            except Exception as e:
+                def on_error():
+                    self.log("ERROR: Manual open failed: {}".format(str(e)))
                     if self.audio_service:
                         self.audio_service.play_error_sound()
-            else:
-                self.log("SIMULATION: Gate opened manually (no gate service)")
-                # Simulate gate operation for testing
-                self.transaction_count += 1
-                self.update_transaction_count()
-                self.gate_status = "OPEN"
-                self.update_gate_status()
-                # Play gate open sound for manual simulation
-                if self.audio_service:
-                    self.audio_service.play_gate_open_sound()
-        except Exception as e:
-            self.log("ERROR: Manual open failed: {}".format(str(e)))
-            # Play error sound for exception
-            if self.audio_service:
-                self.audio_service.play_error_sound()
+                self.root.after(0, on_error)
+        threading.Thread(target=worker, daemon=True).start()
     
     def manual_close_gate(self):
-        """Manual gate close"""
-        try:
-            if self.gate_service:
-                result = self.gate_service.close_gate()
-                self.log("Manual gate close: {}".format("Success" if result else "Failed"))
-                if result:
-                    # Play gate close sound for successful manual close
+        """Manual gate close (non-blocking, threaded)"""
+        def worker():
+            try:
+                if self.gate_service:
+                    # Set status to CLOSING first
+                    self.gate_status = "CLOSING"
+                    self.update_gate_status()
+                    self.log("Closing gate...")
+                    
+                    # Force GPIO LOW immediately
+                    if hasattr(self.gate_service, 'force_gate_gpio_low'):
+                        self.gate_service.force_gate_gpio_low()
+                        self.log("Force setting GPIO LOW")
+                    
+                    # Force close gate
+                    self.gate_service.close_gate()
+                    
+                    # Double check GPIO is LOW
+                    if hasattr(self.gate_service, 'force_gate_gpio_low'):
+                        self.gate_service.force_gate_gpio_low()
+                    
+                    # Update final status
+                    self.gate_status = "CLOSED"
+                    self.update_gate_status()
+                    self.log("Gate closed successfully")
                     if self.audio_service:
                         self.audio_service.play_gate_close_sound()
                 else:
-                    # Play error sound for failed manual close
+                    def on_simulation():
+                        self.gate_status = "CLOSED"
+                        self.update_gate_status()
+                        self.log("SIMULATION: Gate closed manually")
+                        if self.audio_service:
+                            self.audio_service.play_gate_close_sound()
+                    self.root.after(0, on_simulation)
+            except Exception as e:
+                def on_error():
+                    self.log("ERROR: Manual close failed: {}".format(str(e)))
                     if self.audio_service:
                         self.audio_service.play_error_sound()
-            else:
-                self.log("SIMULATION: Gate closed manually (no gate service)")
-                # Simulate gate operation for testing
-                self.gate_status = "CLOSED"
-                self.update_gate_status()
-                # Play gate close sound for manual simulation
-                if self.audio_service:
-                    self.audio_service.play_gate_close_sound()
-        except Exception as e:
-            self.log("ERROR: Manual close failed: {}".format(str(e)))
-            # Play error sound for exception
-            if self.audio_service:
-                self.audio_service.play_error_sound()
+                self.root.after(0, on_error)
+        threading.Thread(target=worker, daemon=True).start()
     
     def test_barcode_scan(self):
         """Test barcode scan"""
@@ -1095,14 +1119,66 @@ class ExitGateGUI(object):
         """Auto close gate after delay (with gate service)"""
         try:
             if self.gate_service:
+                # Set status to CLOSING immediately
+                self.gate_status = "CLOSING"
+                self.update_gate_status()
+                self.log("Auto-closing gate...")
+                
+                # Force GPIO LOW terlebih dahulu untuk memastikan
+                if hasattr(self.gate_service, 'force_gate_gpio_low'):
+                    if self.gate_service.force_gate_gpio_low():
+                        self.log("✅ GPIO forced LOW for auto-closing")
+                    else:
+                        self.log("⚠️ Failed to force GPIO LOW before auto-close")
+                
+                # Tunggu sebentar setelah force LOW
+                time.sleep(0.1)
+                
+                # Lakukan penutupan gate
                 result = self.gate_service.close_gate()
-                self.log("Auto-close gate: {}".format("Success" if result else "Failed"))
-                if result:
-                    # Play gate close sound for successful auto-close
-                    if self.audio_service:
-                        self.audio_service.play_gate_close_sound()
+                
+                def on_closed():
+                    if result:
+                        # Force status to CLOSED after successful close
+                        self.gate_status = "CLOSED"
+                        self.update_gate_status()
+                        
+                        # Verifikasi ulang dan pastikan GPIO benar-benar LOW
+                        if hasattr(self.gate_service, 'force_gate_gpio_low'):
+                            retry_count = 3
+                            while retry_count > 0:
+                                if self.gate_service.force_gate_gpio_low():
+                                    self.log("✅ GPIO verified and forced LOW after auto-close")
+                                    break
+                                else:
+                                    retry_count -= 1
+                                    if retry_count > 0:
+                                        self.log(f"⚠️ Retrying GPIO LOW force ({retry_count} attempts left)")
+                                        time.sleep(0.1)
+                                    else:
+                                        self.log("❌ Failed to verify GPIO LOW after multiple attempts")
+                        
+                        self.log("Gate auto-closed successfully")
+                        if self.audio_service:
+                            self.audio_service.play_gate_close_sound()
+                    else:
+                        self.log("Failed to auto-close gate")
+                        # Coba force LOW sekali lagi jika penutupan gagal
+                        if hasattr(self.gate_service, 'force_gate_gpio_low'):
+                            if self.gate_service.force_gate_gpio_low():
+                                self.log("✅ GPIO forced LOW despite close failure")
+                            else:
+                                self.log("❌ Failed to force GPIO LOW after close failure")
+                        if self.audio_service:
+                            self.audio_service.play_error_sound()
+                self.root.after(0, on_closed)
             else:
-                self.log("ERROR: Gate service not available for auto-close")
+                # Simulation mode
+                self.gate_status = "CLOSED"
+                self.root.after(0, self.update_gate_status)
+                self.log("Auto-close gate: Success (simulated)")
+                if self.audio_service:
+                    self.audio_service.play_gate_close_sound()
         except Exception as e:
             self.log("ERROR: Auto-close failed: {}".format(str(e)))
     
@@ -1110,7 +1186,7 @@ class ExitGateGUI(object):
         """Auto close gate after delay (simulation mode)"""
         try:
             self.gate_status = "CLOSED"
-            self.update_gate_status()
+            self.root.after(0, self.update_gate_status)
             self.log("Auto-close gate: Success (simulated)")
             # Play gate close sound for simulation auto-close
             if self.audio_service:
@@ -1144,116 +1220,85 @@ class ExitGateGUI(object):
                 self.camera_status_label.config(text="Camera: Error", fg='#e74c3c')
     
     def capture_camera_image(self, camera_name):
-        """Capture image from specific camera"""
-        try:
-            if not self.camera_service:
-                self.log("Camera service not available")
-                return
-            
-            self.log("Capturing image from {} camera...".format(camera_name))
-            
-            # Capture image
-            result = self.camera_service.capture_image(camera_name)
-            
-            if result.success:
-                self.log("✅ {} camera capture successful".format(camera_name.upper()))
-                
-                # Update preview if we have image data
-                if result.image_data:
-                    self.root.after(0, self.update_camera_preview, result.image_data)
-                
-                # Play scan sound for successful capture
-                if self.audio_service:
-                    self.audio_service.play_scan_sound()
-                    
-            else:
-                self.log("❌ {} camera capture failed: {}".format(camera_name.upper(), result.error_message))
-                
-                # Play error sound for failed capture
+        """Capture image from specific camera asynchronously"""
+        def worker():
+            try:
+                if not self.camera_service:
+                    self.log("Camera service not available")
+                    return
+                self.log(f"Capturing image from {camera_name} camera...")
+                result = self.camera_service.capture_image(camera_name)
+                if result.success:
+                    self.log(f"✅ {camera_name.upper()} camera capture successful")
+                    if result.image_data:
+                        self.root.after(0, self.update_camera_preview, result.image_data)
+                    if self.audio_service:
+                        self.audio_service.play_scan_sound()
+                else:
+                    self.log(f"❌ {camera_name.upper()} camera capture failed: {result.error_message}")
+                    if self.audio_service:
+                        self.audio_service.play_error_sound()
+            except Exception as e:
+                error_msg = f"Camera capture error: {str(e)}"
+                self.log("ERROR: " + error_msg)
                 if self.audio_service:
                     self.audio_service.play_error_sound()
-                    
-        except Exception as e:
-            error_msg = "Camera capture error: {}".format(str(e))
-            self.log("ERROR: " + error_msg)
-            if self.audio_service:
-                self.audio_service.play_error_sound()
+        threading.Thread(target=worker, daemon=True).start()
     
     def capture_exit_images(self):
-        """Capture images from both cameras for exit processing"""
-        try:
-            if not self.camera_service:
-                self.log("Camera service not available")
-                return
-            
-            self.log("Capturing exit images from all cameras...")
-            
-            # Capture from both cameras
-            result = self.camera_service.capture_exit_images()
-            
-            if result.success:
-                self.log("✅ Exit images capture successful")
-                
-                # Update preview with captured image
-                if result.image_data:
-                    self.root.after(0, self.update_camera_preview, result.image_data)
-                
-                # Play scan sound for successful capture
-                if self.audio_service:
-                    self.audio_service.play_scan_sound()
-                    
-            else:
-                self.log("❌ Exit images capture failed: {}".format(result.error_message))
-                
-                # Play error sound for failed capture
+        """Capture images from both cameras for exit processing asynchronously"""
+        def worker():
+            try:
+                if not self.camera_service:
+                    self.log("Camera service not available")
+                    return
+                self.log("Capturing exit images from all cameras...")
+                result = self.camera_service.capture_exit_images()
+                if result.success:
+                    self.log("✅ Exit images capture successful")
+                    if result.image_data:
+                        self.root.after(0, self.update_camera_preview, result.image_data)
+                    if self.audio_service:
+                        self.audio_service.play_scan_sound()
+                else:
+                    self.log(f"❌ Exit images capture failed: {result.error_message}")
+                    if self.audio_service:
+                        self.audio_service.play_error_sound()
+            except Exception as e:
+                error_msg = f"Exit images capture error: {str(e)}"
+                self.log("ERROR: " + error_msg)
                 if self.audio_service:
                     self.audio_service.play_error_sound()
-                    
-        except Exception as e:
-            error_msg = "Exit images capture error: {}".format(str(e))
-            self.log("ERROR: " + error_msg)
-            if self.audio_service:
-                self.audio_service.play_error_sound()
+        threading.Thread(target=worker, daemon=True).start()
     
     def capture_exit_images_async(self, barcode):
-        """Capture exit images asynchronously with barcode context"""
-        try:
-            if not self.camera_service:
-                return
-            
-            self.log("Auto-capturing exit images for barcode: {}".format(barcode))
-            
-            # Capture from both cameras
-            result = self.camera_service.capture_exit_images()
-            
-            if result.success:
-                self.log("✅ Auto-capture successful for barcode: {}".format(barcode))
-                
-                # Store captured images for later use
-                if hasattr(result, 'plate_image_data') and result.plate_image_data:
-                    self.last_plate_image_data = result.plate_image_data
-                    self.log("Stored plate image data")
-                
-                if hasattr(result, 'driver_image_data') and result.driver_image_data:
-                    self.last_driver_image_data = result.driver_image_data
-                    self.log("Stored driver image data")
-                
-                if result.image_data:
-                    self.last_exit_image_data = result.image_data
-                    self.log("Stored combined exit image data")
-                
-                # Update preview with captured image
-                if result.image_data:
-                    self.root.after(0, self.update_camera_preview, result.image_data)
-                
-                # Save images as attachment to transaction
-                self.save_exit_images_to_transaction(barcode, result)
-                    
-            else:
-                self.log("❌ Auto-capture failed for barcode {}: {}".format(barcode, result.error_message))
-                
-        except Exception as e:
-            self.log("ERROR: Auto-capture failed for barcode {}: {}".format(barcode, str(e)))
+        """Capture exit images asynchronously with barcode context (non-blocking)"""
+        def worker():
+            try:
+                if not self.camera_service:
+                    self.log("Camera service not available for async capture")
+                    return
+                self.log(f"Auto-capturing exit images for barcode: {barcode}")
+                result = self.camera_service.capture_exit_images()
+                if result.success:
+                    self.log(f"✅ Auto-capture successful for barcode: {barcode}")
+                    if hasattr(result, 'plate_image_data') and result.plate_image_data:
+                        self.last_plate_image_data = result.plate_image_data
+                        self.log("Stored plate image data")
+                    if hasattr(result, 'driver_image_data') and result.driver_image_data:
+                        self.last_driver_image_data = result.driver_image_data
+                        self.log("Stored driver image data")
+                    if result.image_data:
+                        self.last_exit_image_data = result.image_data
+                        self.log("Stored combined exit image data")
+                        self.root.after(0, self.update_camera_preview, result.image_data)
+                    # Save images as attachment to transaction (main thread)
+                    self.root.after(0, self.save_exit_images_to_transaction, barcode, result)
+                else:
+                    self.log(f"❌ Auto-capture failed for barcode {barcode}: {result.error_message}")
+            except Exception as e:
+                self.log(f"ERROR: Auto-capture failed for barcode {barcode}: {str(e)}")
+        threading.Thread(target=worker, daemon=True).start()
     
     def save_exit_images_to_transaction(self, barcode, capture_result):
         """Save captured exit images as attachments to transaction"""
@@ -1377,8 +1422,8 @@ class ExitGateGUI(object):
                 image = Image.open(io.BytesIO(image_bytes))
                 
                 # Resize image to fit preview area (maintain aspect ratio)
-                preview_width = 640  # Increased from 480
-                preview_height = 480  # Increased from 360
+                preview_width = 320  # Smaller for small screens
+                preview_height = 240  # Smaller for small screens
                 
                 # Calculate scaling to maintain aspect ratio
                 img_width, img_height = image.size

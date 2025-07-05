@@ -1,0 +1,16 @@
+[Unit]
+Description=Exit Gate Application Service
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/exit-app
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+ExecStart=/home/pi/.pyenv/shims/python /home/pi/exit-app/gui_exit_gate.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
