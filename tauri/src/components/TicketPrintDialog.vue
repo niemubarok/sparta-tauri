@@ -463,7 +463,7 @@ const printThermalTicket = async () => {
       ticketNumber: ticketNumber.value,           // ✅ ticket_number
       platNomor: props.transaction?.plat_nomor || '',           // ✅ plat_nomor
       jenisKendaraan: props.transaction?.jenis_kendaraan || '', // ✅ jenis_kendaraan  
-      waktuMasuk: formatTime(entryTime.value),                 // ✅ waktu_masuk
+      entryTime: formatTime(entryTime.value),                 // ✅ entry_time
       tarif: currentTariff.value,                              // ✅ tarif
       companyName: companyName.value,                          // ✅ company_name
       gateLocation: gateLocation.value,                        // ✅ gate_location

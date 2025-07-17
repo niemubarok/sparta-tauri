@@ -1,0 +1,1795 @@
+2025-07-02 03:11:20,120 - gui_exit_gate - INFO - GUI Setup completed
+2025-07-02 03:11:20,126 - gui_exit_gate - INFO - Initializing services...
+2025-07-02 03:11:20,261 - config - INFO - Loaded configuration from config.ini
+2025-07-02 03:11:20,262 - gate_service - WARNING - Hardware not available - running in SIMULATION mode
+2025-07-02 03:11:20,278 - gui_exit_gate - INFO - Gate service imported successfully
+2025-07-02 03:11:20,374 - gui_exit_gate - INFO - WARNING: USB scanner import failed: No module named 'termios'
+2025-07-02 03:11:24,119 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-02 03:11:24,123 - database_service - INFO - Connected to existing database: transactions
+2025-07-02 03:11:24,131 - database_service - INFO - Database connection established
+2025-07-02 03:11:24,136 - gui_exit_gate - INFO - Database service imported successfully
+2025-07-02 03:11:24,147 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-02 03:11:24,152 - gui_exit_gate - INFO - Audio service imported successfully
+2025-07-02 03:11:24,158 - gui_exit_gate - INFO - Audio service is disabled or not available
+2025-07-02 03:11:24,267 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-02 03:11:24,268 - camera_service - INFO - Initialized 1 cameras
+2025-07-02 03:11:24,281 - gui_exit_gate - INFO - Camera service imported successfully
+2025-07-02 03:11:24,287 - gui_exit_gate - INFO - Testing camera connectivity...
+2025-07-02 03:11:24,289 - camera_service - INFO - Testing camera: exit
+2025-07-02 03:11:24,289 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-02 03:11:24,653 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-02 03:11:24,653 - camera_service - INFO - Camera 'exit' test successful
+2025-07-02 03:11:24,663 - gui_exit_gate - INFO - Camera 'exit': OK
+2025-07-02 03:11:24,705 - gui_exit_gate - INFO - Scanner not available - manual input only
+2025-07-02 03:11:24,760 - gui_exit_gate - INFO - Adding gate status listener...
+2025-07-02 03:11:24,784 - gui_exit_gate - INFO - Gate status listener added
+2025-07-02 03:11:24,800 - gui_exit_gate - INFO - Services initialization completed
+2025-07-02 03:11:24,810 - gui_exit_gate - INFO - System ready - waiting for barcode input...
+2025-07-02 03:11:24,838 - gui_exit_gate - INFO - Exit Gate GUI initialized
+2025-07-02 03:11:24,853 - gui_exit_gate - INFO - Exit Gate GUI started
+2025-07-02 03:11:25,221 - gui_exit_gate - INFO - Auto-listener started
+2025-07-02 03:11:50,052 - gui_exit_gate - INFO - Auto-processing barcode: TRANSACTION_1751400350454477
+2025-07-02 03:11:50,054 - gui_exit_gate - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-02 03:11:50,055 - gui_exit_gate - INFO - Raw barcode: 'TRANSACTION_1751400350454477'
+2025-07-02 03:11:50,056 - gui_exit_gate - INFO - Barcode length: 28
+2025-07-02 03:11:50,058 - gui_exit_gate - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-02 03:11:50,063 - gui_exit_gate - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-02 03:11:50,068 - gui_exit_gate - INFO - Barcode: TRANSACTION_1751400350454477
+2025-07-02 03:11:50,079 - gui_exit_gate - INFO - Debug mode: ENABLED
+2025-07-02 03:11:50,081 - gui_exit_gate - INFO - Capturing exit images...
+2025-07-02 03:11:50,082 - database_service - INFO - Processing vehicle exit for: TRANSACTION_1751400350454477
+2025-07-02 03:11:50,099 - database_service - INFO - Searching for transaction with barcode: TRANSACTION_1751400350454477
+2025-07-02 03:11:50,195 - database_service - INFO - Found transaction by full ID (lowercase): transaction_1751400350454477
+2025-07-02 03:11:50,196 - database_service - INFO - Found transaction by barcode
+2025-07-02 03:11:50,196 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-02 03:11:50,196 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-02 03:11:50,914 - database_service - INFO - Transaction transaction_1751400350454477 marked as exited
+2025-07-02 03:11:50,915 - database_service - INFO - Vehicle exit processed successfully for: TRANSACTION_1751400350454477
+2025-07-02 03:11:52,651 - gui_exit_gate - INFO - \u2705 Valid transaction found in database
+2025-07-02 03:11:52,658 - gui_exit_gate - INFO - Opening gate - Valid transaction
+2025-07-02 03:11:52,667 - gui_exit_gate - INFO - Gate service available - triggering open
+2025-07-02 03:11:52,680 - gui_exit_gate - INFO - Gate status: OPENING
+2025-07-02 03:11:52,692 - gate_service - INFO - SIMULATION: Gate opened
+2025-07-02 03:11:52,693 - gui_exit_gate - INFO - Gate status: OPEN
+2025-07-02 03:11:52,699 - gate_service - INFO - Gate opened successfully
+2025-07-02 03:11:52,702 - gui_exit_gate - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-02 03:11:52,715 - gui_exit_gate - INFO - Auto-capturing exit images for barcode: TRANSACTION_1751400350454477
+2025-07-02 03:11:52,717 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-02 03:11:52,913 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-02 03:11:52,921 - gui_exit_gate - INFO - \u2705 Auto-capture successful for barcode: TRANSACTION_1751400350454477
+2025-07-02 03:11:52,929 - gui_exit_gate - INFO - Stored combined exit image data
+2025-07-02 03:11:52,943 - database_service - INFO - Searching for transaction with barcode: TRANSACTION_1751400350454477
+2025-07-02 03:11:53,024 - database_service - INFO - Found transaction by full ID (lowercase): transaction_1751400350454477
+2025-07-02 03:11:53,025 - gui_exit_gate - INFO - Saving exit images to transaction: transaction_1751400350454477
+2025-07-02 03:11:53,460 - database_service - INFO - Added image exit.jpg to transaction transaction_1751400350454477
+2025-07-02 03:11:53,462 - gui_exit_gate - INFO - \u2705 Saved exit image as attachment (combined)
+2025-07-02 03:11:53,476 - gui_exit_gate - INFO - Successfully saved 1 exit image(s) as attachment(s)
+2025-07-02 03:11:53,810 - gui_exit_gate - INFO - Camera preview updated (640x358)
+2025-07-02 03:11:53,915 - gui_exit_gate - INFO - Gate status: CLOSING
+2025-07-02 03:11:53,943 - gate_service - INFO - SIMULATION: Gate closed
+2025-07-02 03:11:53,944 - gui_exit_gate - INFO - Gate status: CLOSED
+2025-07-02 03:11:53,960 - gate_service - INFO - Gate closed successfully
+2025-07-02 03:11:53,960 - gui_exit_gate - INFO - Auto-close gate: Success
+2025-07-02 03:12:47,554 - gui_exit_gate - INFO - Shutting down...
+2025-07-02 03:12:47,568 - gate_service - INFO - Gate service cleanup completed
+2025-07-02 03:12:47,573 - audio_service - INFO - Audio service cleanup completed
+2025-07-02 03:12:47,574 - gui_exit_gate - INFO - Camera service shutdown
+2025-07-02 03:13:54,223 - gui_exit_gate - INFO - GUI Setup completed
+2025-07-02 03:13:54,253 - gui_exit_gate - INFO - Initializing services...
+2025-07-02 03:13:54,439 - config - INFO - Loaded configuration from config.ini
+2025-07-02 03:13:54,440 - gate_service - WARNING - Hardware not available - running in SIMULATION mode
+2025-07-02 03:13:54,443 - gui_exit_gate - INFO - Gate service imported successfully
+2025-07-02 03:13:54,458 - gui_exit_gate - INFO - WARNING: USB scanner import failed: No module named 'termios'
+2025-07-02 03:13:57,442 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-02 03:13:57,445 - database_service - INFO - Connected to existing database: transactions
+2025-07-02 03:13:57,449 - database_service - INFO - Database connection established
+2025-07-02 03:13:57,452 - gui_exit_gate - INFO - Database service imported successfully
+2025-07-02 03:13:57,455 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-02 03:13:57,459 - gui_exit_gate - INFO - Audio service imported successfully
+2025-07-02 03:13:57,465 - gui_exit_gate - INFO - Audio service is disabled or not available
+2025-07-02 03:13:57,539 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-02 03:13:57,539 - camera_service - INFO - Initialized 1 cameras
+2025-07-02 03:13:57,548 - gui_exit_gate - INFO - Camera service imported successfully
+2025-07-02 03:13:57,551 - gui_exit_gate - INFO - Testing camera connectivity...
+2025-07-02 03:13:57,551 - camera_service - INFO - Testing camera: exit
+2025-07-02 03:13:57,551 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-02 03:13:57,620 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-02 03:13:57,621 - camera_service - INFO - Camera 'exit' test successful
+2025-07-02 03:13:57,623 - gui_exit_gate - INFO - Camera 'exit': OK
+2025-07-02 03:13:57,628 - gui_exit_gate - INFO - Scanner not available - manual input only
+2025-07-02 03:13:57,632 - gui_exit_gate - INFO - Adding gate status listener...
+2025-07-02 03:13:57,635 - gui_exit_gate - INFO - Gate status listener added
+2025-07-02 03:13:57,643 - gui_exit_gate - INFO - Services initialization completed
+2025-07-02 03:13:57,648 - gui_exit_gate - INFO - System ready - waiting for barcode input...
+2025-07-02 03:13:57,652 - gui_exit_gate - INFO - Exit Gate GUI initialized
+2025-07-02 03:13:57,654 - gui_exit_gate - INFO - Exit Gate GUI started
+2025-07-02 03:13:57,879 - gui_exit_gate - INFO - Auto-listener started
+2025-07-02 03:14:04,257 - gui_exit_gate - INFO - Auto-processing barcode: 1751400350454477
+2025-07-02 03:14:04,258 - gui_exit_gate - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-02 03:14:04,258 - gui_exit_gate - INFO - Raw barcode: '1751400350454477'
+2025-07-02 03:14:04,259 - gui_exit_gate - INFO - Barcode length: 16
+2025-07-02 03:14:04,261 - gui_exit_gate - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-02 03:14:04,262 - gui_exit_gate - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-02 03:14:04,264 - gui_exit_gate - INFO - Barcode: 1751400350454477
+2025-07-02 03:14:04,266 - gui_exit_gate - INFO - Debug mode: ENABLED
+2025-07-02 03:14:04,267 - gui_exit_gate - INFO - Capturing exit images...
+2025-07-02 03:14:04,268 - database_service - INFO - Processing vehicle exit for: 1751400350454477
+2025-07-02 03:14:04,272 - database_service - INFO - Searching for transaction with barcode: 1751400350454477
+2025-07-02 03:14:04,283 - database_service - INFO - Found transaction by primary ID: transaction_1751400350454477
+2025-07-02 03:14:04,284 - database_service - INFO - Found transaction by barcode
+2025-07-02 03:14:04,284 - database_service - WARNING - Vehicle already exited at: 2025-07-02T03:11:50.196568
+2025-07-02 03:14:04,974 - gui_exit_gate - INFO - \u274c No transaction found in database: Vehicle already exited at: 2025-07-02T03:11:50.196568
+2025-07-02 03:14:04,976 - gui_exit_gate - INFO - DEBUG MODE: Opening gate despite no transaction found
+2025-07-02 03:14:04,977 - gui_exit_gate - INFO - Gate service available - triggering open
+2025-07-02 03:14:04,980 - gui_exit_gate - INFO - Gate status: OPENING
+2025-07-02 03:14:04,981 - gate_service - INFO - SIMULATION: Gate opened
+2025-07-02 03:14:04,984 - gui_exit_gate - INFO - Gate status: OPEN
+2025-07-02 03:14:04,984 - gate_service - INFO - Gate opened successfully
+2025-07-02 03:14:05,017 - gui_exit_gate - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-02 03:14:05,021 - gui_exit_gate - INFO - Auto-capturing exit images for barcode: 1751400350454477
+2025-07-02 03:14:05,021 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-02 03:14:05,205 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-02 03:14:05,207 - gui_exit_gate - INFO - \u2705 Auto-capture successful for barcode: 1751400350454477
+2025-07-02 03:14:05,208 - gui_exit_gate - INFO - Stored combined exit image data
+2025-07-02 03:14:05,208 - database_service - INFO - Searching for transaction with barcode: 1751400350454477
+2025-07-02 03:14:05,221 - database_service - INFO - Found transaction by primary ID: transaction_1751400350454477
+2025-07-02 03:14:05,222 - gui_exit_gate - INFO - Saving exit images to transaction: transaction_1751400350454477
+2025-07-02 03:14:05,268 - database_service - INFO - Added image exit.jpg to transaction transaction_1751400350454477
+2025-07-02 03:14:05,270 - gui_exit_gate - INFO - \u2705 Saved exit image as attachment (combined)
+2025-07-02 03:14:05,272 - gui_exit_gate - INFO - Successfully saved 1 exit image(s) as attachment(s)
+2025-07-02 03:14:05,423 - gui_exit_gate - INFO - Camera preview updated (640x358)
+2025-07-02 03:14:06,031 - gui_exit_gate - INFO - Gate status: CLOSING
+2025-07-02 03:14:06,033 - gate_service - INFO - SIMULATION: Gate closed
+2025-07-02 03:14:06,033 - gui_exit_gate - INFO - Gate status: CLOSED
+2025-07-02 03:14:06,034 - gate_service - INFO - Gate closed successfully
+2025-07-02 03:14:06,034 - gui_exit_gate - INFO - Auto-close gate: Success
+2025-07-02 03:15:18,639 - gui_exit_gate - INFO - Auto-processing barcode: 1751400910513108
+2025-07-02 03:15:18,641 - gui_exit_gate - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-02 03:15:18,642 - gui_exit_gate - INFO - Raw barcode: '1751400910513108'
+2025-07-02 03:15:18,642 - gui_exit_gate - INFO - Barcode length: 16
+2025-07-02 03:15:18,643 - gui_exit_gate - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-02 03:15:18,643 - gui_exit_gate - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-02 03:15:18,644 - gui_exit_gate - INFO - Barcode: 1751400910513108
+2025-07-02 03:15:18,644 - gui_exit_gate - INFO - Debug mode: ENABLED
+2025-07-02 03:15:18,646 - gui_exit_gate - INFO - Capturing exit images...
+2025-07-02 03:15:18,646 - database_service - INFO - Processing vehicle exit for: 1751400910513108
+2025-07-02 03:15:18,654 - database_service - INFO - Searching for transaction with barcode: 1751400910513108
+2025-07-02 03:15:18,746 - database_service - INFO - Performing full database scan (doc_count: 59)
+2025-07-02 03:15:18,966 - database_service - INFO - No transaction found for barcode: 1751400910513108
+2025-07-02 03:15:18,985 - database_service - WARNING - No transaction found for: 1751400910513108
+2025-07-02 03:15:18,985 - gui_exit_gate - INFO - \u274c No transaction found in database: No active transaction found for: 1751400910513108
+2025-07-02 03:15:18,986 - gui_exit_gate - INFO - DEBUG MODE: Opening gate despite no transaction found
+2025-07-02 03:15:18,986 - gui_exit_gate - INFO - Gate service available - triggering open
+2025-07-02 03:15:18,986 - gui_exit_gate - INFO - Gate status: OPENING
+2025-07-02 03:15:18,987 - gate_service - INFO - SIMULATION: Gate opened
+2025-07-02 03:15:18,987 - gui_exit_gate - INFO - Gate status: OPEN
+2025-07-02 03:15:18,987 - gate_service - INFO - Gate opened successfully
+2025-07-02 03:15:18,988 - gui_exit_gate - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-02 03:15:18,989 - gui_exit_gate - INFO - Auto-capturing exit images for barcode: 1751400910513108
+2025-07-02 03:15:18,989 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-02 03:15:19,056 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-02 03:15:19,056 - gui_exit_gate - INFO - \u2705 Auto-capture successful for barcode: 1751400910513108
+2025-07-02 03:15:19,057 - gui_exit_gate - INFO - Stored combined exit image data
+2025-07-02 03:15:19,057 - database_service - INFO - Searching for transaction with barcode: 1751400910513108
+2025-07-02 03:15:19,092 - database_service - INFO - Performing full database scan (doc_count: 59)
+2025-07-02 03:15:19,266 - database_service - INFO - No transaction found for barcode: 1751400910513108
+2025-07-02 03:15:19,266 - gui_exit_gate - INFO - Cannot save images - transaction not found for barcode: 1751400910513108
+2025-07-02 03:15:19,283 - gui_exit_gate - INFO - Camera preview updated (640x358)
+2025-07-02 03:15:20,000 - gui_exit_gate - INFO - Gate status: CLOSING
+2025-07-02 03:15:20,001 - gate_service - INFO - SIMULATION: Gate closed
+2025-07-02 03:15:20,001 - gui_exit_gate - INFO - Gate status: CLOSED
+2025-07-02 03:15:20,001 - gate_service - INFO - Gate closed successfully
+2025-07-02 03:15:20,002 - gui_exit_gate - INFO - Auto-close gate: Success
+2025-07-02 04:19:34,553 - gui_exit_gate - INFO - GUI Setup completed
+2025-07-02 04:19:34,557 - gui_exit_gate - INFO - Initializing services...
+2025-07-02 04:19:34,606 - config - INFO - Loaded configuration from config.ini
+2025-07-02 04:19:34,607 - gate_service - WARNING - Hardware not available - running in SIMULATION mode
+2025-07-02 04:19:34,614 - gui_exit_gate - INFO - Gate service imported successfully
+2025-07-02 04:19:34,637 - gui_exit_gate - INFO - WARNING: USB scanner import failed: No module named 'termios'
+2025-07-02 04:19:37,440 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-02 04:19:37,443 - database_service - INFO - Connected to existing database: transactions
+2025-07-02 04:19:37,447 - database_service - INFO - Database connection established
+2025-07-02 04:19:37,450 - gui_exit_gate - INFO - Database service imported successfully
+2025-07-02 04:19:37,452 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-02 04:19:37,454 - gui_exit_gate - INFO - Audio service imported successfully
+2025-07-02 04:19:37,459 - gui_exit_gate - INFO - Audio service is disabled or not available
+2025-07-02 04:19:37,531 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-02 04:19:37,532 - camera_service - INFO - Initialized 1 cameras
+2025-07-02 04:19:37,535 - gui_exit_gate - INFO - Camera service imported successfully
+2025-07-02 04:19:37,540 - gui_exit_gate - INFO - Testing camera connectivity...
+2025-07-02 04:19:37,540 - camera_service - INFO - Testing camera: exit
+2025-07-02 04:19:37,540 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-02 04:19:37,620 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-02 04:19:37,620 - camera_service - INFO - Camera 'exit' test successful
+2025-07-02 04:19:37,622 - gui_exit_gate - INFO - Camera 'exit': OK
+2025-07-02 04:19:37,624 - gui_exit_gate - INFO - Scanner not available - manual input only
+2025-07-02 04:19:37,627 - gui_exit_gate - INFO - Adding gate status listener...
+2025-07-02 04:19:37,632 - gui_exit_gate - INFO - Gate status listener added
+2025-07-02 04:19:37,634 - gui_exit_gate - INFO - Services initialization completed
+2025-07-02 04:19:37,638 - gui_exit_gate - INFO - System ready - waiting for barcode input...
+2025-07-02 04:19:37,643 - gui_exit_gate - INFO - Exit Gate GUI initialized
+2025-07-02 04:19:37,644 - gui_exit_gate - INFO - Exit Gate GUI started
+2025-07-02 04:19:37,786 - gui_exit_gate - INFO - Auto-listener started
+2025-07-02 04:19:53,747 - gui_exit_gate - INFO - Shutting down...
+2025-07-02 04:19:53,749 - gate_service - INFO - Gate service cleanup completed
+2025-07-02 04:19:53,750 - audio_service - INFO - Audio service cleanup completed
+2025-07-02 04:19:53,751 - gui_exit_gate - INFO - Camera service shutdown
+2025-07-02 04:20:41,172 - __main__ - INFO - GUI Setup completed
+2025-07-02 04:20:41,178 - __main__ - INFO - Initializing services...
+2025-07-02 04:20:41,253 - config - INFO - Loaded configuration from config.ini
+2025-07-02 04:20:41,257 - gate_service - WARNING - Hardware not available - running in SIMULATION mode
+2025-07-02 04:20:41,266 - __main__ - INFO - Gate service imported successfully
+2025-07-02 04:20:41,312 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'termios'
+2025-07-02 04:20:44,224 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-02 04:20:44,228 - database_service - INFO - Connected to existing database: transactions
+2025-07-02 04:20:44,232 - database_service - INFO - Database connection established
+2025-07-02 04:20:44,237 - __main__ - INFO - Database service imported successfully
+2025-07-02 04:20:44,238 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-02 04:20:44,244 - __main__ - INFO - Audio service imported successfully
+2025-07-02 04:20:44,249 - __main__ - INFO - Audio service is disabled or not available
+2025-07-02 04:20:44,296 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-02 04:20:44,297 - camera_service - INFO - Initialized 1 cameras
+2025-07-02 04:20:44,302 - __main__ - INFO - Camera service imported successfully
+2025-07-02 04:20:44,305 - __main__ - INFO - Testing camera connectivity...
+2025-07-02 04:20:44,306 - camera_service - INFO - Testing camera: exit
+2025-07-02 04:20:44,306 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-02 04:20:44,368 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-02 04:20:44,369 - camera_service - INFO - Camera 'exit' test successful
+2025-07-02 04:20:44,372 - __main__ - INFO - Camera 'exit': OK
+2025-07-02 04:20:44,379 - __main__ - INFO - Scanner not available - manual input only
+2025-07-02 04:20:44,383 - __main__ - INFO - Adding gate status listener...
+2025-07-02 04:20:44,386 - __main__ - INFO - Gate status listener added
+2025-07-02 04:20:44,390 - __main__ - INFO - Services initialization completed
+2025-07-02 04:20:44,395 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-02 04:20:44,399 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-02 04:20:44,403 - __main__ - INFO - Exit Gate GUI started
+2025-07-02 04:20:44,575 - __main__ - INFO - Auto-listener started
+2025-07-02 04:20:48,645 - __main__ - INFO - Capturing image from exit camera...
+2025-07-02 04:20:48,646 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-02 04:20:48,689 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-02 04:20:49,081 - __main__ - INFO - \u2705 EXIT camera capture successful
+2025-07-02 04:20:49,156 - __main__ - INFO - Camera preview updated (640x358)
+2025-07-02 04:20:51,847 - __main__ - INFO - Shutting down...
+2025-07-02 04:20:51,847 - gate_service - INFO - Gate service cleanup completed
+2025-07-02 04:20:51,847 - audio_service - INFO - Audio service cleanup completed
+2025-07-02 04:20:51,847 - __main__ - INFO - Camera service shutdown
+2025-07-02 09:09:25,155 - __main__ - INFO - GUI Setup completed
+2025-07-02 09:09:25,158 - __main__ - INFO - Initializing services...
+2025-07-02 09:09:25,232 - config - INFO - Loaded configuration from config.ini
+2025-07-02 09:09:25,232 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-02 09:09:25,234 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-02 09:09:25,235 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-02 09:09:25,235 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-02 09:09:25,235 - gate_service - INFO - Global gate service instance created successfully
+2025-07-02 09:09:25,237 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-02 09:09:25,249 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-02 09:09:25,251 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-02 09:09:27,808 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-02 09:09:27,812 - database_service - INFO - Connected to existing database: transactions
+2025-07-02 09:09:27,817 - database_service - INFO - Database connection established
+2025-07-02 09:09:27,819 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-02 09:09:27,821 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-02 09:09:27,823 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-02 09:09:27,826 - __main__ - INFO - Audio service is disabled or not available
+2025-07-02 09:09:27,901 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-02 09:09:27,902 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-02 09:09:27,903 - camera_service - INFO - OpenCV not available
+2025-07-02 09:09:27,903 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-02 09:09:27,903 - camera_service - INFO - Initialized 1 cameras
+2025-07-02 09:09:27,907 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-02 09:09:27,909 - __main__ - INFO - Testing camera connectivity...
+2025-07-02 09:09:27,909 - camera_service - INFO - Testing camera: exit
+2025-07-02 09:09:27,909 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-02 09:09:27,981 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-02 09:09:27,981 - camera_service - INFO - Camera 'exit' test successful
+2025-07-02 09:09:27,982 - __main__ - INFO - Camera 'exit': OK
+2025-07-02 09:09:27,984 - __main__ - INFO - Scanner not available - manual input only
+2025-07-02 09:09:27,986 - __main__ - INFO - Adding gate status listener...
+2025-07-02 09:09:27,987 - __main__ - INFO - Gate status listener added
+2025-07-02 09:09:27,989 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-02 09:09:27,993 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-02 09:09:27,996 - __main__ - INFO -   GPIO Available: No
+2025-07-02 09:09:27,998 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-02 09:09:27,999 - __main__ - INFO - Testing gate service functionality...
+2025-07-02 09:09:27,999 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-02 09:09:28,000 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-02 09:09:28,001 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-02 09:09:28,004 - __main__ - INFO - Services initialization completed
+2025-07-02 09:09:28,005 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-02 09:09:28,009 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-02 09:09:28,010 - __main__ - INFO - Exit Gate GUI started
+2025-07-02 09:09:28,186 - __main__ - INFO - Auto-listener started
+2025-07-02 09:09:34,725 - gate_service - INFO - \U0001f513 Opening gate...
+2025-07-02 09:09:34,725 - __main__ - INFO - Gate status: OPENING
+2025-07-02 09:09:34,726 - gate_service - INFO - \U0001f3ad SIMULATION: Gate opened
+2025-07-02 09:09:35,234 - __main__ - INFO - Gate status: OPEN
+2025-07-02 09:09:35,234 - gate_service - INFO - \u2705 Gate opened successfully
+2025-07-02 09:09:35,234 - __main__ - INFO - Manual gate open: Success
+2025-07-02 09:09:37,745 - __main__ - INFO - Capturing image from exit camera...
+2025-07-02 09:09:37,745 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-02 09:09:37,978 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-02 09:09:38,213 - __main__ - INFO - \u2705 EXIT camera capture successful
+2025-07-02 09:09:38,320 - __main__ - INFO - Camera preview updated (640x358)
+2025-07-02 09:09:41,790 - __main__ - INFO - Fullscreen mode: OFF
+2025-07-05 10:52:38,230 - __main__ - INFO - GUI Setup completed
+2025-07-05 10:52:38,248 - __main__ - INFO - Initializing services...
+2025-07-05 10:52:38,530 - config - INFO - Loaded configuration from config.ini
+2025-07-05 10:52:38,536 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-05 10:52:38,544 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-05 10:52:38,546 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-05 10:52:38,546 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-05 10:52:38,546 - gate_service - INFO - Global gate service instance created successfully
+2025-07-05 10:52:38,559 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-05 10:52:38,725 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-05 10:52:38,740 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-05 10:52:44,663 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-05 10:52:44,780 - database_service - INFO - Connected to existing database: transactions
+2025-07-05 10:52:44,974 - database_service - INFO - Database connection established
+2025-07-05 10:52:44,983 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-05 10:52:44,999 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-05 10:52:45,008 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-05 10:52:45,026 - __main__ - INFO - Audio service is disabled or not available
+2025-07-05 10:52:45,392 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-05 10:52:45,396 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-05 10:52:45,398 - camera_service - INFO - OpenCV not available
+2025-07-05 10:52:45,400 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-05 10:52:45,400 - camera_service - INFO - Initialized 1 cameras
+2025-07-05 10:52:45,448 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-05 10:52:45,679 - __main__ - INFO - Testing camera connectivity...
+2025-07-05 10:52:45,710 - camera_service - INFO - Testing camera: exit
+2025-07-05 10:52:45,711 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-05 10:52:46,043 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-05 10:52:46,044 - camera_service - INFO - Camera 'exit' test successful
+2025-07-05 10:52:46,049 - __main__ - INFO - Camera 'exit': OK
+2025-07-05 10:52:46,079 - __main__ - INFO - Scanner not available - manual input only
+2025-07-05 10:52:46,101 - __main__ - INFO - Adding gate status listener...
+2025-07-05 10:52:46,133 - __main__ - INFO - Gate status listener added
+2025-07-05 10:52:46,508 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-05 10:52:46,702 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-05 10:52:46,819 - __main__ - INFO -   GPIO Available: No
+2025-07-05 10:52:46,933 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-05 10:52:47,163 - __main__ - INFO - Testing gate service functionality...
+2025-07-05 10:52:47,225 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-05 10:52:47,226 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-05 10:52:47,333 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-05 10:52:47,501 - __main__ - INFO - Services initialization completed
+2025-07-05 10:52:47,593 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-05 10:52:47,819 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-05 10:52:47,825 - __main__ - INFO - Exit Gate GUI started
+2025-07-05 10:52:48,416 - __main__ - INFO - Auto-listener started
+2025-07-05 10:53:11,631 - __main__ - INFO - Auto-processing barcode: 1751616597645462
+2025-07-05 10:53:11,634 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-05 10:53:11,637 - __main__ - INFO - Raw barcode: '1751616597645462'
+2025-07-05 10:53:11,642 - __main__ - INFO - Barcode length: 16
+2025-07-05 10:53:11,646 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-05 10:53:11,652 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-05 10:53:11,658 - __main__ - INFO - Barcode: 1751616597645462
+2025-07-05 10:53:11,663 - __main__ - INFO - Debug mode: ENABLED
+2025-07-05 10:53:11,667 - __main__ - INFO - Capturing exit images...
+2025-07-05 10:53:11,668 - database_service - INFO - Processing vehicle exit for: 1751616597645462
+2025-07-05 10:53:11,702 - database_service - INFO - Searching for transaction with barcode: 1751616597645462
+2025-07-05 10:53:11,727 - database_service - INFO - Found transaction by primary ID: transaction_1751616597645462
+2025-07-05 10:53:11,727 - database_service - INFO - Found transaction by barcode
+2025-07-05 10:53:11,727 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-05 10:53:11,728 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-05 10:53:11,879 - database_service - INFO - Transaction transaction_1751616597645462 marked as exited
+2025-07-05 10:53:11,879 - database_service - INFO - Vehicle exit processed successfully for: 1751616597645462
+2025-07-05 10:53:12,901 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-05 10:53:12,910 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-05 10:53:12,922 - __main__ - INFO - Gate service available - triggering open
+2025-07-05 10:53:12,929 - gate_service - INFO - \U0001f513 Opening gate...
+2025-07-05 10:53:12,932 - __main__ - INFO - Gate status: OPENING
+2025-07-05 10:53:12,934 - gate_service - INFO - \U0001f3ad SIMULATION: Gate opened
+2025-07-05 10:53:13,442 - __main__ - INFO - Gate status: OPEN
+2025-07-05 10:53:13,451 - gate_service - INFO - \u2705 Gate opened successfully
+2025-07-05 10:53:13,455 - __main__ - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-05 10:53:13,467 - __main__ - INFO - Auto-capturing exit images for barcode: 1751616597645462
+2025-07-05 10:53:13,475 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-05 10:53:13,855 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-05 10:53:13,858 - __main__ - INFO - \u2705 Auto-capture successful for barcode: 1751616597645462
+2025-07-05 10:53:13,862 - __main__ - INFO - Stored combined exit image data
+2025-07-05 10:53:13,864 - database_service - INFO - Searching for transaction with barcode: 1751616597645462
+2025-07-05 10:53:13,893 - database_service - INFO - Found transaction by primary ID: transaction_1751616597645462
+2025-07-05 10:53:13,896 - __main__ - INFO - Saving exit images to transaction: transaction_1751616597645462
+2025-07-05 10:53:14,309 - database_service - INFO - Added image exit.jpg to transaction transaction_1751616597645462
+2025-07-05 10:53:14,311 - __main__ - INFO - \u2705 Saved exit image as attachment (combined)
+2025-07-05 10:53:14,316 - __main__ - INFO - Successfully saved 1 exit image(s) as attachment(s)
+2025-07-05 10:53:14,669 - __main__ - INFO - Camera preview updated (640x358)
+2025-07-05 10:53:14,672 - gate_service - INFO - \U0001f512 Closing gate...
+2025-07-05 10:53:14,674 - __main__ - INFO - Gate status: CLOSING
+2025-07-05 10:53:14,676 - gate_service - INFO - \U0001f3ad SIMULATION: Gate closed
+2025-07-05 10:53:15,191 - __main__ - INFO - Gate status: CLOSED
+2025-07-05 10:53:15,192 - gate_service - INFO - \u2705 Gate closed successfully
+2025-07-05 10:53:15,194 - __main__ - INFO - Auto-close gate: Success
+2025-07-05 10:57:39,013 - __main__ - INFO - Auto-processing barcode: 1751687832910106
+2025-07-05 10:57:39,015 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-05 10:57:39,018 - __main__ - INFO - Raw barcode: '1751687832910106'
+2025-07-05 10:57:39,019 - __main__ - INFO - Barcode length: 16
+2025-07-05 10:57:39,021 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-05 10:57:39,024 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-05 10:57:39,027 - __main__ - INFO - Barcode: 1751687832910106
+2025-07-05 10:57:39,029 - __main__ - INFO - Debug mode: ENABLED
+2025-07-05 10:57:39,031 - __main__ - INFO - Capturing exit images...
+2025-07-05 10:57:39,033 - database_service - INFO - Processing vehicle exit for: 1751687832910106
+2025-07-05 10:57:39,052 - database_service - INFO - Searching for transaction with barcode: 1751687832910106
+2025-07-05 10:57:39,107 - database_service - INFO - Found transaction by primary ID: transaction_1751687832910106
+2025-07-05 10:57:39,107 - database_service - INFO - Found transaction by barcode
+2025-07-05 10:57:39,107 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-05 10:57:39,108 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-05 10:57:39,168 - database_service - INFO - Transaction transaction_1751687832910106 marked as exited
+2025-07-05 10:57:39,250 - database_service - INFO - Added image exit.jpg to transaction transaction_1751687832910106
+2025-07-05 10:57:39,250 - database_service - INFO - Added exit image to transaction
+2025-07-05 10:57:39,250 - database_service - INFO - Vehicle exit processed successfully for: 1751687832910106
+2025-07-05 10:57:39,251 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-05 10:57:39,254 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-05 10:57:39,257 - __main__ - INFO - Gate service available - triggering open
+2025-07-05 10:57:39,258 - gate_service - INFO - \U0001f513 Opening gate...
+2025-07-05 10:57:39,259 - __main__ - INFO - Gate status: OPENING
+2025-07-05 10:57:39,261 - gate_service - INFO - \U0001f3ad SIMULATION: Gate opened
+2025-07-05 10:57:39,776 - __main__ - INFO - Gate status: OPEN
+2025-07-05 10:57:39,777 - gate_service - INFO - \u2705 Gate opened successfully
+2025-07-05 10:57:39,778 - __main__ - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-05 10:57:39,780 - __main__ - INFO - Auto-capturing exit images for barcode: 1751687832910106
+2025-07-05 10:57:39,782 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-05 10:57:39,950 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-05 10:57:39,953 - __main__ - INFO - \u2705 Auto-capture successful for barcode: 1751687832910106
+2025-07-05 10:57:39,955 - __main__ - INFO - Stored combined exit image data
+2025-07-05 10:57:39,956 - database_service - INFO - Searching for transaction with barcode: 1751687832910106
+2025-07-05 10:57:39,988 - database_service - INFO - Found transaction by primary ID: transaction_1751687832910106
+2025-07-05 10:57:39,989 - __main__ - INFO - Saving exit images to transaction: transaction_1751687832910106
+2025-07-05 10:57:40,094 - database_service - INFO - Added image exit.jpg to transaction transaction_1751687832910106
+2025-07-05 10:57:40,095 - __main__ - INFO - \u2705 Saved exit image as attachment (combined)
+2025-07-05 10:57:40,096 - __main__ - INFO - Successfully saved 1 exit image(s) as attachment(s)
+2025-07-05 10:57:40,125 - __main__ - INFO - Camera preview updated (640x358)
+2025-07-05 10:57:40,786 - gate_service - INFO - \U0001f512 Closing gate...
+2025-07-05 10:57:40,787 - __main__ - INFO - Gate status: CLOSING
+2025-07-05 10:57:40,788 - gate_service - INFO - \U0001f3ad SIMULATION: Gate closed
+2025-07-05 10:57:41,303 - __main__ - INFO - Gate status: CLOSED
+2025-07-05 10:57:41,305 - gate_service - INFO - \u2705 Gate closed successfully
+2025-07-05 10:57:41,306 - __main__ - INFO - Auto-close gate: Success
+2025-07-05 10:58:47,629 - __main__ - INFO - Auto-processing barcode: 1751687904760823
+2025-07-05 10:58:47,630 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-05 10:58:47,631 - __main__ - INFO - Raw barcode: '1751687904760823'
+2025-07-05 10:58:47,632 - __main__ - INFO - Barcode length: 16
+2025-07-05 10:58:47,634 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-05 10:58:47,635 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-05 10:58:47,636 - __main__ - INFO - Barcode: 1751687904760823
+2025-07-05 10:58:47,638 - __main__ - INFO - Debug mode: ENABLED
+2025-07-05 10:58:47,640 - __main__ - INFO - Capturing exit images...
+2025-07-05 10:58:47,642 - database_service - INFO - Processing vehicle exit for: 1751687904760823
+2025-07-05 10:58:47,649 - database_service - INFO - Searching for transaction with barcode: 1751687904760823
+2025-07-05 10:58:47,665 - database_service - INFO - Found transaction by primary ID: transaction_1751687904760823
+2025-07-05 10:58:47,666 - database_service - INFO - Found transaction by barcode
+2025-07-05 10:58:47,666 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-05 10:58:47,666 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-05 10:58:47,697 - database_service - INFO - Transaction transaction_1751687904760823 marked as exited
+2025-07-05 10:58:47,785 - database_service - INFO - Added image exit.jpg to transaction transaction_1751687904760823
+2025-07-05 10:58:47,786 - database_service - INFO - Added exit image to transaction
+2025-07-05 10:58:47,786 - database_service - INFO - Vehicle exit processed successfully for: 1751687904760823
+2025-07-05 10:58:47,788 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-05 10:58:47,794 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-05 10:58:47,797 - __main__ - INFO - Gate service available - triggering open
+2025-07-05 10:58:47,799 - gate_service - INFO - \U0001f513 Opening gate...
+2025-07-05 10:58:47,800 - __main__ - INFO - Gate status: OPENING
+2025-07-05 10:58:47,802 - gate_service - INFO - \U0001f3ad SIMULATION: Gate opened
+2025-07-05 10:58:48,314 - __main__ - INFO - Gate status: OPEN
+2025-07-05 10:58:48,318 - gate_service - INFO - \u2705 Gate opened successfully
+2025-07-05 10:58:48,319 - __main__ - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-05 10:58:48,322 - __main__ - INFO - Auto-capturing exit images for barcode: 1751687904760823
+2025-07-05 10:58:48,324 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-05 10:58:48,401 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-05 10:58:48,403 - __main__ - INFO - \u2705 Auto-capture successful for barcode: 1751687904760823
+2025-07-05 10:58:48,405 - __main__ - INFO - Stored combined exit image data
+2025-07-05 10:58:48,406 - database_service - INFO - Searching for transaction with barcode: 1751687904760823
+2025-07-05 10:58:48,420 - database_service - INFO - Found transaction by primary ID: transaction_1751687904760823
+2025-07-05 10:58:48,422 - __main__ - INFO - Saving exit images to transaction: transaction_1751687904760823
+2025-07-05 10:58:48,457 - database_service - INFO - Added image exit.jpg to transaction transaction_1751687904760823
+2025-07-05 10:58:48,460 - __main__ - INFO - \u2705 Saved exit image as attachment (combined)
+2025-07-05 10:58:48,463 - __main__ - INFO - Successfully saved 1 exit image(s) as attachment(s)
+2025-07-05 10:58:48,518 - __main__ - INFO - Camera preview updated (640x358)
+2025-07-05 10:58:49,325 - gate_service - INFO - \U0001f512 Closing gate...
+2025-07-05 10:58:49,327 - __main__ - INFO - Gate status: CLOSING
+2025-07-05 10:58:49,329 - gate_service - INFO - \U0001f3ad SIMULATION: Gate closed
+2025-07-05 10:58:49,841 - __main__ - INFO - Gate status: CLOSED
+2025-07-05 10:58:49,842 - gate_service - INFO - \u2705 Gate closed successfully
+2025-07-05 10:58:49,844 - __main__ - INFO - Auto-close gate: Success
+2025-07-05 11:02:09,915 - __main__ - INFO - Auto-processing barcode: 1751688119437880
+2025-07-05 11:02:09,917 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-05 11:02:09,918 - __main__ - INFO - Raw barcode: '1751688119437880'
+2025-07-05 11:02:09,918 - __main__ - INFO - Barcode length: 16
+2025-07-05 11:02:09,920 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-05 11:02:09,921 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-05 11:02:09,922 - __main__ - INFO - Barcode: 1751688119437880
+2025-07-05 11:02:09,923 - __main__ - INFO - Debug mode: ENABLED
+2025-07-05 11:02:09,924 - __main__ - INFO - Capturing exit images...
+2025-07-05 11:02:09,925 - database_service - INFO - Processing vehicle exit for: 1751688119437880
+2025-07-05 11:02:09,931 - database_service - INFO - Searching for transaction with barcode: 1751688119437880
+2025-07-05 11:02:09,975 - database_service - WARNING - Barcode view search failed: ('not_found', 'deleted')
+2025-07-05 11:02:09,987 - database_service - WARNING - Active transaction manual search failed: ('not_found', 'deleted')
+2025-07-05 11:02:09,998 - database_service - INFO - Performing full database scan (doc_count: 13)
+2025-07-05 11:02:10,043 - database_service - INFO - Found transaction by full scan: transaction_transaction_1751688119437880 (extracted barcode: 1751688119437880, status: 0)
+2025-07-05 11:02:10,043 - database_service - INFO - Found transaction by barcode
+2025-07-05 11:02:10,044 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-05 11:02:10,044 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-05 11:02:10,068 - database_service - INFO - Transaction transaction_transaction_1751688119437880 marked as exited
+2025-07-05 11:02:10,142 - database_service - INFO - Added image exit.jpg to transaction transaction_transaction_1751688119437880
+2025-07-05 11:02:10,143 - database_service - INFO - Added exit image to transaction
+2025-07-05 11:02:10,143 - database_service - INFO - Vehicle exit processed successfully for: 1751688119437880
+2025-07-05 11:02:10,145 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-05 11:02:10,147 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-05 11:02:10,151 - __main__ - INFO - Gate service available - triggering open
+2025-07-05 11:02:10,152 - gate_service - INFO - \U0001f513 Opening gate...
+2025-07-05 11:02:10,155 - __main__ - INFO - Gate status: OPENING
+2025-07-05 11:02:10,156 - gate_service - INFO - \U0001f3ad SIMULATION: Gate opened
+2025-07-05 11:02:10,665 - __main__ - INFO - Gate status: OPEN
+2025-07-05 11:02:10,667 - gate_service - INFO - \u2705 Gate opened successfully
+2025-07-05 11:02:10,669 - __main__ - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-05 11:02:10,671 - __main__ - INFO - Auto-capturing exit images for barcode: 1751688119437880
+2025-07-05 11:02:10,672 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-05 11:02:10,861 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-05 11:02:10,863 - __main__ - INFO - \u2705 Auto-capture successful for barcode: 1751688119437880
+2025-07-05 11:02:10,865 - __main__ - INFO - Stored combined exit image data
+2025-07-05 11:02:10,866 - database_service - INFO - Searching for transaction with barcode: 1751688119437880
+2025-07-05 11:02:10,902 - database_service - WARNING - Barcode view search failed: ('not_found', 'deleted')
+2025-07-05 11:02:10,913 - database_service - WARNING - Active transaction manual search failed: ('not_found', 'deleted')
+2025-07-05 11:02:10,922 - database_service - INFO - Performing full database scan (doc_count: 13)
+2025-07-05 11:02:10,959 - database_service - INFO - Found transaction by full scan: transaction_transaction_1751688119437880 (extracted barcode: 1751688119437880, status: 1)
+2025-07-05 11:02:10,962 - __main__ - INFO - Saving exit images to transaction: transaction_transaction_1751688119437880
+2025-07-05 11:02:11,000 - database_service - INFO - Added image exit.jpg to transaction transaction_transaction_1751688119437880
+2025-07-05 11:02:11,003 - __main__ - INFO - \u2705 Saved exit image as attachment (combined)
+2025-07-05 11:02:11,006 - __main__ - INFO - Successfully saved 1 exit image(s) as attachment(s)
+2025-07-05 11:02:11,070 - __main__ - INFO - Camera preview updated (640x358)
+2025-07-05 11:02:11,681 - gate_service - INFO - \U0001f512 Closing gate...
+2025-07-05 11:02:11,683 - __main__ - INFO - Gate status: CLOSING
+2025-07-05 11:02:11,683 - gate_service - INFO - \U0001f3ad SIMULATION: Gate closed
+2025-07-05 11:02:12,199 - __main__ - INFO - Gate status: CLOSED
+2025-07-05 11:02:12,200 - gate_service - INFO - \u2705 Gate closed successfully
+2025-07-05 11:02:12,200 - __main__ - INFO - Auto-close gate: Success
+2025-07-05 11:20:11,954 - __main__ - INFO - Auto-processing barcode: 1751689187945775
+2025-07-05 11:20:11,958 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-05 11:20:11,960 - __main__ - INFO - Raw barcode: '1751689187945775'
+2025-07-05 11:20:11,964 - __main__ - INFO - Barcode length: 16
+2025-07-05 11:20:11,969 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-05 11:20:11,971 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-05 11:20:11,979 - __main__ - INFO - Barcode: 1751689187945775
+2025-07-05 11:20:11,981 - __main__ - INFO - Debug mode: ENABLED
+2025-07-05 11:20:11,986 - __main__ - INFO - Capturing exit images...
+2025-07-05 11:20:11,990 - database_service - INFO - Processing vehicle exit for: 1751689187945775
+2025-07-05 11:20:14,026 - database_service - INFO - Searching for transaction with barcode: 1751689187945775
+2025-07-05 11:20:14,047 - database_service - INFO - Found transaction by primary ID: transaction_1751689187945775
+2025-07-05 11:20:14,047 - database_service - INFO - Found transaction by barcode
+2025-07-05 11:20:14,047 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-05 11:20:14,047 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-05 11:20:14,091 - database_service - INFO - Transaction transaction_1751689187945775 marked as exited
+2025-07-05 11:20:14,140 - database_service - INFO - Added image exit.jpg to transaction transaction_1751689187945775
+2025-07-05 11:20:14,140 - database_service - INFO - Added exit image to transaction
+2025-07-05 11:20:14,141 - database_service - INFO - Vehicle exit processed successfully for: 1751689187945775
+2025-07-05 11:20:14,144 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-05 11:20:14,146 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-05 11:20:14,148 - __main__ - INFO - Gate service available - triggering open
+2025-07-05 11:20:14,150 - gate_service - INFO - \U0001f513 Opening gate...
+2025-07-05 11:20:14,152 - __main__ - INFO - Gate status: OPENING
+2025-07-05 11:20:14,154 - gate_service - INFO - \U0001f3ad SIMULATION: Gate opened
+2025-07-05 11:20:14,670 - __main__ - INFO - Gate status: OPEN
+2025-07-05 11:20:14,672 - gate_service - INFO - \u2705 Gate opened successfully
+2025-07-05 11:20:14,674 - __main__ - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-05 11:20:14,677 - __main__ - INFO - Auto-capturing exit images for barcode: 1751689187945775
+2025-07-05 11:20:14,679 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-05 11:20:14,762 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-05 11:20:14,764 - __main__ - INFO - \u2705 Auto-capture successful for barcode: 1751689187945775
+2025-07-05 11:20:14,765 - __main__ - INFO - Stored combined exit image data
+2025-07-05 11:20:14,766 - database_service - INFO - Searching for transaction with barcode: 1751689187945775
+2025-07-05 11:20:14,786 - database_service - INFO - Found transaction by primary ID: transaction_1751689187945775
+2025-07-05 11:20:14,788 - __main__ - INFO - Saving exit images to transaction: transaction_1751689187945775
+2025-07-05 11:20:14,849 - database_service - INFO - Added image exit.jpg to transaction transaction_1751689187945775
+2025-07-05 11:20:14,851 - __main__ - INFO - \u2705 Saved exit image as attachment (combined)
+2025-07-05 11:20:14,856 - __main__ - INFO - Successfully saved 1 exit image(s) as attachment(s)
+2025-07-05 11:20:14,905 - __main__ - INFO - Camera preview updated (640x358)
+2025-07-05 11:20:15,680 - gate_service - INFO - \U0001f512 Closing gate...
+2025-07-05 11:20:15,682 - __main__ - INFO - Gate status: CLOSING
+2025-07-05 11:20:15,683 - gate_service - INFO - \U0001f3ad SIMULATION: Gate closed
+2025-07-05 11:20:16,195 - __main__ - INFO - Gate status: CLOSED
+2025-07-05 11:20:16,197 - gate_service - INFO - \u2705 Gate closed successfully
+2025-07-05 11:20:16,199 - __main__ - INFO - Auto-close gate: Success
+2025-07-05 11:21:40,206 - __main__ - INFO - Auto-processing barcode: 1751689285703695
+2025-07-05 11:21:40,208 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-05 11:21:40,209 - __main__ - INFO - Raw barcode: '1751689285703695'
+2025-07-05 11:21:40,209 - __main__ - INFO - Barcode length: 16
+2025-07-05 11:21:40,210 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-05 11:21:40,211 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-05 11:21:40,212 - __main__ - INFO - Barcode: 1751689285703695
+2025-07-05 11:21:40,212 - __main__ - INFO - Debug mode: ENABLED
+2025-07-05 11:21:40,213 - __main__ - INFO - Capturing exit images...
+2025-07-05 11:21:40,213 - database_service - INFO - Processing vehicle exit for: 1751689285703695
+2025-07-05 11:21:40,219 - database_service - INFO - Searching for transaction with barcode: 1751689285703695
+2025-07-05 11:21:40,233 - database_service - INFO - Found transaction by primary ID: transaction_1751689285703695
+2025-07-05 11:21:40,234 - database_service - INFO - Found transaction by barcode
+2025-07-05 11:21:40,234 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-05 11:21:40,234 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-05 11:21:40,262 - database_service - INFO - Transaction transaction_1751689285703695 marked as exited
+2025-07-05 11:21:40,354 - database_service - INFO - Added image exit.jpg to transaction transaction_1751689285703695
+2025-07-05 11:21:40,354 - database_service - INFO - Added exit image to transaction
+2025-07-05 11:21:40,355 - database_service - INFO - Vehicle exit processed successfully for: 1751689285703695
+2025-07-05 11:21:40,356 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-05 11:21:40,357 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-05 11:21:40,358 - __main__ - INFO - Gate service available - triggering open
+2025-07-05 11:21:40,359 - gate_service - INFO - \U0001f513 Opening gate...
+2025-07-05 11:21:40,360 - __main__ - INFO - Gate status: OPENING
+2025-07-05 11:21:40,360 - gate_service - INFO - \U0001f3ad SIMULATION: Gate opened
+2025-07-05 11:21:40,874 - __main__ - INFO - Gate status: OPEN
+2025-07-05 11:21:40,875 - gate_service - INFO - \u2705 Gate opened successfully
+2025-07-05 11:21:40,876 - __main__ - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-05 11:21:40,877 - __main__ - INFO - Auto-capturing exit images for barcode: 1751689285703695
+2025-07-05 11:21:40,878 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-05 11:21:40,956 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-05 11:21:40,957 - __main__ - INFO - \u2705 Auto-capture successful for barcode: 1751689285703695
+2025-07-05 11:21:40,959 - __main__ - INFO - Stored combined exit image data
+2025-07-05 11:21:40,959 - database_service - INFO - Searching for transaction with barcode: 1751689285703695
+2025-07-05 11:21:40,972 - database_service - INFO - Found transaction by primary ID: transaction_1751689285703695
+2025-07-05 11:21:40,974 - __main__ - INFO - Saving exit images to transaction: transaction_1751689285703695
+2025-07-05 11:21:41,003 - database_service - INFO - Added image exit.jpg to transaction transaction_1751689285703695
+2025-07-05 11:21:41,005 - __main__ - INFO - \u2705 Saved exit image as attachment (combined)
+2025-07-05 11:21:41,007 - __main__ - INFO - Successfully saved 1 exit image(s) as attachment(s)
+2025-07-05 11:21:41,061 - __main__ - INFO - Camera preview updated (640x358)
+2025-07-05 11:21:41,887 - gate_service - INFO - \U0001f512 Closing gate...
+2025-07-05 11:21:41,889 - __main__ - INFO - Gate status: CLOSING
+2025-07-05 11:21:41,890 - gate_service - INFO - \U0001f3ad SIMULATION: Gate closed
+2025-07-05 11:21:42,403 - __main__ - INFO - Gate status: CLOSED
+2025-07-05 11:21:42,404 - gate_service - INFO - \u2705 Gate closed successfully
+2025-07-05 11:21:42,405 - __main__ - INFO - Auto-close gate: Success
+2025-07-05 12:28:23,199 - __main__ - INFO - Shutting down...
+2025-07-05 12:28:23,208 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-05 12:28:23,210 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-05 12:28:23,212 - audio_service - INFO - Audio service cleanup completed
+2025-07-05 12:28:23,214 - __main__ - INFO - Camera service shutdown
+2025-07-05 12:28:23,505 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-05 12:28:23,507 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-05 12:28:27,686 - __main__ - INFO - GUI Setup completed
+2025-07-05 12:28:27,690 - __main__ - INFO - Initializing services...
+2025-07-05 12:28:27,771 - config - INFO - Loaded configuration from config.ini
+2025-07-05 12:28:27,771 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-05 12:28:27,775 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-05 12:28:27,775 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-05 12:28:27,775 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-05 12:28:27,776 - gate_service - INFO - Global gate service instance created successfully
+2025-07-05 12:28:27,785 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-05 12:28:27,808 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-05 12:28:27,818 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-05 12:28:31,041 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-05 12:28:31,050 - database_service - INFO - Connected to existing database: transactions
+2025-07-05 12:28:31,205 - database_service - INFO - Created database views
+2025-07-05 12:28:31,206 - database_service - INFO - Database connection established
+2025-07-05 12:28:31,210 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-05 12:28:31,216 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-05 12:28:31,221 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-05 12:28:31,228 - __main__ - INFO - Audio service is disabled or not available
+2025-07-05 12:28:31,360 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-05 12:28:31,362 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-05 12:28:31,364 - camera_service - INFO - OpenCV not available
+2025-07-05 12:28:31,364 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-05 12:28:31,365 - camera_service - INFO - Initialized 1 cameras
+2025-07-05 12:28:31,371 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-05 12:28:31,380 - __main__ - INFO - Testing camera connectivity...
+2025-07-05 12:28:31,384 - camera_service - INFO - Testing camera: exit
+2025-07-05 12:28:31,384 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-05 12:28:31,479 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-05 12:28:31,480 - camera_service - INFO - Camera 'exit' test successful
+2025-07-05 12:28:31,483 - __main__ - INFO - Camera 'exit': OK
+2025-07-05 12:28:31,499 - __main__ - INFO - Scanner not available - manual input only
+2025-07-05 12:28:31,509 - __main__ - INFO - Adding gate status listener...
+2025-07-05 12:28:31,515 - __main__ - INFO - Gate status listener added
+2025-07-05 12:28:31,520 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-05 12:28:31,532 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-05 12:28:31,539 - __main__ - INFO -   GPIO Available: No
+2025-07-05 12:28:31,566 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-05 12:28:31,587 - __main__ - INFO - Testing gate service functionality...
+2025-07-05 12:28:31,588 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-05 12:28:31,588 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-05 12:28:31,592 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-05 12:28:31,609 - __main__ - INFO - Services initialization completed
+2025-07-05 12:28:31,620 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-05 12:28:31,656 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-05 12:28:31,659 - __main__ - INFO - Exit Gate GUI started
+2025-07-05 12:28:31,909 - __main__ - INFO - Auto-listener started
+2025-07-05 12:28:49,799 - __main__ - INFO - Auto-processing barcode: 1751690433718835
+2025-07-05 12:28:49,800 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-05 12:28:49,800 - __main__ - INFO - Raw barcode: '1751690433718835'
+2025-07-05 12:28:49,801 - __main__ - INFO - Barcode length: 16
+2025-07-05 12:28:49,801 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-05 12:28:49,802 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-05 12:28:49,802 - __main__ - INFO - Barcode: 1751690433718835
+2025-07-05 12:28:49,802 - __main__ - INFO - Debug mode: ENABLED
+2025-07-05 12:28:49,803 - __main__ - INFO - Capturing exit images...
+2025-07-05 12:28:49,804 - database_service - INFO - Processing vehicle exit for: 1751690433718835
+2025-07-05 12:28:49,807 - database_service - INFO - Searching for transaction with barcode: 1751690433718835
+2025-07-05 12:28:49,819 - database_service - INFO - Found transaction by primary ID: transaction_1751690433718835
+2025-07-05 12:28:49,819 - database_service - INFO - Found transaction by barcode
+2025-07-05 12:28:49,819 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-05 12:28:49,819 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-05 12:28:49,852 - database_service - INFO - Transaction transaction_1751690433718835 marked as exited
+2025-07-05 12:28:49,852 - database_service - INFO - Vehicle exit processed successfully for: 1751690433718835
+2025-07-05 12:28:50,264 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-05 12:28:50,264 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-05 12:28:50,265 - __main__ - INFO - Gate service available - triggering open
+2025-07-05 12:28:50,265 - gate_service - INFO - \U0001f513 Opening gate...
+2025-07-05 12:28:50,266 - __main__ - INFO - Gate status: OPENING
+2025-07-05 12:28:50,266 - gate_service - INFO - \U0001f3ad SIMULATION: Gate opened
+2025-07-05 12:28:50,767 - __main__ - INFO - Gate status: OPEN
+2025-07-05 12:28:50,767 - gate_service - INFO - \u2705 Gate opened successfully
+2025-07-05 12:28:50,768 - __main__ - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-05 12:28:50,768 - __main__ - INFO - Auto-capturing exit images for barcode: 1751690433718835
+2025-07-05 12:28:50,769 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-05 12:28:50,840 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-05 12:28:50,841 - __main__ - INFO - \u2705 Auto-capture successful for barcode: 1751690433718835
+2025-07-05 12:28:50,841 - __main__ - INFO - Stored combined exit image data
+2025-07-05 12:28:50,842 - database_service - INFO - Searching for transaction with barcode: 1751690433718835
+2025-07-05 12:28:50,891 - database_service - INFO - Found transaction by primary ID: transaction_1751690433718835
+2025-07-05 12:28:50,892 - __main__ - INFO - Saving exit images to transaction: transaction_1751690433718835
+2025-07-05 12:28:50,988 - database_service - INFO - Added image exit.jpg to transaction transaction_1751690433718835
+2025-07-05 12:28:50,988 - __main__ - INFO - \u2705 Saved exit image as attachment (combined)
+2025-07-05 12:28:50,989 - __main__ - INFO - Successfully saved 1 exit image(s) as attachment(s)
+2025-07-05 12:28:51,110 - __main__ - INFO - Camera preview updated (320x179)
+2025-07-05 12:28:51,769 - gate_service - INFO - \U0001f512 Closing gate...
+2025-07-05 12:28:51,771 - __main__ - INFO - Gate status: CLOSING
+2025-07-05 12:28:51,771 - gate_service - INFO - \U0001f3ad SIMULATION: Gate closed
+2025-07-05 12:28:52,274 - __main__ - INFO - Gate status: CLOSED
+2025-07-05 12:28:52,274 - gate_service - INFO - \u2705 Gate closed successfully
+2025-07-05 12:28:52,276 - __main__ - INFO - Auto-close gate: Success
+2025-07-05 12:34:51,545 - __main__ - INFO - Auto-processing barcode: 1751693586912494
+2025-07-05 12:34:51,547 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-05 12:34:51,549 - __main__ - INFO - Raw barcode: '1751693586912494'
+2025-07-05 12:34:51,550 - __main__ - INFO - Barcode length: 16
+2025-07-05 12:34:51,551 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-05 12:34:51,553 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-05 12:34:51,554 - __main__ - INFO - Barcode: 1751693586912494
+2025-07-05 12:34:51,555 - __main__ - INFO - Debug mode: ENABLED
+2025-07-05 12:34:51,557 - __main__ - INFO - Capturing exit images...
+2025-07-05 12:34:51,557 - database_service - INFO - Processing vehicle exit for: 1751693586912494
+2025-07-05 12:34:53,587 - database_service - INFO - Searching for transaction with barcode: 1751693586912494
+2025-07-05 12:34:53,602 - database_service - INFO - Found transaction by primary ID: transaction_1751693586912494
+2025-07-05 12:34:53,603 - database_service - INFO - Found transaction by barcode
+2025-07-05 12:34:53,603 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-05 12:34:53,603 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-05 12:34:53,624 - database_service - INFO - Transaction transaction_1751693586912494 marked as exited
+2025-07-05 12:34:53,684 - database_service - INFO - Added image exit.jpg to transaction transaction_1751693586912494
+2025-07-05 12:34:53,685 - database_service - INFO - Added exit image to transaction
+2025-07-05 12:34:53,685 - database_service - INFO - Vehicle exit processed successfully for: 1751693586912494
+2025-07-05 12:34:53,687 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-05 12:34:53,690 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-05 12:34:53,692 - __main__ - INFO - Gate service available - triggering open
+2025-07-05 12:34:53,693 - gate_service - INFO - \U0001f513 Opening gate...
+2025-07-05 12:34:53,696 - __main__ - INFO - Gate status: OPENING
+2025-07-05 12:34:53,696 - gate_service - INFO - \U0001f3ad SIMULATION: Gate opened
+2025-07-05 12:34:54,208 - __main__ - INFO - Gate status: OPEN
+2025-07-05 12:34:54,210 - gate_service - INFO - \u2705 Gate opened successfully
+2025-07-05 12:34:54,212 - __main__ - INFO - \u2705 GATE OPENED SUCCESSFULLY by barcode scan!
+2025-07-05 12:34:54,214 - __main__ - INFO - Auto-capturing exit images for barcode: 1751693586912494
+2025-07-05 12:34:54,215 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-05 12:34:54,257 - camera_service - INFO - Successfully captured image from camera 'exit'
+2025-07-05 12:34:54,260 - __main__ - INFO - \u2705 Auto-capture successful for barcode: 1751693586912494
+2025-07-05 12:34:54,263 - __main__ - INFO - Stored combined exit image data
+2025-07-05 12:34:54,264 - database_service - INFO - Searching for transaction with barcode: 1751693586912494
+2025-07-05 12:34:54,278 - database_service - INFO - Found transaction by primary ID: transaction_1751693586912494
+2025-07-05 12:34:54,281 - __main__ - INFO - Saving exit images to transaction: transaction_1751693586912494
+2025-07-05 12:34:54,312 - database_service - INFO - Added image exit.jpg to transaction transaction_1751693586912494
+2025-07-05 12:34:54,331 - __main__ - INFO - \u2705 Saved exit image as attachment (combined)
+2025-07-05 12:34:54,342 - __main__ - INFO - Successfully saved 1 exit image(s) as attachment(s)
+2025-07-05 12:34:54,385 - __main__ - INFO - Camera preview updated (320x179)
+2025-07-05 12:34:55,221 - gate_service - INFO - \U0001f512 Closing gate...
+2025-07-05 12:34:55,224 - __main__ - INFO - Gate status: CLOSING
+2025-07-05 12:34:55,225 - gate_service - INFO - \U0001f3ad SIMULATION: Gate closed
+2025-07-05 12:34:55,740 - __main__ - INFO - Gate status: CLOSED
+2025-07-05 12:34:55,741 - gate_service - INFO - \u2705 Gate closed successfully
+2025-07-05 12:34:55,743 - __main__ - INFO - Auto-close gate: Success
+2025-07-05 12:35:50,011 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-05 12:35:50,011 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 14:48:38,747 - __main__ - INFO - GUI Setup completed
+2025-07-16 14:48:38,750 - __main__ - INFO - Initializing services...
+2025-07-16 14:48:38,800 - config - INFO - Loaded configuration from config.ini
+2025-07-16 14:48:38,800 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 14:48:38,806 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 14:48:38,808 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 14:48:38,808 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 14:48:38,808 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 14:48:38,811 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 14:48:38,827 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 14:48:38,833 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 14:48:39,764 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-16 14:48:41,889 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-16 14:48:41,894 - database_service - INFO - Connected to existing database: transactions
+2025-07-16 14:48:41,901 - database_service - INFO - Initializing member optimization views...
+2025-07-16 14:48:41,905 - database_service - INFO - Member views already up to date
+2025-07-16 14:48:41,999 - database_service - INFO - Updated enhanced transaction views
+2025-07-16 14:48:41,999 - database_service - INFO - Index creation attempted
+2025-07-16 14:48:42,000 - database_service - INFO - Preloading active members into cache...
+2025-07-16 14:48:42,106 - member_cache - INFO - Preloaded 6 members into cache
+2025-07-16 14:48:42,106 - database_service - INFO - \u2705 Preloaded 6 active members (106.39ms)
+2025-07-16 14:48:42,106 - database_service - INFO - Member optimization views initialized successfully
+2025-07-16 14:48:42,106 - database_service - INFO - Database connection established
+2025-07-16 14:48:42,112 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-16 14:48:42,118 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-16 14:48:42,123 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 14:48:42,130 - __main__ - INFO - Audio service is disabled or not available
+2025-07-16 14:48:42,274 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 14:48:42,276 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 14:48:42,278 - camera_service - INFO - OpenCV not available
+2025-07-16 14:48:42,278 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 14:48:42,279 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 14:48:42,286 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 14:48:42,289 - __main__ - INFO - Testing camera connectivity...
+2025-07-16 14:48:42,290 - camera_service - INFO - Testing camera: exit
+2025-07-16 14:48:42,290 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 14:48:52,320 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 14:48:52,320 - camera_service - ERROR - Camera 'exit' test failed: Timeout capturing from camera 'exit'
+2025-07-16 14:48:52,324 - __main__ - INFO - Camera 'exit': FAILED
+2025-07-16 14:48:52,342 - __main__ - INFO - Scanner not available - manual input only
+2025-07-16 14:48:52,355 - __main__ - INFO - Adding gate status listener...
+2025-07-16 14:48:52,399 - __main__ - INFO - Gate status listener added
+2025-07-16 14:48:52,421 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-16 14:48:52,487 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-16 14:48:52,558 - __main__ - INFO -   GPIO Available: No
+2025-07-16 14:48:52,592 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-16 14:48:52,634 - __main__ - INFO - Testing gate service functionality...
+2025-07-16 14:48:52,639 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-16 14:48:52,639 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-16 14:48:52,643 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-16 14:48:52,692 - __main__ - INFO - Services initialization completed
+2025-07-16 14:48:52,753 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-16 14:48:52,801 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-16 14:48:52,805 - __main__ - INFO - Exit Gate GUI started
+2025-07-16 14:48:53,200 - __main__ - INFO - Auto-listener started
+2025-07-16 14:49:07,020 - __main__ - INFO - DEBUG MODE: DISABLED
+2025-07-16 14:49:08,553 - __main__ - INFO - Fullscreen mode: OFF
+2025-07-16 14:50:09,526 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 14:50:09,527 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 14:51:12,287 - __main__ - INFO - GUI Setup completed
+2025-07-16 14:51:12,291 - __main__ - INFO - Initializing services...
+2025-07-16 14:51:12,337 - config - INFO - Loaded configuration from config.ini
+2025-07-16 14:51:12,337 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 14:51:12,342 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 14:51:12,342 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 14:51:12,342 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 14:51:12,342 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 14:51:12,354 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 14:51:12,375 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 14:51:12,381 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 14:51:13,000 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-16 14:51:15,088 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-16 14:51:15,093 - database_service - INFO - Connected to existing database: transactions
+2025-07-16 14:51:15,101 - database_service - INFO - Initializing member optimization views...
+2025-07-16 14:51:15,105 - database_service - INFO - Member views already up to date
+2025-07-16 14:51:15,109 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-16 14:51:15,109 - database_service - INFO - Index creation attempted
+2025-07-16 14:51:15,109 - database_service - INFO - Preloading active members into cache...
+2025-07-16 14:51:15,127 - member_cache - INFO - Preloaded 6 members into cache
+2025-07-16 14:51:15,128 - database_service - INFO - \u2705 Preloaded 6 active members (18.95ms)
+2025-07-16 14:51:15,128 - database_service - INFO - Member optimization views initialized successfully
+2025-07-16 14:51:15,128 - database_service - INFO - Database connection established
+2025-07-16 14:51:15,134 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-16 14:51:15,139 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-16 14:51:15,146 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 14:51:15,152 - __main__ - INFO - Audio service is disabled or not available
+2025-07-16 14:51:15,204 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 14:51:15,205 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 14:51:15,209 - camera_service - INFO - OpenCV not available
+2025-07-16 14:51:15,209 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 14:51:15,209 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 14:51:15,214 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 14:51:15,218 - __main__ - INFO - Testing camera connectivity...
+2025-07-16 14:51:15,218 - camera_service - INFO - Testing camera: exit
+2025-07-16 14:51:15,218 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 14:51:25,571 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 14:51:25,571 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 14:51:34,646 - __main__ - INFO - GUI Setup completed
+2025-07-16 14:51:34,648 - __main__ - INFO - Initializing services...
+2025-07-16 14:51:34,695 - config - INFO - Loaded configuration from config.ini
+2025-07-16 14:51:34,696 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 14:51:34,699 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 14:51:34,700 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 14:51:34,700 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 14:51:34,700 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 14:51:34,707 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 14:51:34,722 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 14:51:34,727 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 14:51:35,334 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-16 14:51:37,404 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-16 14:51:37,408 - database_service - INFO - Connected to existing database: transactions
+2025-07-16 14:51:37,417 - database_service - INFO - Initializing member optimization views...
+2025-07-16 14:51:37,421 - database_service - INFO - Member views already up to date
+2025-07-16 14:51:37,438 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-16 14:51:37,438 - database_service - INFO - Index creation attempted
+2025-07-16 14:51:37,438 - database_service - INFO - Preloading active members into cache...
+2025-07-16 14:51:37,461 - member_cache - INFO - Preloaded 6 members into cache
+2025-07-16 14:51:37,461 - database_service - INFO - \u2705 Preloaded 6 active members (21.87ms)
+2025-07-16 14:51:37,462 - database_service - INFO - Member optimization views initialized successfully
+2025-07-16 14:51:37,462 - database_service - INFO - Database connection established
+2025-07-16 14:51:37,481 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-16 14:51:37,486 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-16 14:51:37,490 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 14:51:37,495 - __main__ - INFO - Audio service is disabled or not available
+2025-07-16 14:51:37,545 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 14:51:37,547 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 14:51:37,547 - camera_service - INFO - OpenCV not available
+2025-07-16 14:51:37,548 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 14:51:37,548 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 14:51:37,553 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 14:51:37,559 - __main__ - INFO - Testing camera connectivity...
+2025-07-16 14:51:37,559 - camera_service - INFO - Testing camera: exit
+2025-07-16 14:51:37,559 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 14:51:47,584 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 14:51:47,584 - camera_service - ERROR - Camera 'exit' test failed: Timeout capturing from camera 'exit'
+2025-07-16 14:51:47,593 - __main__ - INFO - Camera 'exit': FAILED
+2025-07-16 14:51:47,605 - __main__ - INFO - Scanner not available - manual input only
+2025-07-16 14:51:47,623 - __main__ - INFO - Adding gate status listener...
+2025-07-16 14:51:47,633 - __main__ - INFO - Gate status listener added
+2025-07-16 14:51:47,644 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-16 14:51:47,657 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-16 14:51:47,662 - __main__ - INFO -   GPIO Available: No
+2025-07-16 14:51:47,676 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-16 14:51:47,687 - __main__ - INFO - Testing gate service functionality...
+2025-07-16 14:51:47,696 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-16 14:51:47,697 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-16 14:51:47,713 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-16 14:51:47,725 - __main__ - INFO - Services initialization completed
+2025-07-16 14:51:47,745 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-16 14:51:47,757 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-16 14:51:47,762 - __main__ - INFO - Exit Gate GUI started
+2025-07-16 14:51:48,054 - __main__ - INFO - Auto-listener started
+2025-07-16 15:03:41,958 - __main__ - INFO - GUI Setup completed
+2025-07-16 15:03:41,981 - __main__ - INFO - Initializing services...
+2025-07-16 15:03:42,742 - config - INFO - Loaded configuration from config.ini
+2025-07-16 15:03:42,743 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 15:03:42,751 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 15:03:48,447 - gate_service - ERROR - Failed to configure serial port: could not open port 'COM7': OSError(22, 'The semaphore timeout period has expired.', None, 121)
+2025-07-16 15:03:48,447 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 15:03:48,448 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 15:03:48,448 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 15:03:48,603 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 15:03:48,995 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 15:03:49,014 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 15:03:49,761 - __main__ - INFO - WARNING: Database service import failed: No module named 'app'
+2025-07-16 15:03:49,918 - __main__ - INFO - Fallback also failed: unexpected indent (database_service.py, line 1612)
+2025-07-16 15:04:01,319 - audio_service - INFO - Audio mixer initialized
+2025-07-16 15:04:01,334 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 15:04:01,347 - __main__ - INFO - Audio service is enabled
+2025-07-16 15:04:08,224 - audio_service - INFO - Testing audio playback...
+2025-07-16 15:04:08,670 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 15:04:08,673 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 15:04:08,772 - camera_service - INFO - OpenCV loaded successfully
+2025-07-16 15:04:08,772 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 15:04:08,772 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 15:04:08,777 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 15:04:08,780 - __main__ - INFO - Testing camera connectivity...
+2025-07-16 15:04:08,780 - camera_service - INFO - Testing camera: exit
+2025-07-16 15:04:08,780 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 15:04:18,788 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 15:04:18,789 - camera_service - ERROR - Camera 'exit' test failed: Timeout capturing from camera 'exit'
+2025-07-16 15:04:18,794 - __main__ - INFO - Camera 'exit': FAILED
+2025-07-16 15:04:18,800 - __main__ - INFO - Scanner not available - manual input only
+2025-07-16 15:04:18,805 - __main__ - INFO - Adding gate status listener...
+2025-07-16 15:04:18,810 - __main__ - INFO - Gate status listener added
+2025-07-16 15:04:18,841 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-16 15:04:18,848 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-16 15:04:18,853 - __main__ - INFO -   GPIO Available: No
+2025-07-16 15:04:18,857 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-16 15:04:18,872 - __main__ - INFO - Testing gate service functionality...
+2025-07-16 15:04:18,872 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-16 15:04:18,874 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-16 15:04:18,878 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-16 15:04:18,881 - __main__ - INFO - Services initialization completed
+2025-07-16 15:04:18,885 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-16 15:04:18,887 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-16 15:04:18,890 - __main__ - INFO - Exit Gate GUI started
+2025-07-16 15:04:19,113 - __main__ - INFO - Auto-listener started
+2025-07-16 15:04:34,143 - __main__ - INFO - Auto-processing barcode: 1806583058
+2025-07-16 15:04:34,143 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 15:04:34,144 - __main__ - INFO - Raw barcode: '1806583058'
+2025-07-16 15:04:34,145 - __main__ - INFO - Barcode length: 10
+2025-07-16 15:04:34,148 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 15:04:34,149 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 15:04:34,156 - __main__ - INFO - Barcode: 1806583058
+2025-07-16 15:04:34,170 - __main__ - INFO - Debug mode: ENABLED
+2025-07-16 15:04:34,176 - __main__ - INFO - Capturing exit images...
+2025-07-16 15:04:34,184 - __main__ - INFO - No database service available
+2025-07-16 15:04:34,185 - __main__ - INFO - Auto-capturing exit images for barcode: 1806583058
+2025-07-16 15:04:34,186 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 15:04:34,191 - __main__ - INFO - DEBUG MODE: Opening gate despite no transaction found
+2025-07-16 15:04:34,200 - __main__ - INFO - Gate service available - triggering open
+2025-07-16 15:04:34,201 - gate_service - ERROR - GPIO not available
+2025-07-16 15:04:34,213 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-16 15:04:35,215 - gate_service - ERROR - GPIO not available
+2025-07-16 15:04:35,218 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-16 15:04:39,425 - __main__ - INFO - DEBUG MODE: DISABLED
+2025-07-16 15:04:41,216 - __main__ - INFO - Auto-processing barcode: 1806583058
+2025-07-16 15:04:41,217 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 15:04:41,218 - __main__ - INFO - Raw barcode: '1806583058'
+2025-07-16 15:04:41,218 - __main__ - INFO - Barcode length: 10
+2025-07-16 15:04:41,221 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 15:04:41,230 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 15:04:41,233 - __main__ - INFO - Barcode: 1806583058
+2025-07-16 15:04:41,237 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 15:04:41,258 - __main__ - INFO - Capturing exit images...
+2025-07-16 15:04:41,288 - __main__ - INFO - Auto-capturing exit images for barcode: 1806583058
+2025-07-16 15:04:41,289 - __main__ - INFO - No database service available
+2025-07-16 15:04:41,290 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 15:04:41,295 - __main__ - INFO - ACCESS DENIED: No transaction found and debug mode disabled
+2025-07-16 15:04:41,308 - __main__ - INFO - Gate NOT opened - access denied
+2025-07-16 15:04:44,197 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 15:04:44,628 - __main__ - INFO - \u274c Auto-capture failed for barcode 1806583058: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 15:04:51,301 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 15:04:51,305 - __main__ - INFO - \u274c Auto-capture failed for barcode 1806583058: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 15:04:57,104 - __main__ - INFO - Shutting down...
+2025-07-16 15:04:57,104 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 15:04:57,105 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 15:04:57,179 - audio_service - INFO - Audio service cleanup completed
+2025-07-16 15:04:57,189 - __main__ - INFO - Camera service shutdown
+2025-07-16 15:04:57,936 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 15:04:57,936 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 15:05:00,336 - __main__ - INFO - GUI Setup completed
+2025-07-16 15:05:00,339 - __main__ - INFO - Initializing services...
+2025-07-16 15:05:00,418 - config - INFO - Loaded configuration from config.ini
+2025-07-16 15:05:00,418 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 15:05:00,424 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 15:05:05,639 - gate_service - ERROR - Failed to configure serial port: could not open port 'COM7': OSError(22, 'The semaphore timeout period has expired.', None, 121)
+2025-07-16 15:05:05,639 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 15:05:05,639 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 15:05:05,640 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 15:05:05,654 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 15:05:05,756 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 15:05:05,768 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 15:05:06,749 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-16 15:05:08,842 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-16 15:05:08,853 - database_service - INFO - Connected to existing database: transactions
+2025-07-16 15:05:08,875 - database_service - INFO - Initializing member optimization views...
+2025-07-16 15:05:08,882 - database_service - INFO - Member views already up to date
+2025-07-16 15:05:08,889 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-16 15:05:08,890 - database_service - INFO - Index creation attempted
+2025-07-16 15:05:08,890 - database_service - INFO - Preloading active members into cache...
+2025-07-16 15:05:08,920 - member_cache - INFO - Preloaded 6 members into cache
+2025-07-16 15:05:08,920 - database_service - INFO - \u2705 Preloaded 6 active members (30.39ms)
+2025-07-16 15:05:08,920 - database_service - INFO - Member optimization views initialized successfully
+2025-07-16 15:05:08,920 - database_service - INFO - Database connection established
+2025-07-16 15:05:08,924 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-16 15:05:09,980 - audio_service - INFO - Audio mixer initialized
+2025-07-16 15:05:09,986 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 15:05:09,989 - __main__ - INFO - Audio service is enabled
+2025-07-16 15:05:09,991 - audio_service - INFO - Testing audio playback...
+2025-07-16 15:05:10,038 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 15:05:10,039 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 15:05:10,110 - camera_service - INFO - OpenCV loaded successfully
+2025-07-16 15:05:10,111 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 15:05:10,111 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 15:05:10,113 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 15:05:10,117 - __main__ - INFO - Testing camera connectivity...
+2025-07-16 15:05:10,118 - camera_service - INFO - Testing camera: exit
+2025-07-16 15:05:10,118 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 15:05:20,126 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 15:05:20,126 - camera_service - ERROR - Camera 'exit' test failed: Timeout capturing from camera 'exit'
+2025-07-16 15:05:20,144 - __main__ - INFO - Camera 'exit': FAILED
+2025-07-16 15:05:20,161 - __main__ - INFO - Scanner not available - manual input only
+2025-07-16 15:05:20,182 - __main__ - INFO - Adding gate status listener...
+2025-07-16 15:05:20,190 - __main__ - INFO - Gate status listener added
+2025-07-16 15:05:20,264 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-16 15:05:20,272 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-16 15:05:20,278 - __main__ - INFO -   GPIO Available: No
+2025-07-16 15:05:20,285 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-16 15:05:20,293 - __main__ - INFO - Testing gate service functionality...
+2025-07-16 15:05:20,293 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-16 15:05:20,294 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-16 15:05:20,298 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-16 15:05:20,305 - __main__ - INFO - Services initialization completed
+2025-07-16 15:05:20,309 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-16 15:05:20,312 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-16 15:05:20,316 - __main__ - INFO - Exit Gate GUI started
+2025-07-16 15:05:20,616 - __main__ - INFO - Auto-listener started
+2025-07-16 15:05:28,532 - __main__ - INFO - Fullscreen mode: OFF
+2025-07-16 15:05:30,032 - __main__ - INFO - DEBUG MODE: DISABLED
+2025-07-16 15:05:34,960 - __main__ - INFO - Auto-processing barcode: 1806583058
+2025-07-16 15:05:34,961 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 15:05:34,963 - __main__ - INFO - Raw barcode: '1806583058'
+2025-07-16 15:05:34,963 - __main__ - INFO - Barcode length: 10
+2025-07-16 15:05:34,965 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 15:05:34,977 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 15:05:34,985 - __main__ - INFO - Barcode: 1806583058
+2025-07-16 15:05:35,000 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 15:05:35,015 - __main__ - INFO - Capturing exit images...
+2025-07-16 15:05:35,020 - database_service - INFO - Processing vehicle exit for: 1806583058
+2025-07-16 15:05:35,027 - __main__ - INFO - Auto-capturing exit images for barcode: 1806583058
+2025-07-16 15:05:35,027 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 15:05:35,031 - database_service - INFO - Searching for transaction with barcode: 1806583058
+2025-07-16 15:05:35,051 - database_service - INFO - Found transaction by primary ID: transaction_1806583058
+2025-07-16 15:05:35,052 - database_service - INFO - Found transaction by barcode (21.44ms)
+2025-07-16 15:05:35,052 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-16 15:05:35,052 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-16 15:05:35,157 - database_service - INFO - Transaction transaction_1806583058 marked as exited
+2025-07-16 15:05:35,157 - database_service - INFO - Vehicle exit processed successfully for: 1806583058
+2025-07-16 15:05:35,294 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-16 15:05:35,299 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-16 15:05:35,304 - __main__ - INFO - Gate service available - triggering open
+2025-07-16 15:05:35,305 - gate_service - ERROR - GPIO not available
+2025-07-16 15:05:35,316 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-16 15:05:36,318 - gate_service - ERROR - GPIO not available
+2025-07-16 15:05:36,319 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-16 15:05:45,041 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 15:05:45,051 - __main__ - INFO - \u274c Auto-capture failed for barcode 1806583058: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 15:06:02,023 - __main__ - INFO - Auto-processing barcode: 1751708191392102
+2025-07-16 15:06:02,024 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 15:06:02,025 - __main__ - INFO - Raw barcode: '1751708191392102'
+2025-07-16 15:06:02,027 - __main__ - INFO - Barcode length: 16
+2025-07-16 15:06:02,031 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 15:06:02,047 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 15:06:02,056 - __main__ - INFO - Barcode: 1751708191392102
+2025-07-16 15:06:02,072 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 15:06:02,166 - __main__ - INFO - Capturing exit images...
+2025-07-16 15:06:02,167 - database_service - INFO - Processing vehicle exit for: 1751708191392102
+2025-07-16 15:06:02,172 - __main__ - INFO - Auto-capturing exit images for barcode: 1751708191392102
+2025-07-16 15:06:02,173 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 15:06:02,174 - database_service - INFO - Searching for transaction with barcode: 1751708191392102
+2025-07-16 15:06:02,199 - database_service - INFO - Found transaction by primary ID: transaction_1751708191392102
+2025-07-16 15:06:02,199 - database_service - INFO - Found transaction by barcode (24.73ms)
+2025-07-16 15:06:02,201 - database_service - INFO - Searching for member transaction with card: 0006225797
+2025-07-16 15:06:02,206 - database_service - INFO - \u2705 Found member in cache (5.60ms)
+2025-07-16 15:06:02,238 - database_service - INFO - \u2705 Processed member exit: 0006225797 (37.94ms)
+2025-07-16 15:06:02,245 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-16 15:06:02,251 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-16 15:06:02,263 - __main__ - INFO - Gate service available - triggering open
+2025-07-16 15:06:02,264 - gate_service - ERROR - GPIO not available
+2025-07-16 15:06:02,267 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-16 15:06:03,271 - gate_service - ERROR - GPIO not available
+2025-07-16 15:06:03,281 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-16 15:06:12,183 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 15:06:12,186 - __main__ - INFO - \u274c Auto-capture failed for barcode 1751708191392102: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 16:22:32,585 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 16:22:32,588 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 16:22:38,789 - __main__ - INFO - GUI Setup completed
+2025-07-16 16:22:38,792 - __main__ - INFO - Initializing services...
+2025-07-16 16:22:38,869 - config - INFO - Loaded configuration from config.ini
+2025-07-16 16:22:38,869 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 16:22:38,872 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 16:22:44,094 - gate_service - ERROR - Failed to configure serial port: could not open port 'COM7': OSError(22, 'The semaphore timeout period has expired.', None, 121)
+2025-07-16 16:22:44,094 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 16:22:44,094 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 16:22:44,094 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 16:22:44,103 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 16:22:44,137 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 16:22:44,171 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 16:22:45,029 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-16 16:22:47,139 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-16 16:22:47,145 - database_service - INFO - Connected to existing database: transactions
+2025-07-16 16:22:47,164 - database_service - INFO - Initializing member optimization views...
+2025-07-16 16:22:47,173 - database_service - INFO - Member views already up to date
+2025-07-16 16:22:47,183 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-16 16:22:47,184 - database_service - INFO - Index creation attempted
+2025-07-16 16:22:47,184 - database_service - INFO - Preloading active members into cache...
+2025-07-16 16:22:47,218 - member_cache - INFO - Preloaded 5 members into cache
+2025-07-16 16:22:47,218 - database_service - INFO - \u2705 Preloaded 5 active members (33.22ms)
+2025-07-16 16:22:47,218 - database_service - INFO - Member optimization views initialized successfully
+2025-07-16 16:22:47,219 - database_service - INFO - Database connection established
+2025-07-16 16:22:47,233 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-16 16:22:48,462 - audio_service - INFO - Audio mixer initialized
+2025-07-16 16:22:48,467 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 16:22:48,475 - __main__ - INFO - Audio service is enabled
+2025-07-16 16:22:48,478 - audio_service - INFO - Testing audio playback...
+2025-07-16 16:22:48,544 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 16:22:48,545 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 16:22:48,629 - camera_service - INFO - OpenCV loaded successfully
+2025-07-16 16:22:48,629 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 16:22:48,630 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 16:22:48,633 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 16:22:48,636 - __main__ - INFO - Testing camera connectivity...
+2025-07-16 16:22:48,636 - camera_service - INFO - Testing camera: exit
+2025-07-16 16:22:48,636 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:22:58,643 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:22:58,643 - camera_service - ERROR - Camera 'exit' test failed: Timeout capturing from camera 'exit'
+2025-07-16 16:22:58,647 - __main__ - INFO - Camera 'exit': FAILED
+2025-07-16 16:22:58,653 - __main__ - INFO - Scanner not available - manual input only
+2025-07-16 16:22:58,666 - __main__ - INFO - Adding gate status listener...
+2025-07-16 16:22:58,680 - __main__ - INFO - Gate status listener added
+2025-07-16 16:22:58,695 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-16 16:22:58,699 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-16 16:22:58,701 - __main__ - INFO -   GPIO Available: No
+2025-07-16 16:22:58,710 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-16 16:22:58,738 - __main__ - INFO - Testing gate service functionality...
+2025-07-16 16:22:58,739 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-16 16:22:58,739 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-16 16:22:58,759 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-16 16:22:58,790 - __main__ - INFO - Services initialization completed
+2025-07-16 16:22:58,802 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-16 16:22:58,807 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-16 16:22:58,822 - __main__ - INFO - Exit Gate GUI started
+2025-07-16 16:22:59,116 - __main__ - INFO - Auto-listener started
+2025-07-16 16:23:42,574 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 16:23:42,574 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 16:23:46,069 - __main__ - INFO - GUI Setup completed
+2025-07-16 16:23:46,071 - __main__ - INFO - Initializing services...
+2025-07-16 16:23:46,134 - config - INFO - Loaded configuration from config.ini
+2025-07-16 16:23:46,134 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 16:23:46,137 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 16:23:51,343 - gate_service - ERROR - Failed to configure serial port: could not open port 'COM7': OSError(22, 'The semaphore timeout period has expired.', None, 121)
+2025-07-16 16:23:51,344 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 16:23:51,344 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 16:23:51,344 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 16:23:51,372 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 16:23:51,408 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 16:23:51,422 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 16:23:52,027 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-16 16:23:54,134 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-16 16:23:54,140 - database_service - INFO - Connected to existing database: transactions
+2025-07-16 16:23:54,153 - database_service - INFO - Initializing member optimization views...
+2025-07-16 16:23:54,158 - database_service - INFO - Member views already up to date
+2025-07-16 16:23:54,166 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-16 16:23:54,166 - database_service - INFO - Index creation attempted
+2025-07-16 16:23:54,166 - database_service - INFO - Preloading active members into cache...
+2025-07-16 16:23:54,187 - member_cache - INFO - Preloaded 5 members into cache
+2025-07-16 16:23:54,188 - database_service - INFO - \u2705 Preloaded 5 active members (21.73ms)
+2025-07-16 16:23:54,188 - database_service - INFO - Member optimization views initialized successfully
+2025-07-16 16:23:54,188 - database_service - INFO - Database connection established
+2025-07-16 16:23:54,197 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-16 16:23:55,314 - audio_service - INFO - Audio mixer initialized
+2025-07-16 16:23:55,322 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 16:23:55,327 - __main__ - INFO - Audio service is enabled
+2025-07-16 16:23:55,328 - audio_service - INFO - Testing audio playback...
+2025-07-16 16:23:55,378 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 16:23:55,378 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 16:23:55,440 - camera_service - INFO - OpenCV loaded successfully
+2025-07-16 16:23:55,442 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 16:23:55,442 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 16:23:55,445 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 16:23:55,448 - __main__ - INFO - Testing camera connectivity...
+2025-07-16 16:23:55,448 - camera_service - INFO - Testing camera: exit
+2025-07-16 16:23:55,448 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:24:05,457 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:24:05,458 - camera_service - ERROR - Camera 'exit' test failed: Timeout capturing from camera 'exit'
+2025-07-16 16:24:05,476 - __main__ - INFO - Camera 'exit': FAILED
+2025-07-16 16:24:05,483 - __main__ - INFO - Scanner not available - manual input only
+2025-07-16 16:24:05,544 - __main__ - INFO - Adding gate status listener...
+2025-07-16 16:24:05,557 - __main__ - INFO - Gate status listener added
+2025-07-16 16:24:05,596 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-16 16:24:05,607 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-16 16:24:05,613 - __main__ - INFO -   GPIO Available: No
+2025-07-16 16:24:05,617 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-16 16:24:05,624 - __main__ - INFO - Testing gate service functionality...
+2025-07-16 16:24:05,625 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-16 16:24:05,625 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-16 16:24:05,628 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-16 16:24:05,631 - __main__ - INFO - Services initialization completed
+2025-07-16 16:24:05,637 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-16 16:24:05,640 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-16 16:24:05,643 - __main__ - INFO - Exit Gate GUI started
+2025-07-16 16:24:06,109 - __main__ - INFO - Auto-listener started
+2025-07-16 16:24:17,683 - __main__ - INFO - Shutting down...
+2025-07-16 16:24:17,687 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 16:24:17,687 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 16:24:17,763 - audio_service - INFO - Audio service cleanup completed
+2025-07-16 16:24:17,764 - __main__ - INFO - Camera service shutdown
+2025-07-16 16:24:18,080 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 16:24:18,081 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 16:24:31,120 - __main__ - INFO - GUI Setup completed
+2025-07-16 16:24:31,123 - __main__ - INFO - Initializing services...
+2025-07-16 16:24:31,192 - config - INFO - Loaded configuration from config.ini
+2025-07-16 16:24:31,193 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 16:24:31,195 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 16:24:36,399 - gate_service - ERROR - Failed to configure serial port: could not open port 'COM7': OSError(22, 'The semaphore timeout period has expired.', None, 121)
+2025-07-16 16:24:36,400 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 16:24:36,400 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 16:24:36,400 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 16:24:36,411 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 16:24:36,458 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 16:24:36,477 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 16:24:37,098 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-16 16:24:39,215 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-16 16:24:39,225 - database_service - INFO - Connected to existing database: transactions
+2025-07-16 16:24:39,241 - database_service - INFO - Initializing member optimization views...
+2025-07-16 16:24:39,251 - database_service - INFO - Member views already up to date
+2025-07-16 16:24:39,266 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-16 16:24:39,266 - database_service - INFO - Index creation attempted
+2025-07-16 16:24:39,267 - database_service - INFO - Preloading active members into cache...
+2025-07-16 16:24:39,297 - member_cache - INFO - Preloaded 5 members into cache
+2025-07-16 16:24:39,298 - database_service - INFO - \u2705 Preloaded 5 active members (31.12ms)
+2025-07-16 16:24:39,298 - database_service - INFO - Member optimization views initialized successfully
+2025-07-16 16:24:39,298 - database_service - INFO - Database connection established
+2025-07-16 16:24:39,307 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-16 16:24:40,442 - audio_service - INFO - Audio mixer initialized
+2025-07-16 16:24:40,446 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 16:24:40,448 - __main__ - INFO - Audio service is enabled
+2025-07-16 16:24:40,450 - audio_service - INFO - Testing audio playback...
+2025-07-16 16:24:40,493 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 16:24:40,493 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 16:24:40,560 - camera_service - INFO - OpenCV loaded successfully
+2025-07-16 16:24:40,560 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 16:24:40,560 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 16:24:40,563 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 16:24:40,566 - __main__ - INFO - Testing camera connectivity...
+2025-07-16 16:24:40,566 - camera_service - INFO - Testing camera: exit
+2025-07-16 16:24:40,566 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:24:50,573 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:24:50,574 - camera_service - ERROR - Camera 'exit' test failed: Timeout capturing from camera 'exit'
+2025-07-16 16:24:50,585 - __main__ - INFO - Camera 'exit': FAILED
+2025-07-16 16:24:50,593 - __main__ - INFO - Scanner not available - manual input only
+2025-07-16 16:24:50,600 - __main__ - INFO - Adding gate status listener...
+2025-07-16 16:24:50,605 - __main__ - INFO - Gate status listener added
+2025-07-16 16:24:50,627 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-16 16:24:50,632 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-16 16:24:50,635 - __main__ - INFO -   GPIO Available: No
+2025-07-16 16:24:50,652 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-16 16:24:50,658 - __main__ - INFO - Testing gate service functionality...
+2025-07-16 16:24:50,659 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-16 16:24:50,659 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-16 16:24:50,663 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-16 16:24:50,667 - __main__ - INFO - Services initialization completed
+2025-07-16 16:24:50,675 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-16 16:24:50,677 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-16 16:24:50,682 - __main__ - INFO - Exit Gate GUI started
+2025-07-16 16:24:51,098 - __main__ - INFO - Auto-listener started
+2025-07-16 16:24:53,129 - __main__ - INFO - Shutting down...
+2025-07-16 16:24:53,130 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 16:24:53,130 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 16:24:53,220 - audio_service - INFO - Audio service cleanup completed
+2025-07-16 16:24:53,221 - __main__ - INFO - Camera service shutdown
+2025-07-16 16:24:53,613 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 16:24:53,615 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 16:25:16,593 - __main__ - INFO - GUI Setup completed
+2025-07-16 16:25:16,603 - __main__ - INFO - Initializing services...
+2025-07-16 16:25:16,718 - config - INFO - Loaded configuration from config.ini
+2025-07-16 16:25:16,719 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 16:25:16,727 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 16:25:21,933 - gate_service - ERROR - Failed to configure serial port: could not open port 'COM7': OSError(22, 'The semaphore timeout period has expired.', None, 121)
+2025-07-16 16:25:21,933 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 16:25:21,933 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 16:25:21,933 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 16:25:21,947 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 16:25:21,968 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 16:25:21,985 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 16:25:23,012 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-16 16:25:25,103 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-16 16:25:25,107 - database_service - INFO - Connected to existing database: transactions
+2025-07-16 16:25:25,117 - database_service - INFO - Initializing member optimization views...
+2025-07-16 16:25:25,120 - database_service - INFO - Member views already up to date
+2025-07-16 16:25:25,125 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-16 16:25:25,126 - database_service - INFO - Index creation attempted
+2025-07-16 16:25:25,126 - database_service - INFO - Preloading active members into cache...
+2025-07-16 16:25:25,140 - member_cache - INFO - Preloaded 5 members into cache
+2025-07-16 16:25:25,140 - database_service - INFO - \u2705 Preloaded 5 active members (14.04ms)
+2025-07-16 16:25:25,140 - database_service - INFO - Member optimization views initialized successfully
+2025-07-16 16:25:25,141 - database_service - INFO - Database connection established
+2025-07-16 16:25:25,224 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-16 16:25:26,379 - audio_service - INFO - Audio mixer initialized
+2025-07-16 16:25:26,399 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 16:25:26,430 - __main__ - INFO - Audio service is enabled
+2025-07-16 16:25:26,445 - audio_service - INFO - Testing audio playback...
+2025-07-16 16:25:26,524 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 16:25:26,526 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 16:25:26,643 - camera_service - INFO - OpenCV loaded successfully
+2025-07-16 16:25:26,653 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 16:25:26,654 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 16:25:26,671 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 16:25:26,679 - __main__ - INFO - Scanner not available - manual input only
+2025-07-16 16:25:26,685 - __main__ - INFO - Adding gate status listener...
+2025-07-16 16:25:26,689 - __main__ - INFO - Gate status listener added
+2025-07-16 16:25:26,706 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-16 16:25:26,711 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-16 16:25:26,714 - __main__ - INFO -   GPIO Available: No
+2025-07-16 16:25:26,723 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-16 16:25:26,726 - __main__ - INFO - Testing gate service functionality...
+2025-07-16 16:25:26,727 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-16 16:25:26,727 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-16 16:25:26,729 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-16 16:25:26,736 - __main__ - INFO - Services initialization completed
+2025-07-16 16:25:26,742 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-16 16:25:26,744 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-16 16:25:26,747 - __main__ - INFO - Exit Gate GUI started
+2025-07-16 16:25:27,137 - __main__ - INFO - Auto-listener started
+2025-07-16 16:25:32,756 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 16:25:32,756 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 16:25:34,636 - __main__ - INFO - GUI Setup completed
+2025-07-16 16:25:34,640 - __main__ - INFO - Initializing services...
+2025-07-16 16:25:34,714 - config - INFO - Loaded configuration from config.ini
+2025-07-16 16:25:34,714 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 16:25:34,717 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 16:25:39,924 - gate_service - ERROR - Failed to configure serial port: could not open port 'COM7': OSError(22, 'The semaphore timeout period has expired.', None, 121)
+2025-07-16 16:25:39,925 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 16:25:39,926 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 16:25:39,926 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 16:25:39,935 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 16:25:39,952 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 16:25:39,961 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 16:25:40,588 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-16 16:25:42,683 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-16 16:25:42,690 - database_service - INFO - Connected to existing database: transactions
+2025-07-16 16:25:42,703 - database_service - INFO - Initializing member optimization views...
+2025-07-16 16:25:42,710 - database_service - INFO - Member views already up to date
+2025-07-16 16:25:42,716 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-16 16:25:42,717 - database_service - INFO - Index creation attempted
+2025-07-16 16:25:42,717 - database_service - INFO - Preloading active members into cache...
+2025-07-16 16:25:42,737 - member_cache - INFO - Preloaded 5 members into cache
+2025-07-16 16:25:42,738 - database_service - INFO - \u2705 Preloaded 5 active members (19.93ms)
+2025-07-16 16:25:42,738 - database_service - INFO - Member optimization views initialized successfully
+2025-07-16 16:25:42,738 - database_service - INFO - Database connection established
+2025-07-16 16:25:42,759 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-16 16:25:43,894 - audio_service - INFO - Audio mixer initialized
+2025-07-16 16:25:43,906 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 16:25:43,921 - __main__ - INFO - Audio service is enabled
+2025-07-16 16:25:43,927 - audio_service - INFO - Testing audio playback...
+2025-07-16 16:25:44,058 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 16:25:44,060 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 16:25:44,143 - camera_service - INFO - OpenCV loaded successfully
+2025-07-16 16:25:44,144 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 16:25:44,144 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 16:25:44,149 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 16:25:44,153 - __main__ - INFO - Scanner not available - manual input only
+2025-07-16 16:25:44,156 - __main__ - INFO - Adding gate status listener...
+2025-07-16 16:25:44,165 - __main__ - INFO - Gate status listener added
+2025-07-16 16:25:44,197 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-16 16:25:44,200 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-16 16:25:44,207 - __main__ - INFO -   GPIO Available: No
+2025-07-16 16:25:44,213 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-16 16:25:44,223 - __main__ - INFO - Testing gate service functionality...
+2025-07-16 16:25:44,224 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-16 16:25:44,224 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-16 16:25:44,229 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-16 16:25:44,237 - __main__ - INFO - Services initialization completed
+2025-07-16 16:25:44,242 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-16 16:25:44,244 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-16 16:25:44,246 - __main__ - INFO - Exit Gate GUI started
+2025-07-16 16:25:44,713 - __main__ - INFO - Auto-listener started
+2025-07-16 16:25:49,191 - __main__ - INFO - Fullscreen mode: OFF
+2025-07-16 16:27:03,493 - __main__ - INFO - DEBUG MODE: DISABLED
+2025-07-16 16:27:16,545 - __main__ - INFO - Auto-processing barcode: 1751708291542845
+2025-07-16 16:27:16,547 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 16:27:16,548 - __main__ - INFO - Raw barcode: '1751708291542845'
+2025-07-16 16:27:16,549 - __main__ - INFO - Barcode length: 16
+2025-07-16 16:27:16,553 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 16:27:16,555 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 16:27:16,571 - __main__ - INFO - Barcode: 1751708291542845
+2025-07-16 16:27:16,605 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 16:27:16,619 - __main__ - INFO - Capturing exit images...
+2025-07-16 16:27:16,631 - database_service - INFO - Processing vehicle exit for: 1751708291542845
+2025-07-16 16:27:16,639 - database_service - INFO - Searching for transaction with barcode: 1751708291542845
+2025-07-16 16:27:16,643 - __main__ - INFO - Auto-capturing exit images for barcode: 1751708291542845
+2025-07-16 16:27:16,645 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:27:16,669 - database_service - INFO - Found transaction by primary ID: transaction_1751708291542845
+2025-07-16 16:27:16,672 - database_service - INFO - Found transaction by barcode (32.32ms)
+2025-07-16 16:27:16,673 - database_service - INFO - Searching for member transaction with card: 0006225797
+2025-07-16 16:27:16,682 - database_service - INFO - \u2705 Found member in cache (9.47ms)
+2025-07-16 16:27:16,718 - database_service - INFO - \u2705 Processed member exit: 0006225797 (45.00ms)
+2025-07-16 16:27:17,128 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-16 16:27:17,138 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-16 16:27:17,143 - __main__ - INFO - Gate service available - triggering open
+2025-07-16 16:27:17,143 - gate_service - ERROR - GPIO not available
+2025-07-16 16:27:17,149 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-16 16:27:18,151 - gate_service - ERROR - GPIO not available
+2025-07-16 16:27:18,164 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-16 16:27:26,681 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:27:26,688 - __main__ - INFO - \u274c Auto-capture failed for barcode 1751708291542845: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 16:33:00,249 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-16 16:33:00,253 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-16 16:33:03,098 - __main__ - INFO - GUI Setup completed
+2025-07-16 16:33:03,101 - __main__ - INFO - Initializing services...
+2025-07-16 16:33:03,176 - config - INFO - Loaded configuration from config.ini
+2025-07-16 16:33:03,176 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-16 16:33:03,180 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-16 16:33:08,390 - gate_service - ERROR - Failed to configure serial port: could not open port 'COM7': OSError(22, 'The semaphore timeout period has expired.', None, 121)
+2025-07-16 16:33:08,391 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-16 16:33:08,391 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-16 16:33:08,392 - gate_service - INFO - Global gate service instance created successfully
+2025-07-16 16:33:08,401 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-16 16:33:08,432 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-16 16:33:08,443 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-16 16:33:09,463 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-16 16:33:11,625 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-16 16:33:11,636 - database_service - INFO - Connected to existing database: transactions
+2025-07-16 16:33:11,652 - database_service - INFO - Initializing member optimization views...
+2025-07-16 16:33:11,663 - database_service - INFO - Member views already up to date
+2025-07-16 16:33:11,672 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-16 16:33:11,672 - database_service - INFO - Index creation attempted
+2025-07-16 16:33:11,672 - database_service - INFO - Preloading active members into cache...
+2025-07-16 16:33:11,706 - member_cache - INFO - Preloaded 4 members into cache
+2025-07-16 16:33:11,706 - database_service - INFO - \u2705 Preloaded 4 active members (34.55ms)
+2025-07-16 16:33:11,708 - database_service - INFO - Member optimization views initialized successfully
+2025-07-16 16:33:11,708 - database_service - INFO - Database connection established
+2025-07-16 16:33:11,727 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-16 16:33:13,151 - audio_service - INFO - Audio mixer initialized
+2025-07-16 16:33:13,160 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-16 16:33:13,181 - __main__ - INFO - Audio service is enabled
+2025-07-16 16:33:13,183 - audio_service - INFO - Testing audio playback...
+2025-07-16 16:33:13,245 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-16 16:33:13,246 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-16 16:33:13,302 - camera_service - INFO - OpenCV loaded successfully
+2025-07-16 16:33:13,302 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-16 16:33:13,302 - camera_service - INFO - Initialized 1 cameras
+2025-07-16 16:33:13,305 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-16 16:33:13,310 - __main__ - INFO - Scanner not available - manual input only
+2025-07-16 16:33:13,313 - __main__ - INFO - Adding gate status listener...
+2025-07-16 16:33:13,317 - __main__ - INFO - Gate status listener added
+2025-07-16 16:33:13,332 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-16 16:33:13,336 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-16 16:33:13,342 - __main__ - INFO -   GPIO Available: No
+2025-07-16 16:33:13,346 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-16 16:33:13,349 - __main__ - INFO - Testing gate service functionality...
+2025-07-16 16:33:13,349 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-16 16:33:13,349 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-16 16:33:13,354 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-16 16:33:13,358 - __main__ - INFO - Services initialization completed
+2025-07-16 16:33:13,362 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-16 16:33:13,364 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-16 16:33:13,366 - __main__ - INFO - Exit Gate GUI started
+2025-07-16 16:33:13,772 - __main__ - INFO - Auto-listener started
+2025-07-16 16:33:30,484 - __main__ - INFO - Auto-processing barcode: 1751713732366975
+2025-07-16 16:33:30,485 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 16:33:30,485 - __main__ - INFO - Raw barcode: '1751713732366975'
+2025-07-16 16:33:30,487 - __main__ - INFO - Barcode length: 16
+2025-07-16 16:33:30,490 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 16:33:30,506 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 16:33:30,553 - __main__ - INFO - Barcode: 1751713732366975
+2025-07-16 16:33:30,581 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 16:33:30,610 - __main__ - INFO - Capturing exit images...
+2025-07-16 16:33:30,619 - database_service - INFO - Processing vehicle exit for: 1751713732366975
+2025-07-16 16:33:30,628 - database_service - INFO - Searching for transaction with barcode: 1751713732366975
+2025-07-16 16:33:30,631 - __main__ - INFO - Auto-capturing exit images for barcode: 1751713732366975
+2025-07-16 16:33:30,632 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:33:30,683 - database_service - INFO - Found transaction by primary ID: transaction_1751713732366975
+2025-07-16 16:33:30,684 - database_service - INFO - Found transaction by barcode (55.24ms)
+2025-07-16 16:33:30,684 - database_service - WARNING - Vehicle already exited at: 2025-07-16T15:06:02
+2025-07-16 16:33:30,801 - __main__ - INFO - \u274c No transaction found in database: Vehicle already exited at: 2025-07-16T15:06:02
+2025-07-16 16:33:30,815 - __main__ - INFO - ACCESS DENIED: No transaction found and debug mode disabled
+2025-07-16 16:33:30,827 - __main__ - INFO - Gate NOT opened - access denied
+2025-07-16 16:33:40,664 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:33:40,669 - __main__ - INFO - \u274c Auto-capture failed for barcode 1751713732366975: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 16:34:08,248 - __main__ - INFO - Auto-processing barcode: 1802343707
+2025-07-16 16:34:08,249 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 16:34:08,250 - __main__ - INFO - Raw barcode: '1802343707'
+2025-07-16 16:34:08,250 - __main__ - INFO - Barcode length: 10
+2025-07-16 16:34:08,255 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 16:34:08,270 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 16:34:08,274 - __main__ - INFO - Barcode: 1802343707
+2025-07-16 16:34:08,279 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 16:34:08,288 - __main__ - INFO - Capturing exit images...
+2025-07-16 16:34:08,297 - database_service - INFO - Processing vehicle exit for: 1802343707
+2025-07-16 16:34:08,305 - database_service - INFO - Searching for transaction with barcode: 1802343707
+2025-07-16 16:34:08,307 - __main__ - INFO - Auto-capturing exit images for barcode: 1802343707
+2025-07-16 16:34:08,308 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:34:08,319 - database_service - INFO - Found transaction by primary ID: transaction_1802343707
+2025-07-16 16:34:08,319 - database_service - INFO - Found transaction by barcode (14.09ms)
+2025-07-16 16:34:08,319 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-16 16:34:08,321 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-16 16:34:08,349 - database_service - INFO - Transaction transaction_1802343707 marked as exited
+2025-07-16 16:34:08,349 - database_service - INFO - Vehicle exit processed successfully for: 1802343707
+2025-07-16 16:34:08,362 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-16 16:34:08,370 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-16 16:34:08,393 - __main__ - INFO - Gate service available - triggering open
+2025-07-16 16:34:08,394 - gate_service - ERROR - GPIO not available
+2025-07-16 16:34:08,430 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-16 16:34:09,433 - gate_service - ERROR - GPIO not available
+2025-07-16 16:34:09,436 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-16 16:34:18,320 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:34:18,324 - __main__ - INFO - \u274c Auto-capture failed for barcode 1802343707: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 16:35:23,985 - __main__ - INFO - Fullscreen mode: OFF
+2025-07-16 16:35:30,511 - __main__ - INFO - Auto-processing barcode: 1801365248
+2025-07-16 16:35:30,512 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 16:35:30,513 - __main__ - INFO - Raw barcode: '1801365248'
+2025-07-16 16:35:30,514 - __main__ - INFO - Barcode length: 10
+2025-07-16 16:35:30,520 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 16:35:30,531 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 16:35:30,538 - __main__ - INFO - Barcode: 1801365248
+2025-07-16 16:35:30,552 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 16:35:30,560 - __main__ - INFO - Capturing exit images...
+2025-07-16 16:35:30,565 - database_service - INFO - Processing vehicle exit for: 1801365248
+2025-07-16 16:35:30,574 - database_service - INFO - Searching for transaction with barcode: 1801365248
+2025-07-16 16:35:30,576 - __main__ - INFO - Auto-capturing exit images for barcode: 1801365248
+2025-07-16 16:35:30,577 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:35:30,599 - database_service - INFO - Found transaction by primary ID: transaction_1801365248
+2025-07-16 16:35:30,600 - database_service - INFO - Found transaction by barcode (26.27ms)
+2025-07-16 16:35:30,600 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-16 16:35:30,600 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-16 16:35:30,636 - database_service - INFO - Transaction transaction_1801365248 marked as exited
+2025-07-16 16:35:30,637 - database_service - INFO - Vehicle exit processed successfully for: 1801365248
+2025-07-16 16:35:30,647 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-16 16:35:30,683 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-16 16:35:30,691 - __main__ - INFO - Gate service available - triggering open
+2025-07-16 16:35:30,692 - gate_service - ERROR - GPIO not available
+2025-07-16 16:35:30,713 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-16 16:35:31,716 - gate_service - ERROR - GPIO not available
+2025-07-16 16:35:31,723 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-16 16:35:40,591 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:35:40,594 - __main__ - INFO - \u274c Auto-capture failed for barcode 1801365248: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 16:36:46,576 - __main__ - INFO - Auto-processing barcode: 1752658598743271
+2025-07-16 16:36:46,578 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 16:36:46,580 - __main__ - INFO - Raw barcode: '1752658598743271'
+2025-07-16 16:36:46,582 - __main__ - INFO - Barcode length: 16
+2025-07-16 16:36:46,587 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 16:36:46,590 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 16:36:46,614 - __main__ - INFO - Barcode: 1752658598743271
+2025-07-16 16:36:46,619 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 16:36:46,636 - __main__ - INFO - Capturing exit images...
+2025-07-16 16:36:46,646 - database_service - INFO - Processing vehicle exit for: 1752658598743271
+2025-07-16 16:36:46,652 - database_service - INFO - Searching for transaction with barcode: 1752658598743271
+2025-07-16 16:36:46,653 - __main__ - INFO - Auto-capturing exit images for barcode: 1752658598743271
+2025-07-16 16:36:46,655 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:36:46,712 - database_service - INFO - Performing full database scan (doc_count: 20)
+2025-07-16 16:36:46,771 - database_service - INFO - No transaction found for barcode: 1752658598743271
+2025-07-16 16:36:46,771 - database_service - INFO - Searching for member transaction with card: 1752658598743271
+2025-07-16 16:36:46,818 - database_service - WARNING - \u274c Member transaction not found (46.35ms)
+2025-07-16 16:36:46,831 - database_service - WARNING - No transaction found for: 1752658598743271
+2025-07-16 16:36:46,836 - __main__ - INFO - \u274c No transaction found in database: No active transaction found for: 1752658598743271
+2025-07-16 16:36:46,850 - __main__ - INFO - ACCESS DENIED: No transaction found and debug mode disabled
+2025-07-16 16:36:46,865 - __main__ - INFO - Gate NOT opened - access denied
+2025-07-16 16:36:54,820 - __main__ - INFO - Auto-processing barcode: 1752658598743271
+2025-07-16 16:36:54,829 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 16:36:54,831 - __main__ - INFO - Raw barcode: '1752658598743271'
+2025-07-16 16:36:54,832 - __main__ - INFO - Barcode length: 16
+2025-07-16 16:36:54,837 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 16:36:54,852 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 16:36:54,868 - __main__ - INFO - Barcode: 1752658598743271
+2025-07-16 16:36:54,872 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 16:36:54,887 - __main__ - INFO - Capturing exit images...
+2025-07-16 16:36:54,896 - database_service - INFO - Processing vehicle exit for: 1752658598743271
+2025-07-16 16:36:54,902 - database_service - INFO - Searching for transaction with barcode: 1752658598743271
+2025-07-16 16:36:54,910 - __main__ - INFO - Auto-capturing exit images for barcode: 1752658598743271
+2025-07-16 16:36:54,912 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:36:54,959 - database_service - INFO - Performing full database scan (doc_count: 20)
+2025-07-16 16:36:55,023 - database_service - INFO - No transaction found for barcode: 1752658598743271
+2025-07-16 16:36:55,023 - database_service - INFO - Searching for member transaction with card: 1752658598743271
+2025-07-16 16:36:55,067 - database_service - WARNING - \u274c Member transaction not found (44.09ms)
+2025-07-16 16:36:55,082 - database_service - WARNING - No transaction found for: 1752658598743271
+2025-07-16 16:36:55,088 - __main__ - INFO - \u274c No transaction found in database: No active transaction found for: 1752658598743271
+2025-07-16 16:36:55,101 - __main__ - INFO - ACCESS DENIED: No transaction found and debug mode disabled
+2025-07-16 16:36:55,105 - __main__ - INFO - Gate NOT opened - access denied
+2025-07-16 16:36:56,666 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:36:56,677 - __main__ - INFO - \u274c Auto-capture failed for barcode 1752658598743271: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 16:37:00,364 - __main__ - INFO - Auto-processing barcode: 1752658598743271
+2025-07-16 16:37:00,366 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 16:37:00,367 - __main__ - INFO - Raw barcode: '1752658598743271'
+2025-07-16 16:37:00,367 - __main__ - INFO - Barcode length: 16
+2025-07-16 16:37:00,371 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 16:37:00,386 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 16:37:00,401 - __main__ - INFO - Barcode: 1752658598743271
+2025-07-16 16:37:00,406 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 16:37:00,426 - __main__ - INFO - Capturing exit images...
+2025-07-16 16:37:00,429 - database_service - INFO - Processing vehicle exit for: 1752658598743271
+2025-07-16 16:37:00,433 - __main__ - INFO - Auto-capturing exit images for barcode: 1752658598743271
+2025-07-16 16:37:00,434 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:37:00,436 - database_service - INFO - Searching for transaction with barcode: 1752658598743271
+2025-07-16 16:37:00,484 - database_service - INFO - Performing full database scan (doc_count: 20)
+2025-07-16 16:37:00,530 - database_service - INFO - No transaction found for barcode: 1752658598743271
+2025-07-16 16:37:00,530 - database_service - INFO - Searching for member transaction with card: 1752658598743271
+2025-07-16 16:37:00,589 - database_service - WARNING - \u274c Member transaction not found (57.80ms)
+2025-07-16 16:37:00,607 - database_service - WARNING - No transaction found for: 1752658598743271
+2025-07-16 16:37:00,611 - __main__ - INFO - \u274c No transaction found in database: No active transaction found for: 1752658598743271
+2025-07-16 16:37:00,619 - __main__ - INFO - ACCESS DENIED: No transaction found and debug mode disabled
+2025-07-16 16:37:00,627 - __main__ - INFO - Gate NOT opened - access denied
+2025-07-16 16:37:04,921 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:37:04,932 - __main__ - INFO - \u274c Auto-capture failed for barcode 1752658598743271: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 16:37:10,439 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:37:10,442 - __main__ - INFO - \u274c Auto-capture failed for barcode 1752658598743271: Exit camera: Timeout capturing from camera 'exit'
+2025-07-16 16:37:12,700 - __main__ - INFO - Auto-processing barcode: 1752658598743271
+2025-07-16 16:37:12,701 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-16 16:37:12,702 - __main__ - INFO - Raw barcode: '1752658598743271'
+2025-07-16 16:37:12,703 - __main__ - INFO - Barcode length: 16
+2025-07-16 16:37:12,709 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-16 16:37:12,727 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-16 16:37:12,735 - __main__ - INFO - Barcode: 1752658598743271
+2025-07-16 16:37:12,749 - __main__ - INFO - Debug mode: DISABLED
+2025-07-16 16:37:12,760 - __main__ - INFO - Capturing exit images...
+2025-07-16 16:37:12,762 - database_service - INFO - Processing vehicle exit for: 1752658598743271
+2025-07-16 16:37:12,777 - database_service - INFO - Searching for transaction with barcode: 1752658598743271
+2025-07-16 16:37:12,780 - __main__ - INFO - Auto-capturing exit images for barcode: 1752658598743271
+2025-07-16 16:37:12,781 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-16 16:37:12,800 - database_service - INFO - Found transaction by primary ID: transaction_1752658598743271
+2025-07-16 16:37:12,801 - database_service - INFO - Found transaction by barcode (23.95ms)
+2025-07-16 16:37:12,802 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-16 16:37:12,846 - database_service - INFO - Transaction transaction_1752658598743271 marked as exited
+2025-07-16 16:37:12,847 - database_service - INFO - Vehicle exit processed successfully for: 1752658598743271
+2025-07-16 16:37:12,858 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-16 16:37:12,872 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-16 16:37:12,882 - __main__ - INFO - Gate service available - triggering open
+2025-07-16 16:37:12,884 - gate_service - ERROR - GPIO not available
+2025-07-16 16:37:12,892 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-16 16:37:13,894 - gate_service - ERROR - GPIO not available
+2025-07-16 16:37:13,899 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-16 16:37:22,793 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-16 16:37:22,808 - __main__ - INFO - \u274c Auto-capture failed for barcode 1752658598743271: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 09:21:35,497 - __main__ - INFO - GUI Setup completed
+2025-07-17 09:21:35,501 - __main__ - INFO - Initializing services...
+2025-07-17 09:21:35,649 - config - INFO - Loaded configuration from config.ini
+2025-07-17 09:21:35,650 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-17 09:21:35,656 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-17 09:21:35,657 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-17 09:21:35,659 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-17 09:21:35,659 - gate_service - INFO - Global gate service instance created successfully
+2025-07-17 09:21:35,667 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-17 09:21:35,705 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-17 09:21:35,716 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-17 09:21:37,009 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-17 09:21:39,190 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-17 09:21:39,199 - database_service - INFO - Connected to existing database: transactions
+2025-07-17 09:21:39,353 - database_service - INFO - Initializing member optimization views...
+2025-07-17 09:21:39,402 - database_service - INFO - Member views already up to date
+2025-07-17 09:21:39,426 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-17 09:21:39,427 - database_service - INFO - Index creation attempted
+2025-07-17 09:21:39,427 - database_service - INFO - Preloading active members into cache...
+2025-07-17 09:21:39,548 - member_cache - INFO - Preloaded 1 members into cache
+2025-07-17 09:21:39,548 - database_service - INFO - \u2705 Preloaded 1 active members (121.42ms)
+2025-07-17 09:21:39,549 - database_service - INFO - Member optimization views initialized successfully
+2025-07-17 09:21:39,549 - database_service - INFO - Database connection established
+2025-07-17 09:21:39,563 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-17 09:21:39,586 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-17 09:21:39,629 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-17 09:21:39,646 - __main__ - INFO - Audio service is disabled or not available
+2025-07-17 09:21:39,979 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-17 09:21:39,983 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-17 09:21:39,985 - camera_service - INFO - OpenCV not available
+2025-07-17 09:21:39,986 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-17 09:21:39,986 - camera_service - INFO - Initialized 1 cameras
+2025-07-17 09:21:40,001 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-17 09:21:40,079 - __main__ - INFO - Scanner not available - manual input only
+2025-07-17 09:21:40,267 - __main__ - INFO - Adding gate status listener...
+2025-07-17 09:21:40,351 - __main__ - INFO - Gate status listener added
+2025-07-17 09:21:40,366 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-17 09:21:40,485 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-17 09:21:40,500 - __main__ - INFO -   GPIO Available: No
+2025-07-17 09:21:40,560 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-17 09:21:40,582 - __main__ - INFO - Testing gate service functionality...
+2025-07-17 09:21:40,585 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-17 09:21:40,587 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-17 09:21:40,607 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-17 09:21:40,622 - __main__ - INFO - Services initialization completed
+2025-07-17 09:21:40,650 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-17 09:21:40,673 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-17 09:21:40,704 - __main__ - INFO - Exit Gate GUI started
+2025-07-17 09:21:41,284 - __main__ - INFO - Auto-listener started
+2025-07-17 09:21:45,035 - __main__ - INFO - Fullscreen mode: OFF
+2025-07-17 09:21:53,913 - __main__ - INFO - Auto-processing barcode: 123456789101219
+2025-07-17 09:21:53,926 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 09:21:53,940 - __main__ - INFO - Raw barcode: '123456789101219'
+2025-07-17 09:21:53,953 - __main__ - INFO - Barcode length: 15
+2025-07-17 09:21:53,960 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 09:21:54,010 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 09:21:54,020 - __main__ - INFO - Barcode: 123456789101219
+2025-07-17 09:21:54,043 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 09:21:54,073 - __main__ - INFO - Capturing exit images...
+2025-07-17 09:21:54,086 - database_service - INFO - Processing vehicle exit for: 123456789101219
+2025-07-17 09:21:54,097 - __main__ - INFO - Auto-capturing exit images for barcode: 123456789101219
+2025-07-17 09:21:54,100 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 09:21:54,108 - database_service - INFO - Searching for transaction with barcode: 123456789101219
+2025-07-17 09:21:54,266 - database_service - INFO - Found active transaction by manual search (extracted barcode: 1752717580322755)
+2025-07-17 09:21:54,267 - database_service - INFO - Found transaction by barcode (159.72ms)
+2025-07-17 09:21:54,267 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-17 09:21:54,360 - database_service - INFO - Transaction transaction_1752717580322755 marked as exited
+2025-07-17 09:21:54,360 - database_service - INFO - Vehicle exit processed successfully for: 123456789101219
+2025-07-17 09:21:55,643 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 09:21:55,663 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 09:21:55,675 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 09:21:55,676 - gate_service - ERROR - GPIO not available
+2025-07-17 09:21:55,679 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 09:21:56,694 - gate_service - ERROR - GPIO not available
+2025-07-17 09:21:56,697 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 09:22:04,163 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 09:22:04,190 - __main__ - INFO - \u274c Auto-capture failed for barcode 123456789101219: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 09:35:03,973 - __main__ - INFO - Auto-processing barcode: 0934462713
+2025-07-17 09:35:03,984 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 09:35:03,985 - __main__ - INFO - Raw barcode: '0934462713'
+2025-07-17 09:35:03,987 - __main__ - INFO - Barcode length: 10
+2025-07-17 09:35:03,992 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 09:35:03,999 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 09:35:04,036 - __main__ - INFO - Barcode: 0934462713
+2025-07-17 09:35:04,046 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 09:35:04,055 - __main__ - INFO - Capturing exit images...
+2025-07-17 09:35:04,059 - database_service - INFO - Processing vehicle exit for: 0934462713
+2025-07-17 09:35:04,074 - __main__ - INFO - Auto-capturing exit images for barcode: 0934462713
+2025-07-17 09:35:04,077 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 09:35:06,146 - database_service - INFO - Searching for transaction with barcode: 0934462713
+2025-07-17 09:35:06,156 - database_service - INFO - Found transaction by primary ID: transaction_0934462713
+2025-07-17 09:35:06,158 - database_service - INFO - Found transaction by barcode (9.52ms)
+2025-07-17 09:35:06,158 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-17 09:35:06,159 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-17 09:35:06,176 - database_service - INFO - Transaction transaction_0934462713 marked as exited
+2025-07-17 09:35:06,176 - database_service - INFO - Vehicle exit processed successfully for: 0934462713
+2025-07-17 09:35:06,180 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 09:35:06,185 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 09:35:06,216 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 09:35:06,218 - gate_service - ERROR - GPIO not available
+2025-07-17 09:35:06,226 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 09:35:07,242 - gate_service - ERROR - GPIO not available
+2025-07-17 09:35:07,248 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 09:35:14,114 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 09:35:14,123 - __main__ - INFO - \u274c Auto-capture failed for barcode 0934462713: Exit camera: Timeout capturing from camera 'exit'

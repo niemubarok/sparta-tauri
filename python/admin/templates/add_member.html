@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Add Member{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Add New Member</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('members') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Members
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="plate_number" class="form-label">Plate Number *</label>
+                        <input type="text" class="form-control" id="plate_number" name="plate_number" 
+                               placeholder="e.g., B1234XYZ" style="text-transform: uppercase;" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="membership_type" class="form-label">Membership Type</label>
+                        <select class="form-select" id="membership_type" name="membership_type">
+                            <option value="regular">Regular</option>
+                            <option value="premium">Premium</option>
+                            <option value="vip">VIP</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Member
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Instructions</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li>Full Name and Plate Number are required fields</li>
+                    <li>Plate Number will be automatically converted to uppercase</li>
+                    <li>Make sure the plate number format is correct (e.g., B1234XYZ)</li>
+                    <li>Phone and Email are optional but recommended for contact purposes</li>
+                    <li>Choose appropriate membership type based on the member's package</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('plate_number').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase();
+});
+</script>
+{% endblock %}

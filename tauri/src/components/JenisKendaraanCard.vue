@@ -84,7 +84,7 @@ const selectJenisKendaraan = async (jenis, shortcut) => {
     transaksiStore.currentTransaction = {
       id: 'PREPAID-' + Date.now(),
       no_pol: transaksiStore.platNomor,
-      waktu_masuk: new Date().toISOString(),
+      entry_time: new Date().toISOString(),
       status: 0, // entry
       jenis_kendaraan: jenisKendaraanData.label
     };

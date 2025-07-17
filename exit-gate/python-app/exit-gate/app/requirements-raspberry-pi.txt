@@ -1,0 +1,56 @@
+# Requirements for Raspberry Pi with Python 2.7
+# Optimized for Raspberry Pi hardware and Python 2.7
+
+# Core dependencies - tested on Raspberry Pi
+flask==1.0.4
+werkzeug==0.16.1
+jinja2==2.10.3
+markupsafe==1.1.1
+click==7.1.2
+itsdangerous==1.1.0
+
+# Database
+couchdb==1.2
+requests==2.25.1  # More stable on Raspberry Pi
+urllib3==1.26.5
+
+# GPIO and Serial for Raspberry Pi
+pyserial==3.4  # Very stable on Raspberry Pi
+# RPi.GPIO installed via: sudo apt-get install python-rpi.gpio
+
+# Camera and imaging - Raspberry Pi specific
+# IMPORTANT: Try these in order until one works
+
+# Option 1: Use system PIL (RECOMMENDED for Raspberry Pi)
+# sudo apt-get install python-pil python-pil.imagetk python-imaging-tk
+
+# Option 2: Specific Pillow versions known to work on RPi Python 2.7
+pillow==5.1.0  # Most compatible with RPi Python 2.7
+# pillow==4.3.0  # Alternative if 5.1.0 fails
+# pillow==3.4.2  # Older fallback
+
+# Option 3: Install with build dependencies first
+# sudo apt-get install libjpeg-dev zlib1g-dev libpng-dev libfreetype6-dev
+# pip install pillow==5.1.0
+
+# Option 4: Use older PIL (if available in repos)
+# pil==1.1.7
+
+# Audio
+pygame==1.9.6
+
+# Utilities
+configparser==4.0.2
+futures==3.3.0
+enum34==1.1.10
+typing==3.7.4.3  # More stable version
+
+# Development
+gunicorn==19.10.0
+
+# Raspberry Pi specific notes:
+# Install system packages first:
+# sudo apt-get update
+# sudo apt-get install python-pip python-dev python-pil python-pil.imagetk
+# sudo apt-get install python-rpi.gpio python-serial
+# sudo apt-get install libjpeg-dev zlib1g-dev libpng-dev

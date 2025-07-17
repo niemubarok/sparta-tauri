@@ -236,7 +236,7 @@ const cameraOutRef = ref(null);
 // };
 
 const waktuMasuk = ref(
-  new Date(transaksiStore.currentTransaction?.waktu_masuk || new Date())
+  new Date(transaksiStore.currentTransaction?.entry_time || new Date())
     .toLocaleTimeString("id-ID", {
       hour: "2-digit",
       minute: "2-digit",
@@ -246,7 +246,7 @@ const waktuMasuk = ref(
 );
 
 const tanggalMasuk = ref(
-  new Date(transaksiStore.currentTransaction?.waktu_masuk || new Date()).toLocaleString("id-ID", {
+  new Date(transaksiStore.currentTransaction?.entry_time || new Date()).toLocaleString("id-ID", {
     // weekday: "long",
     day: "2-digit",
     month: "2-digit",

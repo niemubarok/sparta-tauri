@@ -27,6 +27,13 @@
             outline
           />
           <q-btn
+            color="orange"
+            icon="upload_file"
+            label="Upload Tipe"
+            @click="showUploadTypeDialog = true"
+            outline
+          />
+          <q-btn
             color="primary"
             icon="person_add"
             label="Tambah Member"
@@ -112,6 +119,9 @@
                 emit-value
                 map-options
                 clearable
+                option-value="value"
+                option-label="label"
+                behavior="menu"
               />
             </div>
             
@@ -120,11 +130,14 @@
                 v-model="filterStatus"
                 outlined
                 dense
-                label="Status"
+                label="Filter Status"
                 :options="statusOptions"
                 emit-value
                 map-options
                 clearable
+                option-value="value"
+                option-label="label"
+                behavior="menu"
               />
             </div>
             
@@ -186,7 +199,7 @@
                 text-color="white"
                 dense
               >
-                {{ props.row.membershipType }}
+                {{ getMembershipTypeName(props.row.membership_type_id) }}
               </q-chip>
             </q-td>
           </template>
@@ -661,6 +674,12 @@
                     </q-item>
                     <q-item>
                       <q-item-section>
+                        <q-item-label class="text-weight-medium">Nomor Kartu</q-item-label>
+                        <q-item-label caption>{{ selectedMember.card_number || '-' }}</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section>
                         <q-item-label class="text-weight-medium">Nama</q-item-label>
                         <q-item-label caption>{{ selectedMember.name }}</q-item-label>
                       </q-item-section>
@@ -702,7 +721,7 @@
                             :color="getMembershipCategoryColor(selectedMember.membershipCategory)"
                             text-color="white"
                           >
-                            {{ selectedMember.membershipType }}
+                            {{ getMembershipTypeName(selectedMember.membership_type_id) }}
                           </q-chip>
                         </q-item-label>
                       </q-item-section>
@@ -814,11 +833,55 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Dialog Upload Excel Membership Types -->
+    <q-dialog v-model="showUploadTypeDialog">
+      <q-card style="min-width:400px">
+        <q-card-section class="bg-orange text-white">
+          <div class="text-h6">Upload Excel Tipe Member</div>
+        </q-card-section>
+        <q-card-section>
+          <p class="text-body2 q-mb-md">
+            Silakan upload file Excel dengan format yang sesuai untuk tipe member.
+          </p>
+          <div class="text-body2 q-mb-md">
+            <strong>Format kolom yang diperlukan:</strong>
+            <ul class="q-pl-md">
+              <li><strong>_id</strong> - ID unik untuk tipe member (opsional, akan di-generate otomatis jika kosong)</li>
+              <li><strong>name</strong> - Nama tipe member (wajib)</li>
+              <li><strong>price</strong> - Harga (wajib)</li>
+              <li><strong>duration_months</strong> - Durasi dalam bulan (wajib)</li>
+              <li><strong>category</strong> - Kategori (VIP, PREMIUM, REGULAR, CORPORATE)</li>
+              <li><strong>area_type</strong> - Tipe area (residential, commercial)</li>
+              <li><strong>max_vehicles</strong> - Maksimal kendaraan</li>
+              <li><strong>operating_hours_start</strong> - Jam mulai (HH:MM)</li>
+              <li><strong>operating_hours_end</strong> - Jam selesai (HH:MM)</li>
+              <li><strong>description</strong> - Deskripsi</li>
+              <li><strong>facilities</strong> - Fasilitas (pisahkan dengan koma)</li>
+              <li><strong>benefits</strong> - Benefit (pisahkan dengan koma)</li>
+              <li><strong>access_areas</strong> - Area akses (pisahkan dengan koma)</li>
+            </ul>
+          </div>
+          <q-uploader
+            label="Pilih file Excel (*.xlsx)"
+            accept=".xlsx,.xls"
+            :auto-upload="false"
+            @added="onExcelTypeFileAdded"
+            ref="excelTypeUploader"
+            style="width:100%"
+          />
+          <div v-if="excelTypeUploadError" class="text-negative q-mt-sm">{{ excelTypeUploadError }}</div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Batal" color="primary" v-close-popup @click="resetExcelTypeUpload" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useMembershipStore } from 'src/stores/membership-store'
 import DatabaseInitializer from 'src/components/DatabaseInitializer.vue'
@@ -828,8 +891,11 @@ import {  getCurrentInstance } from 'vue'
 import * as XLSX from 'xlsx'
 
 const showUploadDialog = ref(false)
+const showUploadTypeDialog = ref(false)
 const excelUploadError = ref('')
+const excelTypeUploadError = ref('')
 const excelUploader = ref(null)
+const excelTypeUploader = ref(null)
 const { proxy } = getCurrentInstance() || {}
 
 function resetExcelUpload() {
@@ -924,13 +990,217 @@ async function onExcelFileAdded(files) {
   }
 }
 
+function resetExcelTypeUpload() {
+  excelTypeUploadError.value = ''
+  showUploadTypeDialog.value = false
+  if (excelTypeUploader.value) excelTypeUploader.value.reset()
+}
+
+async function onExcelTypeFileAdded(files) {
+  excelTypeUploadError.value = ''
+  if (!files || !files.length) return
+  const file = files[0]
+  if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+    excelTypeUploadError.value = 'File harus berformat .xlsx atau .xls'
+    return
+  }
+  try {
+    const data = await file.arrayBuffer()
+    const workbook = XLSX.read(data, { type: 'array', cellDates: true })
+    const sheetName = workbook.SheetNames[0]
+    const sheet = workbook.Sheets[sheetName]
+    const json = XLSX.utils.sheet_to_json(sheet, { defval: '' })
+    console.log("🚀 ~ onExcelTypeFileAdded ~ json:", json)
+    
+    // Clean up column names (remove trailing spaces) and normalize data
+    const cleanedJson = json.map(row => {
+      const cleanRow = {}
+      Object.keys(row).forEach(key => {
+        const cleanKey = key.trim()
+        let value = row[key]
+        
+        // Convert "-" values to appropriate defaults or empty values
+        if (value === "-" || value === "" || value === null || value === undefined) {
+          switch (cleanKey) {
+            case 'duration_months':
+              value = 12
+              break
+            case 'price':
+              value = 0
+              break
+            case 'max_vehicles':
+              value = 1
+              break
+            case 'category':
+              value = 'REGULAR'
+              break
+            case 'area_type':
+              value = 'residential'
+              break
+            default:
+              value = ''
+          }
+        }
+        
+        cleanRow[cleanKey] = value
+      })
+      return cleanRow
+    })
+    
+    
+    // Validasi minimal kolom wajib: name, price, duration_months
+    const requiredFields = ['name', 'price', 'duration_months']
+    const invalidRows = cleanedJson.filter(row => {
+      return requiredFields.some(field => {
+        const value = row[field]
+        if (field === 'name') {
+          const isInvalid = !value || value.toString().trim() === ''
+          if (isInvalid) console.log(`Invalid name for row:`, row, `value: "${value}"`)
+          return isInvalid
+        }
+        if (field === 'price') {
+          const isInvalid = value === null || value === undefined || value === '' || isNaN(Number(value))
+          if (isInvalid) console.log(`Invalid price for row:`, row, `value: "${value}", type: ${typeof value}`)
+          return isInvalid
+        }
+        if (field === 'duration_months') {
+          const isInvalid = value === null || value === undefined || value === '' || isNaN(Number(value)) || Number(value) <= 0
+          if (isInvalid) console.log(`Invalid duration_months for row:`, row, `value: "${value}", type: ${typeof value}`)
+          return isInvalid
+        }
+        return false
+      })
+    })
+    
+    if (invalidRows.length > 0) {
+      console.log("Invalid rows:", invalidRows)
+      excelTypeUploadError.value = 'Ada baris yang tidak lengkap (name, price, duration_months wajib diisi dan valid)'
+      return
+    }
+
+    // Check for duplicate _id if provided
+    const idsInFile = cleanedJson.filter(row => row._id && row._id.trim() !== '').map(row => row._id.trim())
+    const duplicateIds = idsInFile.filter((id, index) => idsInFile.indexOf(id) !== index)
+    if (duplicateIds.length > 0) {
+      excelTypeUploadError.value = `ID duplikat ditemukan dalam file: ${duplicateIds.join(', ')}`
+      return
+    }
+
+    // Check if any provided _id already exists in database
+    const existingIds = []
+    for (const row of cleanedJson) {
+      if (row._id && row._id.trim() !== '') {
+        const existing = membershipTypes.value.find(type => type._id === row._id.trim())
+        if (existing) {
+          existingIds.push(row._id.trim())
+        }
+      }
+    }
+    
+    if (existingIds.length > 0) {
+      excelTypeUploadError.value = `ID berikut sudah ada di database: ${existingIds.join(', ')}. Gunakan ID yang berbeda atau kosongkan kolom _id untuk auto-generate.`
+      return
+    }
+
+    // Proses bulk insert membership types
+    let success = 0, failed = 0
+    for (const row of cleanedJson) {
+      try {
+        const typeData = { ...row }
+
+        // If _id is provided, use it, otherwise let the store generate one
+        if (typeData._id && typeData._id.trim()) {
+          typeData._id = typeData._id.trim()
+        } else {
+          delete typeData._id // Remove empty _id to let store generate
+        }
+
+        // Parse operating hours if they exist and are not empty
+        if (row.operating_hours_start && row.operating_hours_start !== '' && 
+            row.operating_hours_end && row.operating_hours_end !== '') {
+          typeData.operating_hours = {
+            start: row.operating_hours_start,
+            end: row.operating_hours_end
+          }
+        } else {
+          typeData.operating_hours = {
+            start: '00:00',
+            end: '23:59'
+          }
+        }
+        delete typeData.operating_hours_start
+        delete typeData.operating_hours_end
+
+        // Parse facilities and benefits arrays if they exist and are not empty
+        if (row.facilities && typeof row.facilities === 'string' && row.facilities.trim() !== '') {
+          typeData.facilities = row.facilities.split(',').map(f => f.trim()).filter(f => f)
+        } else {
+          typeData.facilities = []
+        }
+        
+        if (row.benefits && typeof row.benefits === 'string' && row.benefits.trim() !== '') {
+          typeData.benefits = row.benefits.split(',').map(b => b.trim()).filter(b => b)
+        } else {
+          typeData.benefits = []
+        }
+        
+        if (row.access_areas && typeof row.access_areas === 'string' && row.access_areas.trim() !== '') {
+          typeData.access_areas = row.access_areas.split(',').map(a => a.trim()).filter(a => a)
+        } else {
+          typeData.access_areas = []
+        }
+
+        // Ensure numeric fields are numbers with proper defaults
+        typeData.price = Number(typeData.price) || 0
+        typeData.duration_months = Number(typeData.duration_months) || 12
+        typeData.max_vehicles = Number(typeData.max_vehicles) || 1
+
+        // Ensure duration_months is at least 1
+        if (typeData.duration_months <= 0) {
+          typeData.duration_months = 12
+        }
+
+        // Set defaults for optional string fields
+        if (!typeData.category || typeData.category === '') {
+          typeData.category = 'REGULAR'
+        }
+        if (!typeData.area_type || typeData.area_type === '') {
+          typeData.area_type = 'residential'
+        }
+        if (!typeData.description || typeData.description === '') {
+          typeData.description = ''
+        }
+
+        // Ensure name is not empty
+        if (!typeData.name || typeData.name.trim() === '') {
+          throw new Error('Name cannot be empty')
+        }
+        typeData.name = typeData.name.trim()
+
+        await membershipStore.addMembershipType(typeData)
+        success++
+      } catch (e) {
+        console.error('Failed to import membership type row:', row, e)
+        failed++
+      }
+    }
+    resetExcelTypeUpload()
+    $q.notify({
+      type: 'positive',
+      message: `Import tipe member selesai: ${success} berhasil, ${failed} gagal.`
+    })
+  } catch (err) {
+    excelTypeUploadError.value = 'Gagal membaca file: ' + err.message
+  }
+}
+
 const $q = useQuasar()
 const membershipStore = useMembershipStore()
 
 // Reactive references
 const searchText = ref('')
-const filterType = ref('')
-const filterStatus = ref('')
+const filterType = ref(null)
+const filterStatus = ref(null)
 const showAddNewMemberDialog = ref(false)
 const showAddTypeDialog = ref(false)
 const showMemberDetailDialog = ref(false
@@ -979,7 +1249,7 @@ const memberForm = ref({
     phone: '',
     relationship: ''
   },
-  active: 1
+  active: true
 })
 
 const typeForm = ref({
@@ -1049,7 +1319,7 @@ const benefitOptions = [
 
 // Computed properties for filtering
 const membershipTypeOptions = computed(() => [
-  { label: 'Semua Tipe', value: '' },
+  { label: 'Semua Tipe', value: null },
   ...membershipTypes.value.map(type => ({
     label: type.name,
     value: type._id
@@ -1057,7 +1327,11 @@ const membershipTypeOptions = computed(() => [
 ])
 
 const filteredMembers = computed(() => {
-  let filtered = members.value
+  if (!members.value || members.value.length === 0) {
+    return []
+  }
+
+  let filtered = [...members.value] // Create a copy to avoid mutation
 
   // Enrich members with membership type information
   filtered = filtered.map(member => {
@@ -1065,43 +1339,62 @@ const filteredMembers = computed(() => {
     return {
       ...member,
       membershipType: membershipType?.name || 'Unknown',
-      membershipCategory: membershipType?.category || 'REGULAR'
+      membershipCategory: membershipType?.category || 'REGULAR',
+      membershipTypeObject: membershipType // Add full object for reference
     }
   })
 
   // Search filter
-  if (searchText.value) {
-    const search = searchText.value.toLowerCase()
-    filtered = filtered.filter(member => 
-      member.name.toLowerCase().includes(search) ||
-      member.member_id.toLowerCase().includes(search) ||
-      member.phone.includes(search) ||
-      (member.email && member.email.toLowerCase().includes(search)) ||
-      member.vehicles.some(vehicle => 
-        vehicle.license_plate.toLowerCase().includes(search)
+  if (searchText.value && searchText.value.trim() !== '') {
+    const search = searchText.value.toLowerCase().trim()
+    filtered = filtered.filter(member => {
+      const name = member.name || ''
+      const memberId = member.member_id || ''
+      const phone = member.phone || ''
+      const email = member.email || ''
+      const cardNumber = member.card_number || ''
+      
+      return (
+        name.toLowerCase().includes(search) ||
+        memberId.toLowerCase().includes(search) ||
+        phone.includes(search) ||
+        email.toLowerCase().includes(search) ||
+        cardNumber.toLowerCase().includes(search) ||
+        (member.vehicles && member.vehicles.some(vehicle => 
+          (vehicle.license_plate || '').toLowerCase().includes(search)
+        ))
       )
-    )
+    })
   }
 
   // Type filter
-  if (filterType.value) {
+  if (filterType.value && filterType.value !== '') {
     filtered = filtered.filter(member => 
       member.membership_type_id === filterType.value
     )
   }
 
   // Status filter
-  if (filterStatus.value) {
+  if (filterStatus.value && filterStatus.value !== '') {
     filtered = filtered.filter(member => {
+      // Use fallback functions if store methods are not available
+      const isExpired = membershipStore.isExpired 
+        ? membershipStore.isExpired(member.end_date)
+        : (member.end_date && new Date(member.end_date) < new Date())
+      
+      const isExpiringSoon = membershipStore.isExpiringSoon 
+        ? membershipStore.isExpiringSoon(member.end_date)
+        : (member.end_date && new Date(member.end_date) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
+      
       switch (filterStatus.value) {
         case 'active':
-          return member.active === 1 && !membershipStore.isExpired(member.end_date)
+          return (member.active === 1 || member.active === true) && !isExpired
         case 'inactive':
-          return member.active === 0
+          return member.active === 0 || member.active === false
         case 'expiring':
-          return membershipStore.isExpiringSoon(member.end_date)
+          return (member.active === 1 || member.active === true) && isExpiringSoon && !isExpired
         case 'expired':
-          return membershipStore.isExpired(member.end_date)
+          return isExpired
         default:
           return true
       }
@@ -1193,7 +1486,7 @@ const openAddMemberDialog = () => {
       phone: '',
       relationship: ''
     },
-    active: 1
+    active: true
   }
   showAddNewMemberDialog.value = true
 }
@@ -1226,7 +1519,7 @@ const closeAddMemberDialog = () => {
       phone: '',
       relationship: ''
     },
-    active: 1
+    active: true
   }
 }
 
@@ -1290,7 +1583,8 @@ const viewMember = (member) => {
   selectedMember.value = {
     ...member,
     membershipType: membershipType?.name || 'Unknown',
-    membershipCategory: membershipType?.category || 'REGULAR'
+    membershipCategory: membershipType?.category || 'REGULAR',
+    membershipTypeObject: membershipType // Add full object for reference
   }
   showMemberDetailDialog.value = true
 }
@@ -1416,8 +1710,8 @@ const handleDatabaseInitialized = async () => {
 
 const resetFilters = () => {
   searchText.value = ''
-  filterType.value = ''
-  filterStatus.value = ''
+  filterType.value = null
+  filterStatus.value = null
 }
 
 const exportData = () => {
@@ -1439,6 +1733,17 @@ const getMembershipCategoryColor = (category) => {
   return colors[category] || 'blue'
 }
 
+const getMembershipTypeName = (membershipTypeId) => {
+  // console.log("🚀 ~ getMembershipTypeName ~ membershipTypeId:", membershipTypeId)
+  console.log("🚀 ~ getMembershipTypeName ~ membershipTypes.value:", membershipTypes.value)
+  if (!membershipTypeId) return 'Tidak ada'
+  const membershipType = membershipTypes.value.find(type => type._id === membershipTypeId)
+  if (!membershipType) {
+    return 'Unknown'
+  }
+  return membershipType.name
+}
+
 const getVehicleIcon = (type) => {
   const icons = {
     'Mobil': 'directions_car',
@@ -1450,16 +1755,18 @@ const getVehicleIcon = (type) => {
 }
 
 const getStatusColor = (member) => {
-  if (member.active === 0) return 'red'
-  if (membershipStore.isExpired(member.end_date)) return 'red'
-  if (membershipStore.isExpiringSoon(member.end_date)) return 'orange'
+  if (!member) return 'grey'
+  if (member.active === 0 || member.active === false) return 'red'
+  if (membershipStore.isExpired && membershipStore.isExpired(member.end_date)) return 'red'
+  if (membershipStore.isExpiringSoon && membershipStore.isExpiringSoon(member.end_date)) return 'orange'
   return 'green'
 }
 
 const getStatusLabel = (member) => {
-  if (member.active === 0) return 'Tidak Aktif'
-  if (membershipStore.isExpired(member.end_date)) return 'Kadaluarsa'
-  if (membershipStore.isExpiringSoon(member.end_date)) return 'Akan Berakhir'
+  if (!member) return 'Unknown'
+  if (member.active === 0 || member.active === false) return 'Tidak Aktif'
+  if (membershipStore.isExpired && membershipStore.isExpired(member.end_date)) return 'Kadaluarsa'
+  if (membershipStore.isExpiringSoon && membershipStore.isExpiringSoon(member.end_date)) return 'Akan Berakhir'
   return 'Aktif'
 }
 
@@ -1482,12 +1789,14 @@ const getPaymentStatusLabel = (status) => {
 }
 
 const getExpiryTextClass = (member) => {
+  if (!member || !membershipStore.isExpired || !membershipStore.isExpiringSoon) return 'text-grey'
   if (membershipStore.isExpired(member.end_date)) return 'text-negative'
   if (membershipStore.isExpiringSoon(member.end_date)) return 'text-warning'
   return 'text-positive'
 }
 
 const getExpiryText = (member) => {
+  if (!member || !membershipStore.calculateDaysUntilExpiry) return '-'
   const days = membershipStore.calculateDaysUntilExpiry(member.end_date)
   if (days === null) return '-'
   if (days < 0) return `Lewat ${Math.abs(days)} hari`
@@ -1507,6 +1816,17 @@ const formatCurrency = (amount) => {
     currency: 'IDR'
   }).format(amount || 0)
 }
+
+// Watch for debugging filters
+watch([searchText, filterType, filterStatus], () => {
+  console.log('Filters changed:', {
+    search: searchText.value,
+    type: filterType.value,
+    status: filterStatus.value,
+    totalMembers: members.value?.length || 0,
+    filteredCount: filteredMembers.value?.length || 0
+  })
+}, { immediate: true })
 
 // Lifecycle
 onMounted(async () => {

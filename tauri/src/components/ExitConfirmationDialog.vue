@@ -30,13 +30,13 @@
                   <q-item>
                     <q-item-section>
                       <q-item-label caption>Waktu Masuk</q-item-label>
-                      <q-item-label>{{ formatDateTime(transaction.waktu_masuk) }}</q-item-label>
+                      <q-item-label>{{ formatDateTime(transaction.entry_time) }}</q-item-label>
                     </q-item-section>
                   </q-item>
                   <q-item>
                     <q-item-section>
                       <q-item-label caption>Durasi Parkir</q-item-label>
-                      <q-item-label class="text-weight-bold">{{ calculateDuration(transaction.waktu_masuk) }}</q-item-label>
+                      <q-item-label class="text-weight-bold">{{ calculateDuration(transaction.entry_time) }}</q-item-label>
                     </q-item-section>
                   </q-item>
                   <q-item v-if="transaction.ticket_number">
@@ -179,7 +179,7 @@ const calculatedFee = computed(() => {
     return { baseFee: 0, additionalFee: 0, totalFee: 0 };
   }
 
-  const entryTime = new Date(props.transaction.waktu_masuk);
+  const entryTime = new Date(props.transaction.entry_time);
   const exitTime = new Date();
   const durationHours = Math.ceil((exitTime - entryTime) / (1000 * 60 * 60));
   

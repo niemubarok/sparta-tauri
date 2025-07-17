@@ -1,0 +1,147 @@
+{
+  "transactions": {},
+  "members": {
+    "member1": {
+      "id": "member1",
+      "no_pol": "B1234ABC",
+      "name": "John Doe",
+      "phone": "081234567890",
+      "active": true,
+      "membership_type": "premium",
+      "created_at": "2025-07-14T01:35:48.301569"
+    },
+    "member2": {
+      "id": "member2",
+      "no_pol": "B5678DEF",
+      "name": "Jane Smith",
+      "phone": "081234567891",
+      "active": true,
+      "membership_type": "regular",
+      "created_at": "2025-07-14T01:35:48.301569"
+    }
+  },
+  "settings": {},
+  "activity_logs": [
+    {
+      "id": "2d481fba-fcb7-4ddb-bf75-36c3b25613f6",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate initialized",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-08T06:48:53.236873"
+    },
+    {
+      "id": "139ce6e5-90d3-48b8-91f0-771a338e50f9",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate initialized",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-08T06:48:58.415869"
+    },
+    {
+      "id": "6195d137-a7e9-46fc-88c2-6f65bbdedc7c",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate initialized",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-08T06:59:08.719850"
+    },
+    {
+      "id": "b57729ea-81ea-4b45-8afd-ca8d858fd37a",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate initialized",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-08T06:59:13.901483"
+    },
+    {
+      "id": "76e1dffc-3d87-40e4-9eaa-ef092795a4c4",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate shut down",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-08T06:59:15.163413"
+    },
+    {
+      "id": "60da1e09-a35e-49ea-8ca9-367149bd9a52",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate shut down",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-08T09:26:33.513153"
+    },
+    {
+      "id": "55daaeee-4640-4ecd-84f8-ba9e26c3f36d",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate initialized",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-08T09:43:54.829756"
+    },
+    {
+      "id": "8a29d2a9-26af-4017-9a11-c32a0c617dff",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate initialized",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-08T14:43:54.497935"
+    },
+    {
+      "id": "3a5cac04-b392-41b2-a297-568fb1197da5",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate initialized",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-14T01:35:48.382464"
+    },
+    {
+      "id": "6f7ecafb-6ba7-45f7-9556-49e9e1b063e9",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate initialized",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-14T01:35:48.438730"
+    },
+    {
+      "id": "5b299d7a-9352-44ae-a20f-d5ad39ac6788",
+      "type": "activity_log",
+      "gate_id": "entry_manual",
+      "gate_type": "entry",
+      "level": "INFO",
+      "message": "Manual entry gate shut down",
+      "plate_number": null,
+      "operator_id": null,
+      "timestamp": "2025-07-14T01:36:03.005871"
+    }
+  ]
+}

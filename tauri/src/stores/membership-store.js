@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { localDbs } from 'src/boot/pouchdb'
+import { remoteDbs } from 'src/boot/pouchdb'
 
 export const useMembershipStore = defineStore('membership', {
   state: () => ({
@@ -89,7 +89,11 @@ export const useMembershipStore = defineStore('membership', {
 
     // Get member by card number
     getMemberByCardNumber: (state) => (cardNumber) => {
-      return state.members.find(member => member.card_number === cardNumber)
+      console.log("🚀 ~ cardNumber:", typeof cardNumber)
+      return state.members.find(member => 
+        String(member.card_number || '').toLowerCase() === String(cardNumber || '').toLowerCase()
+      )
+      
     },
 
     // Get membership type by ID
@@ -173,7 +177,7 @@ export const useMembershipStore = defineStore('membership', {
         
         // Create indexes for members collection
         indexPromises.push(
-          localDbs.members.createIndex({
+          remoteDbs.members.createIndex({
             index: { fields: ['type', 'createdAt'] }
           }).catch(err => {
             if (!err.message?.includes('already exists')) {
@@ -183,7 +187,7 @@ export const useMembershipStore = defineStore('membership', {
         )
         
         indexPromises.push(
-          localDbs.members.createIndex({
+          remoteDbs.members.createIndex({
             index: { fields: ['type', 'name'] }
           }).catch(err => {
             if (!err.message?.includes('already exists')) {
@@ -193,7 +197,7 @@ export const useMembershipStore = defineStore('membership', {
         )
         
         indexPromises.push(
-          localDbs.members.createIndex({
+          remoteDbs.members.createIndex({
             index: { fields: ['type', 'member_id'] }
           }).catch(err => {
             if (!err.message?.includes('already exists')) {
@@ -203,7 +207,7 @@ export const useMembershipStore = defineStore('membership', {
         )
         
         indexPromises.push(
-          localDbs.members.createIndex({
+          remoteDbs.members.createIndex({
             index: { fields: ['type', 'active', 'end_date'] }
           }).catch(err => {
             if (!err.message?.includes('already exists')) {
@@ -213,7 +217,7 @@ export const useMembershipStore = defineStore('membership', {
         )
         
         indexPromises.push(
-          localDbs.members.createIndex({
+          remoteDbs.members.createIndex({
             index: { fields: ['type', 'membership_type_id'] }
           }).catch(err => {
             if (!err.message?.includes('already exists')) {
@@ -223,7 +227,7 @@ export const useMembershipStore = defineStore('membership', {
         )
         
         indexPromises.push(
-          localDbs.members.createIndex({
+          remoteDbs.members.createIndex({
             index: { fields: ['createdAt'] }
           }).catch(err => {
             if (!err.message?.includes('already exists')) {
@@ -234,7 +238,7 @@ export const useMembershipStore = defineStore('membership', {
         
         // Create indexes for membership types collection  
         indexPromises.push(
-          localDbs.membershipTypes.createIndex({
+          remoteDbs.membershipTypes.createIndex({
             index: { fields: ['type', 'name'] }
           }).catch(err => {
             if (!err.message?.includes('already exists')) {
@@ -244,7 +248,7 @@ export const useMembershipStore = defineStore('membership', {
         )
         
         indexPromises.push(
-          localDbs.membershipTypes.createIndex({
+          remoteDbs.membershipTypes.createIndex({
             index: { fields: ['type', 'category'] }
           }).catch(err => {
             if (!err.message?.includes('already exists')) {
@@ -254,7 +258,7 @@ export const useMembershipStore = defineStore('membership', {
         )
         
         indexPromises.push(
-          localDbs.membershipTypes.createIndex({
+          remoteDbs.membershipTypes.createIndex({
             index: { fields: ['name'] }
           }).catch(err => {
             if (!err.message?.includes('already exists')) {
@@ -264,9 +268,9 @@ export const useMembershipStore = defineStore('membership', {
         )
         
         // Create indexes for transactions collection (member usage)
-        if (localDbs.transactions) {
+        if (remoteDbs.transactions) {
           indexPromises.push(
-            localDbs.transactions.createIndex({
+            remoteDbs.transactions.createIndex({
               index: { fields: ['type', 'member_id', 'timestamp'] }
             }).catch(err => {
               if (!err.message?.includes('already exists')) {
@@ -276,7 +280,7 @@ export const useMembershipStore = defineStore('membership', {
           )
           
           indexPromises.push(
-            localDbs.transactions.createIndex({
+            remoteDbs.transactions.createIndex({
               index: { fields: ['type', 'timestamp'] }
             }).catch(err => {
               if (!err.message?.includes('already exists')) {
@@ -301,7 +305,7 @@ export const useMembershipStore = defineStore('membership', {
       try {
         this.isLoadingMembers = true
         
-        const result = await localDbs.members.allDocs({
+        const result = await remoteDbs.members.allDocs({
           include_docs: true,
           startkey: 'member_',
           endkey: 'member_\uffff'
@@ -334,10 +338,10 @@ export const useMembershipStore = defineStore('membership', {
       try {
         this.isLoadingTypes = true
         
-        const result = await localDbs.membershipTypes.allDocs({
+        const result = await remoteDbs.membershipTypes.allDocs({
           include_docs: true,
-          startkey: 'membership_type_',
-          endkey: 'membership_type_\uffff'
+          // startkey: 'membership_type_',
+          // endkey: 'membership_type_\uffff'
         })
         
         // Filter and sort membership types
@@ -413,7 +417,7 @@ export const useMembershipStore = defineStore('membership', {
         }
         
         // Save to database
-        const result = await localDbs.members.put(member)
+        const result = await remoteDbs.members.put(member)
         member._rev = result.rev
         
         // Add to local state
@@ -431,7 +435,7 @@ export const useMembershipStore = defineStore('membership', {
     // Update member
     async updateMember(memberId, updateData) {
       try {
-        const member = await localDbs.members.get(memberId)
+        const member = await remoteDbs.members.get(memberId)
         
         // Update member data
         const updatedMember = {
@@ -441,7 +445,7 @@ export const useMembershipStore = defineStore('membership', {
         }
         
         // Save to database
-        const result = await localDbs.members.put(updatedMember)
+        const result = await remoteDbs.members.put(updatedMember)
         updatedMember._rev = result.rev
         
         // Update local state
@@ -463,8 +467,8 @@ export const useMembershipStore = defineStore('membership', {
     // Delete member
     async deleteMember(memberId) {
       try {
-        const member = await localDbs.members.get(memberId)
-        await localDbs.members.remove(member)
+        const member = await remoteDbs.members.get(memberId)
+        await remoteDbs.members.remove(member)
         
         // Remove from local state
         this.members = this.members.filter(m => m._id !== memberId)
@@ -481,22 +485,50 @@ export const useMembershipStore = defineStore('membership', {
     // Add membership type
     async addMembershipType(typeData) {
       try {
-        // Validate required fields
-        if (!typeData.name || !typeData.price || !typeData.duration_months) {
-          throw new Error('Required fields: name, price, duration_months')
+        // Validate required fields with proper checks for numbers
+        if (!typeData.name || typeData.name.trim() === '') {
+          throw new Error('Required field: name cannot be empty')
+        }
+        if (typeData.price === null || typeData.price === undefined || isNaN(Number(typeData.price))) {
+          throw new Error('Required field: price must be a valid number')
+        }
+        if (typeData.duration_months === null || typeData.duration_months === undefined || isNaN(Number(typeData.duration_months)) || Number(typeData.duration_months) <= 0) {
+          throw new Error('Required field: duration_months must be a positive number')
+        }
+        
+        // Generate ID if not provided, or use provided ID
+        let membershipTypeId
+        if (typeData._id && typeData._id.trim()) {
+          membershipTypeId = typeData._id.trim()
+          // Check if ID already exists
+          try {
+            await remoteDbs.membershipTypes.get(membershipTypeId)
+            throw new Error(`Membership type with ID ${membershipTypeId} already exists`)
+          } catch (err) {
+            // If get() throws an error, it means the ID doesn't exist, which is what we want
+            if (err.name !== 'not_found') {
+              throw err // Re-throw if it's not a "not found" error
+            }
+          }
+        } else {
+          membershipTypeId = `membership_type_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         }
         
         // Create membership type document
         const membershipType = {
-          _id: `membership_type_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          _id: membershipTypeId,
           type: 'membership_type',
           ...typeData,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
         
+        // Remove the _id from typeData if it was passed in to avoid duplication
+        delete membershipType._id
+        membershipType._id = membershipTypeId
+        
         // Save to database
-        const result = await localDbs.membershipTypes.put(membershipType)
+        const result = await remoteDbs.membershipTypes.put(membershipType)
         membershipType._rev = result.rev
         
         // Add to local state
@@ -514,7 +546,7 @@ export const useMembershipStore = defineStore('membership', {
     // Renew membership for a member
     async renewMembership(memberId, duration_months) {
       try {
-      const member = await localDbs.members.get(memberId)
+      const member = await remoteDbs.members.get(memberId)
       const membershipType = this.membershipTypes.find(
         t => t._id === member.membership_type_id
       )
@@ -543,7 +575,7 @@ export const useMembershipStore = defineStore('membership', {
       }
 
       // Save to database
-      const result = await localDbs.members.put(updatedMember)
+      const result = await remoteDbs.members.put(updatedMember)
       updatedMember._rev = result.rev
 
       // Update local state

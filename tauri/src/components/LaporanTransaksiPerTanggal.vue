@@ -162,9 +162,9 @@
           <q-td key="index" :props="props">
             {{ (page - 1) * 10 + props.rowIndex + 1 }}
           </q-td>
-          <q-td key="waktu_masuk" :props="props">
+          <q-td key="entry_time" :props="props">
             {{
-              new Date(props.row.waktu_masuk).toLocaleDateString("id-ID", {
+              new Date(props.row.entry_time).toLocaleDateString("id-ID", {
                 day: "2-digit",
                 month: "2-digit",
                 year: "numeric",
@@ -363,11 +363,11 @@ const columns = [
     sortable: true,
   },
   {
-    name: "waktu_masuk",
+    name: "entry_time",
     required: true,
     label: "Waktu Masuk",
     align: "left",
-    field: (row) => row.waktu_masuk,
+    field: (row) => row.entry_time,
     format: (val) => `${val}`,
     sortable: true,
   },

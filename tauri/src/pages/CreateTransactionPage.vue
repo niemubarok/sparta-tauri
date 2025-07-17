@@ -27,11 +27,11 @@
       </div>
 
       <div>
-        <label for="waktu_masuk">Waktu Masuk:</label>
+        <label for="entry_time">Waktu Masuk:</label>
         <input
           type="datetime-local"
-          id="waktu_masuk"
-          v-model="formData.waktu_masuk"
+          id="entry_time"
+          v-model="formData.entry_time"
         />
       </div>
       <div>
@@ -116,7 +116,7 @@ const formData = ref({
   status: 0,
   id_pintu_masuk: null,
   id_pintu_keluar: null,
-  waktu_masuk: "",
+  entry_time: "",
   waktu_keluar: null,
   id_op_masuk: null,
   id_op_keluar: "00001",

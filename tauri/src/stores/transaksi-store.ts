@@ -5,7 +5,7 @@ import ls from 'localstorage-slim';
 import { api } from 'src/boot/axios';
 import { useSettingsService } from './settings-service';
 import { useTarifStore } from './tarif-store';
-import { localDbs, addTransaction, addTransactionAttachment } from 'src/boot/pouchdb';
+import { remoteDbs, addTransaction, addTransactionAttachment } from 'src/boot/pouchdb';
 
 // Interface untuk transaksi parkir berdasarkan parkir_awal.sql
 export interface TransaksiParkir {
@@ -15,8 +15,8 @@ export interface TransaksiParkir {
   status: number; // 0 = masuk, 1 = keluar
   id_pintu_masuk: string;
   id_pintu_keluar?: string;
-  waktu_masuk: string;
-  waktu_keluar?: string;
+  entry_time: string;
+  exit_time?: string;
   id_op_masuk: string;
   id_op_keluar?: string;
   id_shift_masuk: string;
@@ -98,7 +98,7 @@ export interface LokasiPos {
 
 export const useTransaksiStore = defineStore('transaksi', () => {
   const $q = useQuasar();
-  const db = localDbs.transactions;
+  const db = remoteDbs.transactions;
   const settingsService = useSettingsService();
   const tarifStore = useTarifStore();
   
@@ -256,14 +256,23 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     
     // Dapatkan tarif entry berdasarkan mode pembayaran
     const entryFee = isPrepaidMode ? getEntryTarif() : 0;
+
+    // Generate ticket number yang akan digunakan sebagai ID dan barcode
+    const now = new Date();
+    const gate = lokasiPos.value?.value || '01';
+    const time = now.toTimeString().slice(0, 8).replace(/:/g, '');
+    const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+    const ticketNumber = `${time}${sequence}`;
     
+    // ticketNumber akan digunakan sebagai ID (tanpa prefix) dan barcode
     const transaction: TransaksiParkir = {
-      id: generateTransactionId(),
+      id: ticketNumber, // ID untuk database (tanpa prefix, akan ditambah prefix saat save)
+      no_barcode: ticketNumber, // Nomor tiket yang sama untuk dicetak
       no_pol: platNomor.value.toUpperCase(),
       id_kendaraan: selectedJenisKendaraan.value?.id || 1,
       status: 0, // 0 = entry
       id_pintu_masuk: lokasiPos.value.value || '01',
-      waktu_masuk: getCurrentDateTime(),
+      entry_time: getCurrentDateTime(),
       id_op_masuk: pegawai.value?.id || 'SYSTEM',
       id_shift_masuk: shift.value || 'SHIFT1',
       kategori: dataCustomer.value ? 'MEMBER' : 'UMUM',
@@ -292,7 +301,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       ...currentTransaction.value,
       status: 1, // 1 = exit
       id_pintu_keluar: lokasiPos.value.value || '01',
-      waktu_keluar: getCurrentDateTime(),
+      exit_time: getCurrentDateTime(),
       id_op_keluar: pegawai.value?.id || 'SYSTEM',
       id_shift_keluar: shift.value || 'SHIFT1',
       pic_driver_keluar: exit_pic.value,
@@ -309,7 +318,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       return 0;
     }
 
-    const entryTime = new Date(currentTransaction.value.waktu_masuk);
+    const entryTime = new Date(currentTransaction.value.entry_time);
     const exitTime = new Date();
     const durationMs = exitTime.getTime() - entryTime.getTime();
     const durationHours = Math.ceil(durationMs / (1000 * 60 * 60));
@@ -495,7 +504,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     }
   };
 
-  const processEntryTransaction = async (isPrepaidMode: boolean = false): Promise<void> => {
+  const processEntryTransaction = async (isPrepaidMode: boolean = false): Promise<TransaksiParkir | undefined> => {
     try {
       // Pastikan exit_pic kosong sebelum memproses entry transaction
       exit_pic.value = '';
@@ -509,6 +518,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       
       // Add to history
       transactionHistory.value.unshift(transaction);
+
+      return transaction
       
     } catch (error) {
       console.error('Error processing entry transaction:', error);
@@ -599,10 +610,10 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
   const getCountVehicleOutToday = async (): Promise<void> => {
     try {
-      if (API_URL.value && API_URL.value !== '-') {
-        const response = await api.get('/statistics/vehicle-out-today');
-        totalVehicleOut.value = response.data?.count || 0;
-      } else {
+      // if (API_URL.value && API_URL.value !== '-') {
+      //   const response = await api.get('/statistics/vehicle-out-today');
+      //   totalVehicleOut.value = response.data?.count || 0;
+      // } else {
         // Local count from PouchDB
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -614,7 +625,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         });
         
         totalVehicleOut.value = result.rows[0]?.value || 0;
-      }
+      // }
     } catch (error) {
       console.error('Error fetching vehicle out count:', error);
       totalVehicleOut.value = 0;
@@ -655,12 +666,12 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         id: doc._id,
         plat: doc.no_pol,
         status: doc.status,
-        waktu_masuk: doc.waktu_masuk,
-        waktu_keluar: doc.waktu_keluar,
+        entry_time: doc.entry_time,
+        exit_time: doc.exit_time,
         tanggal: doc.tanggal
       })));
 
-      // Filter for transactions that exited today (status 1 and waktu_keluar today)
+      // Filter for transactions that exited today (status 1 and exit_time today)
       const todayExitTransactions = result.rows
         .map(row => row.doc)
         .filter((doc: any) => {
@@ -670,16 +681,16 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           }
           
           // Must have exit status (1) and exit time
-          if (doc.status !== 1 || !doc.waktu_keluar) {
-            console.log(`🚀 Skipping transaction ${doc._id}: status=${doc.status}, waktu_keluar=${doc.waktu_keluar}`);
+          if (doc.status !== 1 || !doc.exit_time) {
+            console.log(`🚀 Skipping transaction ${doc._id}: status=${doc.status}, exit_time=${doc.exit_time}`);
             return false;
           }
           
           // Check if exit time is today
-          const exitDate = new Date(doc.waktu_keluar);
+          const exitDate = new Date(doc.exit_time);
           const isToday = exitDate >= today && exitDate <= endOfDay;
           
-          console.log(`🚀 Transaction ${doc._id}: status=${doc.status}, waktu_keluar=${doc.waktu_keluar}, isToday=${isToday}`);
+          console.log(`🚀 Transaction ${doc._id}: status=${doc.status}, exit_time=${doc.exit_time}, isToday=${isToday}`);
           
           return isToday;
         });
@@ -691,7 +702,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           id: t?._id || 'unknown',
           plat: t?.no_pol || 'unknown',
           status: t?.status || 0,
-          waktu_keluar: t?.waktu_keluar || 'unknown',
+          exit_time: t?.exit_time || 'unknown',
           bayar_keluar: t?.bayar_keluar || 0,
           id_kendaraan: t?.id_kendaraan || 0
         })));
@@ -757,7 +768,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         id_kendaraan: selectedJenisKendaraan.value?.id || 1,
         status: 0,
         id_pintu_masuk: gateId || lokasiPos.value.value || '01',
-        waktu_masuk: getCurrentDateTime(),
+        entry_time: getCurrentDateTime(),
         id_op_masuk: pegawai.value?.id || 'OPERATOR',
         id_shift_masuk: shift.value || 'SHIFT1',
         kategori: 'MANUAL',
@@ -817,10 +828,10 @@ export const useTransaksiStore = defineStore('transaksi', () => {
   const initializeDesignDocs = async (): Promise<void> => {
     // Create indexes for sorting
     try {
-      // Index for waktu_masuk field (used for sorting)
+      // Index for entry_time field (used for sorting)
       await db.createIndex({
         index: {
-          fields: ['type', 'waktu_masuk']
+          fields: ['type', 'entry_time']
         }
       });
 
@@ -855,7 +866,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       // Composite index for complex queries
       await db.createIndex({
         index: {
-          fields: ['type', 'status', 'waktu_masuk']
+          fields: ['type', 'status', 'entry_time']
         }
       });
 
@@ -908,7 +919,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     const normalized = {
       page: Math.max(1, parseInt(params.page) || 1),
       limit: Math.max(1, Math.min(1000, parseInt(params.limit) || 25)),
-      sortBy: params.sortBy?.trim() || 'waktu_masuk',
+      sortBy: params.sortBy?.trim() || 'entry_time',
       sortOrder: params.sortOrder === 'asc' ? 'asc' : 'desc',
       platNomor: params.platNomor?.toString().trim() || '',
       status: params.status !== null && params.status !== undefined && params.status !== '' ? parseInt(params.status) : null,
@@ -993,9 +1004,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         // For parking transactions, use tanggal field
         // For member transactions, use entry_time field and extract date
         let docDate = doc.tanggal;
-        if (!docDate && (doc.entry_time || doc.waktu_masuk)) {
+        if (!docDate && doc.entry_time) {
           // Extract date from ISO string for member transactions
-          const dateStr = doc.entry_time || doc.waktu_masuk;
+          const dateStr = doc.entry_time;
           docDate = dateStr.split('T')[0]; // Get YYYY-MM-DD part
         }
         
@@ -1129,7 +1140,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           if (bVal === null || bVal === undefined) bVal = '';
 
           // Handle date/time fields
-          if (sortBy === 'waktu_masuk' || sortBy === 'waktu_keluar' || sortBy === 'tanggal') {
+          if (sortBy === 'entry_time' || sortBy === 'exit_time' || sortBy === 'tanggal') {
             aVal = aVal ? new Date(aVal).getTime() : 0;
             bVal = bVal ? new Date(bVal).getTime() : 0;
           }
@@ -1176,8 +1187,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
             jenis_kendaraan: isMemberTransaction 
               ? (doc.jenis_kendaraan?.label || 'Motor')
               : getJenisKendaraanLabel(doc.id_kendaraan || 1),
-            waktu_masuk: doc.waktu_masuk || doc.entry_time || '',
-            waktu_keluar: doc.waktu_keluar || doc.exit_time || null,
+            entry_time: doc.entry_time || '',
+            exit_time: doc.exit_time || null,
             status: isMemberTransaction ? (doc.status === 'in' ? 0 : 1) : (doc.status || 0),
             tarif: doc.bayar_keluar || doc.bayar_masuk || doc.tarif || 0,
             petugas: doc.id_op_masuk || doc.created_by || '',
@@ -1401,7 +1412,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       const exitTransaction: any = {
         ...transaction,
         status: 1,
-        waktu_keluar: getCurrentDateTime(),
+        exit_time: getCurrentDateTime(),
         id_op_keluar: pegawai.value?.id || 'SYSTEM',
         id_shift_keluar: shift.value || 'SHIFT1',
         id_pintu_keluar: lokasiPos.value.value || '01'
@@ -1425,8 +1436,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           status: exitTransaction.status,
           id_pintu_masuk: exitTransaction.id_pintu_masuk,
           id_pintu_keluar: exitTransaction.id_pintu_keluar,
-          waktu_masuk: exitTransaction.waktu_masuk,
-          waktu_keluar: exitTransaction.waktu_keluar,
+          entry_time: exitTransaction.entry_time,
+          exit_time: exitTransaction.exit_time,
           id_op_masuk: exitTransaction.id_op_masuk,
           id_op_keluar: exitTransaction.id_op_keluar,
           id_shift_masuk: exitTransaction.id_shift_masuk,
@@ -1461,13 +1472,32 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
   const deleteTransaction = async (transactionId: string) => {
     try {
-      const transaction = await db.get(transactionId);
+      let transaction;
+      try {
+        // Try to get by _id (CouchDB/PouchDB primary key)
+        transaction = await db.get(transactionId);
+      } catch (err: any) {
+        // If not found, try to find by id field (custom id)
+        if (err.status === 404) {
+          const result = await db.find({ selector: { id: transactionId }, limit: 1 });
+          if (result.docs && result.docs.length > 0) {
+            transaction = result.docs[0];
+          } else {
+            throw new Error('Transaksi tidak ditemukan');
+          }
+        } else {
+          throw err;
+        }
+      }
+
       await db.remove(transaction);
-      
+
       // Try to delete from server if available
       try {
         if (API_URL.value && API_URL.value !== '-') {
-          await api.delete(`/transaksi/${transactionId}`);
+          // Use _id if available, else fallback to transactionId
+          const idForDelete = (transaction && typeof transaction === 'object' && '_id' in transaction && transaction._id) ? transaction._id : transactionId;
+          await api.delete(`/transaksi/${idForDelete}`);
         }
       } catch (syncError) {
         console.warn('Failed to delete from server:', syncError);
@@ -1507,8 +1537,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           row.id,
           row.plat_nomor,
           row.jenis_kendaraan,
-          row.waktu_masuk,
-          row.waktu_keluar || '',
+          row.entry_time,
+          row.exit_time || '',
           row.status === 0 ? 'Aktif' : row.status === 1 ? 'Selesai' : 'Dibatalkan',
           row.tarif,
           row.petugas,
@@ -1544,8 +1574,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           <p><strong>ID:</strong> ${transaction.id}</p>
           <p><strong>Plat:</strong> ${transaction.plat_nomor}</p>
           <p><strong>Jenis:</strong> ${transaction.jenis_kendaraan}</p>
-          <p><strong>Masuk:</strong> ${transaction.waktu_masuk}</p>
-          ${transaction.waktu_keluar ? `<p><strong>Keluar:</strong> ${transaction.waktu_keluar}</p>` : ''}
+          <p><strong>Masuk:</strong> ${transaction.entry_time}</p>
+          ${transaction.exit_time ? `<p><strong>Keluar:</strong> ${transaction.exit_time}</p>` : ''}
           <p><strong>Tarif:</strong> ${formatCurrency(transaction.tarif)}</p>
           <p><strong>Status:</strong> ${transaction.status === 0 ? 'Aktif' : transaction.status === 1 ? 'Selesai' : 'Dibatalkan'}</p>
           <hr>
@@ -1576,12 +1606,12 @@ export const useTransaksiStore = defineStore('transaksi', () => {
   };
 
   const calculateParkingFeeForTransaction = (transaction: any): number => {
-    if (!transaction.waktu_masuk || !transaction.waktu_keluar) {
+    if (!transaction.entry_time || !transaction.exit_time) {
       return 0;
     }
 
-    const masuk = new Date(transaction.waktu_masuk);
-    const keluar = new Date(transaction.waktu_keluar);
+    const masuk = new Date(transaction.entry_time);
+    const keluar = new Date(transaction.exit_time);
     const durationMs = keluar.getTime() - masuk.getTime();
     const durationHours = Math.ceil(durationMs / (1000 * 60 * 60)); // Round up to nearest hour
 
@@ -1634,6 +1664,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
   };
 
   const searchTransactionByPlateNumber = async (plateNumber: string): Promise<TransaksiParkir[]> => {
+    console.log("🚀 ~ searchTransactionByPlateNumber ~ plateNumber:", plateNumber)
     try {
       const result = await db.query('transaksi/by_no_pol', {
         key: plateNumber.toUpperCase(),
@@ -1688,8 +1719,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           status: 1, // Completed
           id_pintu_masuk: '01',
           id_pintu_keluar: '01',
-          waktu_masuk: new Date(Date.now() - 4 * 3600000).toISOString(), // 4 hours ago
-          waktu_keluar: new Date(Date.now() - 30 * 60000).toISOString(), // 30 minutes ago
+          entry_time: new Date(Date.now() - 4 * 3600000).toISOString(), // 4 hours ago
+          exit_time: new Date(Date.now() - 30 * 60000).toISOString(), // 30 minutes ago
           id_op_masuk: 'ADMIN',
           id_op_keluar: 'ADMIN',
           id_shift_masuk: 'SHIFT1',
@@ -1712,8 +1743,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           status: 1, // Completed
           id_pintu_masuk: '01',
           id_pintu_keluar: '01',
-          waktu_masuk: new Date(Date.now() - 3 * 3600000).toISOString(), // 3 hours ago
-          waktu_keluar: new Date(Date.now() - 15 * 60000).toISOString(), // 15 minutes ago
+          entry_time: new Date(Date.now() - 3 * 3600000).toISOString(), // 3 hours ago
+          exit_time: new Date(Date.now() - 15 * 60000).toISOString(), // 15 minutes ago
           id_op_masuk: 'ADMIN',
           id_op_keluar: 'ADMIN',
           id_shift_masuk: 'SHIFT1',
@@ -1735,7 +1766,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           id_kendaraan: 1,
           status: 0, // Still parked
           id_pintu_masuk: '01',
-          waktu_masuk: new Date(Date.now() - 1 * 3600000).toISOString(), // 1 hour ago
+          entry_time: new Date(Date.now() - 1 * 3600000).toISOString(), // 1 hour ago
           id_op_masuk: 'ADMIN',
           id_shift_masuk: 'SHIFT1',
           kategori: 'UMUM',
@@ -1814,7 +1845,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
           const exitTransaction = {
             ...transaction,
             status: 1,
-            waktu_keluar: exitTime,
+            exit_time: exitTime,
             id_op_keluar: pegawai.value?.id || 'SYSTEM',
             id_shift_keluar: shift.value || 'SHIFT1',
             id_pintu_keluar: lokasiPos.value.value || '01'

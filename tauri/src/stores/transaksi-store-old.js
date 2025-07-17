@@ -134,7 +134,7 @@ export const useTransaksiStore = defineStore("transaksi", {
         status: 1,
         // id_pintu_masuk: null,
         // id_pintu_keluar: null,
-        // waktu_masuk: "",
+        // entry_time: "",
         // waktu_keluar: this.getLocalDateTimeString(),
         // id_op_masuk: null,
         id_op_keluar: ls.get("pegawai")?.id_pegawai,

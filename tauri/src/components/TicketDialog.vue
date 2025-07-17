@@ -145,7 +145,7 @@ const onSaveSettings = async () => {
 
 
     if (transaksi.length) {
-      const waktuMasuk = new Date(transaksi[0].waktu_masuk);
+      const waktuMasuk = new Date(transaksi[0].entry_time);
       const waktuKeluar = new Date();
       const lamaParkir = calculateParkingDuration(waktuMasuk);
       transaksiStore.durasi =
@@ -157,7 +157,7 @@ const onSaveSettings = async () => {
           ? `${lamaParkir.hours} Jam ${lamaParkir.minutes} Menit`
           : `${lamaParkir.minutes} Menit`;
 
-      transaksiStore.waktuMasuk = transaksi[0].waktu_masuk;
+      transaksiStore.waktuMasuk = transaksi[0].entry_time;
       transaksiStore.waktuKeluar = waktuKeluar.toISOString();
 
       if(transaksi[0].status === 0){

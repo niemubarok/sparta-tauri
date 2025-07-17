@@ -33,7 +33,7 @@ struct TransaksiParkir {
     id_pintu_keluar: String,
     plat_nomor: String,
     jns_kendaraan: String,
-    waktu_masuk: String,
+    entry_time: String,
     waktu_keluar: String,
     lama_parkir: String,
     biaya_parkir: String,

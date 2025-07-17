@@ -504,7 +504,7 @@ const syncSingleDatabase = async (dbName: string) => {
     setTimeout(() => {
   //
       syncSingleDatabase(dbName);
-    }, 10000);
+    }, 1000);
   }
 };
 

@@ -62,7 +62,7 @@
           <ShinyCard
             class="bg-grey-9"
             title="Kendaraan Parkir"
-            :jumlah="transaksiStore.totalVehicleInside"
+            :jumlah="Math.max(0, transaksiStore.totalVehicleInside)"
           />
           <!-- shortkey="F5" -->
         </div>
@@ -108,7 +108,7 @@
       /> -->
       
       <!-- Sync Status Indicator -->
-      <q-chip
+      <!-- <q-chip
         v-if="isAdmin"
         :color="syncStatusColor"
         :text-color="syncStatusTextColor"
@@ -117,7 +117,7 @@
         class="text-caption"
       >
         <q-tooltip>{{ syncStatusTooltip }}</q-tooltip>
-      </q-chip>
+      </q-chip> -->
       
       <Clock />
     </div>
@@ -205,14 +205,23 @@
           class="input-box rounded-corner relative text-uppercase q-pa-md q-mb-xl bg-grey-2"
           input-style="height:90px;border:0"
           label-color="grey-9 text-body1 q-pb-sm"
-          
           item-aligned
           borderless
           v-model="transaksiStore.platNomor"
           label="Masukkan Plat Nomor"
           ref="inputPlatNomorRef"
           autofocus
-        
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          :autofill="false"
+          :hide-hint="true"
+          :hide-bottom-space="true"
+          :clearable="false"
+          :use-input="false"
+          :use-chips="false"
+          :hide-dropdown-icon="true"
+          :options="[]"
           @update:model-value="() => onInputPlatNomor()"
           @keydown.enter="onPressEnterPlatNomor()"
         >
@@ -486,11 +495,12 @@ import { useComponentStore } from "src/stores/component-store";
 import { useSettingsService } from "src/stores/settings-service";
 import { usePetugasStore } from "src/stores/petugas-store";
 import { useGateStore } from "src/stores/gate-store";
-import { userStore } from "src/stores/user-store";
+import { useTarifStore } from "src/stores/tarif-store";
 import { useMembershipStore } from "src/stores/membership-store";
 import LoginDialog from "src/components/LoginDialog.vue";
 import Logo from "src/components/Logo.vue";
 import ApiUrlDialog from "src/components/ApiUrlDialog.vue";
+import { invoke } from '@tauri-apps/api/core';
 import { getTime, checkSubscriptionExpiration } from "src/utils/time-util";
 import ls from "localstorage-slim";
 import { syncSingleDatabase, getSyncStatus, isSyncing, lastSyncStatus, lastSyncError, forceSyncAllDatabases, safeSyncTransaction, checkRemoteConnection, forceSyncAndVerifyTransaction } from "src/boot/pouchdb"
@@ -508,6 +518,7 @@ import SettingsDialog from "src/components/SettingsDialog.vue";
 import mitt from 'mitt';
 const emitter = mitt();
 
+const tarifStore = useTarifStore()
 // Simulasi event kartu member terbaca
 // emitter.emit('card-read', { cardNumber: '1234567890' });
 
@@ -792,11 +803,11 @@ const handleMemberCardTap = async (member) => {
     
     // Cek status aktif dan masa berlaku
     if (!member.active || membershipStore.isExpired(member.end_date)) {
-      $q.notify({
-        type: 'warning',
-        message: 'Member tidak aktif atau sudah kadaluarsa',
-        position: 'top',
-      });
+      // $q.notify({
+      //   type: 'warning',
+      //   message: 'Member tidak aktif atau sudah kadaluarsa',
+      //   position: 'top',
+      // });
       return;
     }
     
@@ -827,25 +838,43 @@ const handleMemberCardTap = async (member) => {
     
     // Capture gambar masuk dengan optimasi kecepatan
     console.log('📸 Starting image capture for member transaction...');
-    captureEntryImages(false); // Use normal mode for member transactions
+    await captureEntryImages(false); // Use normal mode for member transactions
     
     // Don't wait for image capture to complete - proceed immediately
     console.log('✅ Member transaction proceeding without waiting for image capture');
     
     // Simpan transaksi ke database transactions
-    await saveMemberTransaction(member);
-    
+    const saveResult = await saveMemberTransaction(member);
+    console.log("🚀 ~ handleMemberCardTap ~ saveResult:", saveResult)
+
+    // Setelah transaksi member tersimpan, simpan gambar masuk sebagai attachment jika ada
+    if (saveResult) {
+      try {
+        // Remove data:image/jpeg;base64, prefix if exists
+        let base64Data = transaksiStore.entry_pic;
+        if (base64Data.includes(',')) {
+          base64Data = base64Data.split(',')[1];
+        }
+        await transaksiStore.saveTransactionAttachments(
+          saveResult.id.replace('transaction_', ''), // remove prefix if present
+          saveResult.rev
+        );
+        console.log('✅ Entry image attachment saved for member transaction');
+      } catch (err) {
+        console.error('❌ Error saving entry image attachment for member:', err);
+      }
+    }
+
     // Show member details dialog instead of auto-opening gate
     currentMember.value = member
-    
+
     // showMemberDialog.value = true
-   
 
     // Reset form setelah small delay untuk memastikan semua proses selesai
     setTimeout(() => {
       resetFormState();
     }, 500);
-    
+
     await updateStatistics();
 
     await gateStore.openGate();
@@ -895,112 +924,61 @@ const saveMemberTransaction = async (member) => {
       is_member: true,
       tarif: 0, // Member tidak dikenakan tarif
       payment_status: 'paid', // Member sudah bayar melalui membership
-      has_image: !!transaksiStore.entry_pic // Flag untuk menandai apakah ada gambar
+      has_image: !!transaksiStore.entry_pic, // Flag untuk menandai apakah ada gambar
+      entry_pic: transaksiStore.entry_pic,
     };
     
     // Debug: Check transaction object before saving
-    console.log('💾 Transaction object to save:', {
-      id: trx._id,
-      member_name: trx.name,
-      plate: trx.plat_nomor,
-      type: trx.type,
-      has_image: trx.has_image
-    });
+    // console.log('💾 Transaction object to save:', {
+    //   id: trx._id,
+    //   member_name: trx.name,
+    //   plate: trx.plat_nomor,
+    //   type: trx.type,
+    //   has_image: trx.has_image
+    // });
     
     // 1. Simpan transaksi dulu dengan immediate sync
     const response = await addTransaction(trx, true); // Enable immediate sync
-    console.log('✅ Member transaction saved successfully with immediate sync:', response);
-    
-    // Debug: Check what ID was actually saved
-    console.log('🆔 Transaction ID comparison:', {
-      originalId: trx._id,
-      responseId: response.id,
-      responseRev: response.rev
-    });
-    
+    // console.log('✅ Member transaction saved successfully with immediate sync:', response);
+
+    // // Debug: Check what ID was actually saved
+    // console.log('🆔 Transaction ID comparison:', {
+    //   originalId: trx._id,
+    //   responseId: response.id,
+    //   responseRev: response.rev
+    // });
+
     // 2. Try to verify sync with timeout
-    setTimeout(async () => {
-      try {
-        console.log('🔍 Verifying transaction sync to server...');
-        const syncSuccess = await safeSyncTransaction(response.id);
-        if (syncSuccess) {
-          console.log('✅ Transaction successfully synced to server');
-          $q.notify({
-            type: 'positive',
-            message: 'Transaksi berhasil disinkronisasi ke server',
-            position: 'top',
-            timeout: 2000,
-            icon: 'cloud_done'
-          });
-        } else {
-          console.warn('⚠️ Transaction sync verification failed');
-          $q.notify({
-            type: 'warning',
-            message: 'Transaksi tersimpan lokal, sync ke server akan dilakukan nanti',
-            position: 'top',
-            timeout: 3000,
-            icon: 'cloud_queue'
-          });
-        }
-      } catch (verifyError) {
-        console.error('❌ Sync verification error:', verifyError);
-      }
-    }, 2000); // Check sync after 2 seconds
-    
-    // 2. Simpan gambar sebagai attachment jika ada
-    if (transaksiStore.entry_pic) {
-      try {
-        // Remove data:image/jpeg;base64, prefix if exists
-        let base64Data = transaksiStore.entry_pic;
-        if (base64Data.includes(',')) {
-          base64Data = base64Data.split(',')[1];
-        }
-        
-        console.log('💾 Saving attachment with cleaned base64 data:', {
-          originalLength: transaksiStore.entry_pic.length,
-          cleanedLength: base64Data.length,
-          hasPrefix: transaksiStore.entry_pic !== base64Data
-        });
-        
-        // Use response.id to ensure we use the actual saved document ID
-        await addTransactionAttachment(
-          response.id,
-          response.rev,
-          'entry.jpg',
-          base64Data,
-          'image/jpeg'
-        );
-        
-        console.log('✅ Entry image attachment saved successfully');
-        
-        // Debug: Verify attachment was saved by trying to read it back
-        try {
-          const { getTransactionAttachment } = await import('src/boot/pouchdb');
-          const testBlob = await getTransactionAttachment(response.id, 'entry.jpg');
-          console.log('🔍 Attachment verification successful:', {
-            transactionId: response.id,
-            attachmentName: 'entry.jpg',
-            blobSize: testBlob.size,
-            blobType: testBlob.type
-          });
-        } catch (verificationError) {
-          console.error('❌ Attachment verification failed:', verificationError);
-        }
-      } catch (attachmentError) {
-        console.error('❌ Error saving entry image attachment:', attachmentError);
-        // Don't throw error, just log it - transaction continues without image
-        console.log('📝 Transaction saved successfully without image attachment');
-        $q.notify({
-          type: 'info',
-          message: 'Transaksi tersimpan berhasil, gambar tidak dapat disimpan',
-          position: 'top',
-          timeout: 3000
-        });
-      }
-    } else {
-      console.log('📝 No entry image to save as attachment - transaction saved without image');
-    }
-    
+    // setTimeout(async () => {
+    //   try {
+    //     console.log('🔍 Verifying transaction sync to server...');
+    //     const syncSuccess = await safeSyncTransaction(response.id);
+    //     if (syncSuccess) {
+    //       console.log('✅ Transaction successfully synced to server');
+    //       $q.notify({
+    //         type: 'positive',
+    //         message: 'Transaksi berhasil disinkronisasi ke server',
+    //         position: 'top',
+    //         timeout: 2000,
+    //         icon: 'cloud_done'
+    //       });
+    //     } else {
+    //       console.warn('⚠️ Transaction sync verification failed');
+    //       $q.notify({
+    //         type: 'warning',
+    //         message: 'Transaksi tersimpan lokal, sync ke server akan dilakukan nanti',
+    //         position: 'top',
+    //         timeout: 3000,
+    //         icon: 'cloud_queue'
+    //       });
+    //     }
+    //   } catch (verifyError) {
+    //     console.error('❌ Sync verification error:', verifyError);
+    //   }
+    // }, 2000); // Check sync after 2 seconds
+
+    // Kembalikan response agar bisa dipakai untuk simpan attachment di luar
+    return response;
   } catch (err) {
     console.error('❌ Error saving member transaction:', err);
     throw err;
@@ -1162,7 +1140,7 @@ const onClickKendaraanKeluar = () => {
       try {
         // Find existing transaction
         const transactions = await transaksiStore.searchTransactionByPlateNumber(exitData.plateNumber);
-        const entryTransaction = transactions.find(t => t.status === 0 && !t.waktu_keluar);
+        const entryTransaction = transactions.find(t => t.status === 0 && !t.exit_time);
         
         if (entryTransaction) {
           // Set current transaction for exit processing
@@ -1316,14 +1294,17 @@ const resetFormState = () => {
 // };
 
 const onInputPlatNomor = () => {
-  if (transaksiStore.platNomor.length >= 3) {
+  // Always remove prefix first if present
+  if (prefix.value && transaksiStore.platNomor.startsWith(prefix.value)) {
+    transaksiStore.platNomor = transaksiStore.platNomor.substring(prefix.value.length);
+  }
+  transaksiStore.platNomor = transaksiStore.platNomor?.toUpperCase();
+
+  if (transaksiStore.platNomor.length >= 3 && transaksiStore.platNomor.length < 9) {
     const firstCharacter = transaksiStore.platNomor?.charAt(0);
 
-    if (!isNaN(firstCharacter) && prefix.value && transaksiStore.platNomor.length < 6) {
-      transaksiStore.platNomor =
-        prefix.value + transaksiStore.platNomor?.toUpperCase();
-    } else {
-      transaksiStore.platNomor = transaksiStore.platNomor?.toUpperCase();
+    if (!isNaN(firstCharacter) && prefix.value && transaksiStore.platNomor.length <= 8) {
+      transaksiStore.platNomor = prefix.value + transaksiStore.platNomor;
     }
   }
   // console.log(platNomorModel.value.toUpperCase());
@@ -1425,9 +1406,9 @@ const onPressEnterPlatNomor = async () => {
     // });
 
     // Cek apakah plat nomor adalah member
-    await membershipStore.loadMembers();
-    const member = membershipStore.getMemberByPlatOrCard(transaksiStore.platNomor);
-    // console.log("🚀 ~ onPressEnterPlatNomor ~ member:", member)
+    
+    const member = membershipStore.getMemberByCardNumber(transaksiStore.platNomor);
+    console.log("🚀 ~ onPressEnterPlatNomor ~ member:", member)
     
     let platNomorToCheck = transaksiStore.platNomor.toUpperCase().trim();
     if(member && member.vehicles && member.vehicles.length > 0) {
@@ -1440,10 +1421,11 @@ const onPressEnterPlatNomor = async () => {
     console.log("🚀 ~ onPressEnterPlatNomor ~ existingTransactions:", existingTransactions)
     // return
     const activeTransactions = existingTransactions.filter(trx => {
-      // trx.status === 0 dan waktu_masuk masih di hari yang sama
-      const isActive = trx.waktu_masuk && (new Date(trx.waktu_masuk)).toDateString() === (new Date()).toDateString();
+      // trx.status === 0 dan entry_time masih di hari yang sama
+      const isActive = trx.entry_time && (new Date(trx.entry_time)).toDateString() === (new Date()).toDateString();
       return isActive;
     });
+    console.log("🚀 ~ onPressEnterPlatNomor ~ activeTransactions:", activeTransactions)
     if (activeTransactions.length > 0) {
       // loadingNotify();
       const activeTransaction = activeTransactions[0];
@@ -1491,7 +1473,7 @@ const onPressEnterPlatNomor = async () => {
       componentProps: {
         // plateNumber: transaksiStore.platNomor,
         nama: member.name,
-        jenisMember: member.membership_type || 'Umum',
+        jenisMember: member.membership_type_id || 'Umum',
         endDate: member.end_date ? member.end_date : 'Tidak diketahui',
         plateNumber: platNomorToCheck || 'Tidak diketahui'
       },
@@ -1640,15 +1622,82 @@ const processEntry = async (isPrepaidMode = false) => {
   try {
     transaksiStore.isProcessing = true;
     
-    await transaksiStore.processEntryTransaction(isPrepaidMode);
+    // Buat transaksi terlebih dahulu
+    const transaction =  await transaksiStore.processEntryTransaction(isPrepaidMode);
+    
+    if (isPrepaidMode) {
+      // Get prepaid tariff from tarif store
+      const prepaidTariff = tarifStore.activeTarifPrepaid.find(t => t.id_mobil === transaction.id_kendaraan);
+      const tarifAmount = prepaidTariff?.tarif_prepaid || transaksiStore.selectedJenisKendaraan.tarif || 0;
 
+      // Prepare ticket data before saving transaction
+      const ticketData = {
+        ticketNumber: transaction.id,           // ✅ Gunakan ID transaksi sebagai nomor tiket
+        platNomor: transaction.no_pol,          // ✅ plat_nomor
+        jenisKendaraan: transaksiStore.selectedJenisKendaraan.label, // ✅ jenis_kendaraan  
+        entryTime: transaction.entry_time,    // ✅ entry_time
+        tarif: tarifAmount,                     // ✅ tarif
+        companyName: ls.get('companyName') || 'SISTEM PARKIR SPARTA',  // ✅ company_name
+        gateLocation: ls.get('lokasiPos')?.label || 'PINTU MASUK',     // ✅ gate_location
+        operatorName: ls.get('pegawai')?.nama || 'OPERATOR',           // ✅ operator_name
+        isPaid: true,                           // ✅ is_paid
+        barcodeData: transaction.id             // ✅ Gunakan ID yang sama untuk barcode
+      };
+
+      // Print thermal ticket
+      await invoke('print_thermal_ticket', { 
+        printerName: null, // will use default printer
+        ticketData
+      });
+      
+      // Notify success
+      $q.notify({
+        type: 'positive',
+        message: 'Tiket berhasil dicetak',
+        position: 'top'
+      });
+    } else {
+      // For non-prepaid, prepare regular ticket
+      const ticketData = {
+        ticketNumber: transaction.id,
+        platNomor: transaction.no_pol,
+        jenisKendaraan: transaksiStore.selectedJenisKendaraan.label,
+        entryTime: transaction.entry_time,
+        tarif: 0, // Regular ticket doesn't show tariff
+        companyName: ls.get('companyName') || 'SISTEM PARKIR SPARTA',
+        gateLocation: ls.get('lokasiPos')?.label || 'PINTU MASUK',
+        operatorName: ls.get('pegawai')?.nama || 'OPERATOR',
+        isPaid: false,
+        barcodeData: transaction.id
+      };
+
+      // Print thermal ticket
+      await invoke('print_thermal_ticket', { 
+        printerName: null,
+        ticketData
+      });
+
+      // Notify success
+      $q.notify({
+        type: 'positive',
+        message: 'Tiket berhasil dicetak',
+        position: 'top'
+      });
+    }
+
+    // Save transaction after successful print
+   
+    
+    // Open gate after successful print and save
+    await gateStore.writeToPort('entry', '*OPEN1#');
+
+    // Sync database
     syncSingleDatabase('transactions')
     
     // Update statistics
     await updateStatistics();
     
-    // For postpaid mode, hide input and show payment card
-    // For prepaid mode, payment is already done, just reset the form
+    // Form handling
     if (isPrepaidMode) {
       // Reset form for next vehicle in prepaid mode
       transaksiStore.resetTransactionState();
@@ -2380,6 +2429,13 @@ onMounted(async () => {
   // Set current page first
   componentStore.currentPage = "outgate";
   console.log('✅ Current page set to outgate');
+
+
+  // Sync all main databases on mount
+  // syncSingleDatabase('transactions');
+  // syncSingleDatabase('members');
+  // syncSingleDatabase('tarif');
+  // syncSingleDatabase('petugas');
   
   // Initialize settings service first
   try {

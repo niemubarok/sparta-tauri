@@ -273,7 +273,7 @@
         </q-td>
       </template>
 
-      <template v-slot:body-cell-waktu_masuk="props">
+      <template v-slot:body-cell-entry_time="props">
         <q-td :props="props">
           {{ formatDateTime(getEntryTime(props.row)) }}
         </q-td>
@@ -651,7 +651,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useTransaksiStore } from 'src/stores/transaksi-store'
 import { invoke } from '@tauri-apps/api/core'
-import { getTransactionAttachment } from 'src/boot/pouchdb'
+import { getTransactionAttachment, syncSingleDatabase } from 'src/boot/pouchdb'
 import ls from 'localstorage-slim'
 
 // Utility function for date formatting (alternative to date-fns)
@@ -750,7 +750,7 @@ const filters = ref({
 
 // Pagination
 const pagination = ref({
-  sortBy: 'waktu_masuk',
+  sortBy: 'entry_time',
   descending: true,
   page: 1,
   rowsPerPage: 25,
@@ -841,7 +841,7 @@ const columns = [
     style: 'width: 80px'
   },
   {
-    name: 'waktu_masuk',
+    name: 'entry_time',
     label: 'Waktu Masuk',
     align: 'left',
     field: row => getEntryTime(row),
@@ -1313,7 +1313,7 @@ const printTicket = async (transaction) => {
       ticketNumber: ticketNumber,           // ✅ ticket_number
       platNomor: transaction.plat_nomor || transaction.no_pol,  // ✅ plat_nomor
       jenisKendaraan: transaction.jenis_kendaraan, // ✅ jenis_kendaraan  
-      waktuMasuk: transaction.waktu_masuk,  // ✅ waktu_masuk
+      waktuMasuk: transaction.entry_time,  // ✅ entry_time
       tarif: transaction.tarif,             // ✅ tarif
       companyName: ls.get('companyName') || 'SISTEM PARKIR SPARTA',  // ✅ company_name
       gateLocation: ls.get('lokasiPos')?.label || 'PINTU MASUK',     // ✅ gate_location
@@ -1388,7 +1388,7 @@ const addTestData = async () => {
           status: 1, // Completed
           id_pintu_masuk: '01',
           id_pintu_keluar: '01',
-          waktu_masuk: new Date(Date.now() - 4 * 3600000).toISOString(),
+          entry_time: new Date(Date.now() - 4 * 3600000).toISOString(),
           waktu_keluar: new Date(Date.now() - 30 * 60000).toISOString(),
           id_op_masuk: 'ADMIN',
           id_op_keluar: 'ADMIN',
@@ -1414,7 +1414,7 @@ const addTestData = async () => {
           status: 1, // Completed
           id_pintu_masuk: '01',
           id_pintu_keluar: '01',
-          waktu_masuk: new Date(Date.now() - 3 * 3600000).toISOString(),
+          entry_time: new Date(Date.now() - 3 * 3600000).toISOString(),
           waktu_keluar: new Date(Date.now() - 15 * 60000).toISOString(),
           id_op_masuk: 'ADMIN',
           id_op_keluar: 'ADMIN',
@@ -1524,7 +1524,7 @@ const getEntryTime = (transaction) => {
   }
   
   // For parking transactions
-  return transaction.waktu_masuk || ''
+  return transaction.entry_time || ''
 }
 
 const getExitTime = (transaction) => {
@@ -1729,6 +1729,10 @@ const displayStatistics = computed(() => {
 // Lifecycle
 onMounted(() => {
   console.log('🚀 Component mounted, loading data...')
+    syncSingleDatabase('transactions');
+  syncSingleDatabase('members');
+  syncSingleDatabase('tarif');
+  syncSingleDatabase('petugas');
   
   // Don't set default dates - let user choose
   // This prevents unwanted filtering on first load

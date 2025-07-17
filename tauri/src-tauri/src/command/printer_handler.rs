@@ -35,7 +35,7 @@ pub struct TicketData {
     ticket_number: String,
     plat_nomor: String,
     jenis_kendaraan: String,
-    waktu_masuk: String,
+    entry_time: String,
     tarif: i32,
     company_name: String,
     gate_location: String,
@@ -309,7 +309,7 @@ fn generate_raw_commands(ticket_data: &TicketData) -> Vec<u8> {
         ticket_data.ticket_number,
         ticket_data.plat_nomor,
         ticket_data.jenis_kendaraan,
-        ticket_data.waktu_masuk,
+        ticket_data.entry_time,
         format_currency(ticket_data.tarif),
     );
     
@@ -961,7 +961,7 @@ pub async fn test_print_barcode(barcode_data: String, printer_name: Option<Strin
         ticket_number: "TEST-12345".to_string(),
         plat_nomor: "B 1234 ABC".to_string(),
         jenis_kendaraan: "Motor".to_string(),
-        waktu_masuk: chrono::Local::now().format("%d/%m/%Y %H:%M:%S").to_string(),
+        entry_time: chrono::Local::now().format("%d/%m/%Y %H:%M:%S").to_string(),
         tarif: 2000,
         company_name: "TEST PARKIR SPARTA".to_string(),
         gate_location: "PINTU MASUK - TEST".to_string(),

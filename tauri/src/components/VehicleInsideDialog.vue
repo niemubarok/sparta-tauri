@@ -18,16 +18,16 @@
           <q-icon name="directions_car" size="48px" color="primary" />
         </div>
         <div class="q-mb-md text-center text-h6 text-weight-bold">
-          Kendaraan Sudah Masuk Hari Ini
+          Kendaraan Sudah Di Dalam
         </div>
         <div class="q-mb-md text-center text-subtitle1">
           Plat Nomor: <span class="text-primary text-weight-bold">{{ plateNumber }}</span>
         </div>
-        <div class="q-mb-md text-center text-subtitle2">
+        <!-- <div class="q-mb-md text-center text-subtitle2">
           Status Pembayaran: <span class="text-positive text-weight-bold">LUNAS</span>
-        </div>
+        </div> -->
       </q-card-section>
-      <q-card-actions align="right" class="q-pa-md">
+      <!-- <q-card-actions align="right" class="q-pa-md">
         <q-btn
           ref="enterBtn"
           push
@@ -40,7 +40,7 @@
           style="border-radius: 12px; min-height: 48px; letter-spacing: 1px;"
         >
         </q-btn>
-      </q-card-actions>
+      </q-card-actions> -->
     </q-card>
   </q-dialog>
 </template>
