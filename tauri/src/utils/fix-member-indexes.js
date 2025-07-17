@@ -8,69 +8,69 @@ export const fixMemberDatabaseIndexes = async () => {
   
   try {
     // Import PouchDB dari boot file
-    const { localDbs } = await import('src/boot/pouchdb')
+    const { remoteDbs } = await import('src/boot/pouchdb')
     
     const indexPromises = []
     
     // Members collection indexes
     indexPromises.push(
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'createdAt'] }
       }).catch(err => console.log('Index already exists:', err.message))
     )
     
     indexPromises.push(
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'name'] }
       }).catch(err => console.log('Index already exists:', err.message))
     )
     
     indexPromises.push(
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'member_id'] }
       }).catch(err => console.log('Index already exists:', err.message))
     )
     
     indexPromises.push(
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'active', 'end_date'] }
       }).catch(err => console.log('Index already exists:', err.message))
     )
     
     indexPromises.push(
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['createdAt'] }
       }).catch(err => console.log('Index already exists:', err.message))
     )
     
     // Membership types collection indexes
     indexPromises.push(
-      localDbs.membershipTypes.createIndex({
+      remoteDbs.membershipTypes.createIndex({
         index: { fields: ['type', 'name'] }
       }).catch(err => console.log('Index already exists:', err.message))
     )
     
     indexPromises.push(
-      localDbs.membershipTypes.createIndex({
+      remoteDbs.membershipTypes.createIndex({
         index: { fields: ['name'] }
       }).catch(err => console.log('Index already exists:', err.message))
     )
     
     indexPromises.push(
-      localDbs.membershipTypes.createIndex({
+      remoteDbs.membershipTypes.createIndex({
         index: { fields: ['type', 'category'] }
       }).catch(err => console.log('Index already exists:', err.message))
     )
     
     // Member usage tracking indexes
     indexPromises.push(
-      localDbs.transactions.createIndex({
+      remoteDbs.transactions.createIndex({
         index: { fields: ['type', 'member_id', 'timestamp'] }
       }).catch(err => console.log('Index already exists:', err.message))
     )
     
     indexPromises.push(
-      localDbs.transactions.createIndex({
+      remoteDbs.transactions.createIndex({
         index: { fields: ['type', 'timestamp'] }
       }).catch(err => console.log('Index already exists:', err.message))
     )

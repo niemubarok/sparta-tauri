@@ -16,13 +16,13 @@ Sebelumnya, data transaksi baru dari entry gate tidak langsung tersinkronisasi k
 ```typescript
 const addTransaction = async (transaction: any, immediateSync = false) => {
   try {
-    const response = await localDbs.transactions.put(transaction);
+    const response = await remoteDbs.transactions.put(transaction);
     
     if (immediateSync) {
       // Trigger immediate sync untuk database transactions
       console.log('🔄 Triggering immediate sync for transaction:', response.id);
       
-      const sync = localDbs.transactions.sync(remoteDbs.transactions, {
+      const sync = remoteDbs.transactions.sync(remoteDbs.transactions, {
         ...syncOpts,
         timeout: 10000, // 10 detik timeout
         retry: false    // Tidak retry untuk immediate sync
@@ -185,9 +185,9 @@ const syncStatusLabel = computed(() => {
 const forceSyncAllDatabases = async (): Promise<void> => {
   console.log('🔄 Starting forced sync for all databases...');
   
-  const syncPromises = Object.keys(localDbs).map(dbName => {
+  const syncPromises = Object.keys(remoteDbs).map(dbName => {
     return new Promise((resolve, reject) => {
-      const sync = localDbs[dbName].sync(remoteDbs[dbName], {
+      const sync = remoteDbs[dbName].sync(remoteDbs[dbName], {
         timeout: 30000,
         retry: false
       });

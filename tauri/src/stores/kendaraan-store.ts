@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import ls from 'localstorage-slim';
 import { api } from 'src/boot/axios';
-import { localDbs } from 'src/boot/pouchdb';
+import { remoteDbs } from 'src/boot/pouchdb';
 
 // Interface untuk jenis kendaraan berdasarkan struktur database
 export interface JenisKendaraan {
@@ -42,7 +42,7 @@ export interface BlacklistKendaraan {
 
 export const useKendaraanStore = defineStore('kendaraan', () => {
   const $q = useQuasar();
-  const db = localDbs.kendaraan;
+  const db = remoteDbs.kendaraan;
   
   // State variables
   const jenisKendaraan = ref<JenisKendaraan[]>([]);

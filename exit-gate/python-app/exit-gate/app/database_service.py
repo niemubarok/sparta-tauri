@@ -811,8 +811,97 @@ class DatabaseService(object):
             logger.error("Failed to create member transaction: {}".format(str(e)))
             return None
     
+    def update_transaction_status(self, transaction, operator="SYSTEM", gate_id="EXIT_GATE_01", exit_image_data=None):
+        """
+        Unified method untuk update status transaksi dari 0 ke 1 (exit)
+        Digunakan untuk member_entry dan parking_transaction
+        """
+        try:
+            if not transaction:
+                return {
+                    'success': False,
+                    'message': 'Transaction not provided',
+                    'error_code': 'TRANSACTION_NULL'
+                }
+            
+            # Check if already exited
+            if transaction.get('status') != 0:
+                transaction_type = "Member" if transaction.get('type') == 'member_entry' else "Vehicle"
+                exit_time = transaction.get('waktu_keluar', 'Unknown')
+                return {
+                    'success': False,
+                    'message': '{} already exited at: {}'.format(transaction_type, exit_time),
+                    'error_code': 'ALREADY_EXITED',
+                    'transaction': transaction
+                }
+            
+            # Calculate fee (0 for members, calculated for parking)
+            exit_time = datetime.datetime.now()
+            if transaction.get('type') == 'member_entry':
+                fee = 0  # Members don't pay fees
+            else:
+                fee = self.calculate_parking_fee(transaction, exit_time)
+            
+            # Common update fields for both transaction types
+            transaction['status'] = 1
+            transaction['waktu_keluar'] = exit_time.isoformat()
+            transaction['bayar_keluar'] = fee
+            transaction['id_pintu_keluar'] = gate_id
+            transaction['id_op_keluar'] = operator
+            transaction['id_shift_keluar'] = 'SHIFT_001'  # Default shift
+            transaction['exit_processed_at'] = time.time()
+            transaction['updated_at'] = time.time()
+            transaction['status_transaksi'] = "1"
+            
+            # Additional fields for member transactions
+            if transaction.get('type') == 'member_entry':
+                transaction['exit_time'] = exit_time.isoformat()
+                transaction['operator'] = operator
+                transaction['gate_id'] = gate_id
+            
+            # Save to database
+            self.local_db.save(transaction)
+            
+            # Add exit image as attachment if provided
+            if exit_image_data:
+                image_success = self.add_image_to_transaction(transaction['_id'], 'exit.jpg', exit_image_data)
+                if image_success:
+                    logger.info("Added exit image to transaction")
+                else:
+                    logger.warning("Failed to add exit image to transaction")
+            
+            # Invalidate member cache if it's a member transaction
+            if transaction.get('type') == 'member_entry' and self.member_cache_enabled:
+                card_number = transaction.get('card_number')
+                if card_number:
+                    member_cache.invalidate(card_number)
+            
+            transaction_type = "member" if transaction.get('type') == 'member_entry' else "parking"
+            duration_hours = self._calculate_duration_hours(transaction, exit_time)
+            
+            logger.info("✅ Updated {} transaction status to exited: {} (fee: {})".format(
+                transaction_type, transaction['_id'], fee))
+            
+            return {
+                'success': True,
+                'message': '{} transaction processed successfully'.format(transaction_type.title()),
+                'transaction': transaction,
+                'transaction_type': transaction_type,
+                'fee': fee,
+                'duration_hours': duration_hours,
+                'exit_time': exit_time.isoformat()
+            }
+            
+        except Exception as e:
+            logger.error("Error updating transaction status: {}".format(str(e)))
+            return {
+                'success': False,
+                'message': 'System error: {}'.format(str(e)),
+                'error_code': 'SYSTEM_ERROR'
+            }
+    
     def process_member_exit_optimized(self, card_number, operator="SYSTEM", gate_id="EXIT_GATE_01"):
-        """Process member exit dengan optimized lookup"""
+        """Process member exit dengan optimized lookup - menggunakan unified update method"""
         try:
             start_time = time.time()
             
@@ -826,40 +915,17 @@ class DatabaseService(object):
                     'error_code': 'TRANSACTION_NOT_FOUND'
                 }
             
-            if transaction.get('status') != 0:
-                return {
-                    'success': False,
-                    'message': 'Member already exited',
-                    'error_code': 'ALREADY_EXITED',
-                    'transaction': transaction
-                }
+            # Use unified update method
+            result = self.update_transaction_status(transaction, operator, gate_id)
             
-            # Update transaction
-            transaction['status'] = 1
-            transaction['waktu_keluar'] = time.strftime('%Y-%m-%dT%H:%M:%S')
-            transaction['exit_time'] = time.strftime('%Y-%m-%dT%H:%M:%S')
-            transaction['operator'] = operator
-            transaction['gate_id'] = gate_id
-            transaction['exit_processed_at'] = time.time()
-            transaction['updated_at'] = time.time()
-            
-            # Save to database
-            self.local_db.save(transaction)
-            
-            # Invalidate cache for this member
-            if self.member_cache_enabled:
-                member_cache.invalidate(card_number)
-            
+            # Add timing information
             elapsed = (time.time() - start_time) * 1000
+            result['processing_time_ms'] = elapsed
             
-            logger.info("✅ Processed member exit: {} ({:.2f}ms)".format(card_number, elapsed))
+            if result['success']:
+                logger.info("✅ Processed member exit: {} ({:.2f}ms)".format(card_number, elapsed))
             
-            return {
-                'success': True,
-                'message': 'Member exit processed successfully',
-                'transaction': transaction,
-                'processing_time_ms': elapsed
-            }
+            return result
             
         except Exception as e:
             logger.error("Error processing member exit: {}".format(str(e)))
@@ -962,30 +1028,9 @@ class DatabaseService(object):
             logger.error("Error getting vehicle tariff: {}".format(str(e)))
             return 5000
     
-    def exit_transaction(self, transaction_id, exit_data):
-        """Update transaction with exit data"""
-        try:
-            # Get existing transaction
-            doc = self.local_db[transaction_id]
-            
-            # Update with exit data
-            doc.update(exit_data)
-            doc['status'] = 1  # Mark as exited
-            doc['status_transaksi'] = "1"
-            doc['updated_at'] = datetime.datetime.now().isoformat()
-            
-            # Save updated document
-            self.local_db.save(doc)
-            
-            logger.info("Transaction {} marked as exited".format(transaction_id))
-            return True
-            
-        except Exception as e:
-            logger.error("Error updating exit transaction: {}".format(str(e)))
-            return False
-    
+
     def process_vehicle_exit(self, plate_or_barcode, operator_id, gate_id, exit_image_data=None):
-        """Comprehensive exit processing method dengan member optimization"""
+        """Comprehensive exit processing method dengan member optimization - menggunakan unified update"""
         try:
             logger.info("Processing vehicle exit for: {}".format(plate_or_barcode))
             
@@ -997,7 +1042,7 @@ class DatabaseService(object):
                     'error_code': 'DB_NOT_CONNECTED'
                 }
             
-            # Find transaction by barcode first, then by member card, then by plate
+            # Find transaction by different methods
             transaction = None
             search_method = None
             processing_time = 0
@@ -1040,86 +1085,22 @@ class DatabaseService(object):
                     'search_time_ms': total_search_time
                 }
             
-            # Check if already exited
-            current_status = transaction.get('status', 0)
-            if current_status == 1:
-                exit_time = transaction.get('waktu_keluar', 'Unknown')
-                logger.warning("Vehicle already exited at: {}".format(exit_time))
-                return {
-                    'success': False,
-                    'message': 'Vehicle already exited at: {}'.format(exit_time),
-                    'fee': transaction.get('bayar_keluar', 0),
-                    'error_code': 'ALREADY_EXITED',
-                    'transaction': transaction,
-                    'search_method': search_method,
-                    'search_time_ms': total_search_time
-                }
+            # Use unified update method
+            update_result = self.update_transaction_status(transaction, operator_id, gate_id, exit_image_data)
             
-            # Treat member and regular parking transactions similarly, except for type and fee
-            exit_time = datetime.datetime.now()
-            duration_hours = self._calculate_duration_hours(transaction, exit_time)
-            if transaction.get('type') == 'member_entry':
-                fee = 0  # Members don't pay fees
-            else:
-                fee = self.calculate_parking_fee(transaction, exit_time)
-
-            logger.info("Calculated fee: {} for {} hours".format(fee, duration_hours))
-
-            # Prepare exit data (status always set to 1)
-            exit_data = {
-                'waktu_keluar': exit_time.isoformat(),
-                'bayar_keluar': fee,
-                'id_pintu_keluar': gate_id,
-                'id_op_keluar': operator_id,
-                'id_shift_keluar': 'SHIFT_001',  # Default shift
-                'exit_method': search_method,
-                'exit_input': plate_or_barcode,
-                'status': 1,  # Mark as exited
-                'status_transaksi': "1",
-                'search_time_ms': total_search_time
-            }
-
-            # Update transaction
-            success = self.exit_transaction(transaction['_id'], exit_data)
-
-            if success:
-                # Add exit image as attachment if provided
-                if exit_image_data:
-                    image_success = self.add_image_to_transaction(transaction['_id'], 'exit.jpg', exit_image_data)
-                    if image_success:
-                        logger.info("Added exit image to transaction")
-                    else:
-                        logger.warning("Failed to add exit image to transaction")
-
-                total_processing_time = (time.time() - start_time) * 1000
-
+            total_processing_time = (time.time() - start_time) * 1000
+            
+            # Add search-specific information to result
+            update_result['search_method'] = search_method
+            update_result['search_time_ms'] = total_search_time
+            update_result['total_processing_time_ms'] = total_processing_time
+            update_result['exit_input'] = plate_or_barcode
+            update_result['transaction_id'] = transaction['_id']
+            
+            if update_result['success']:
                 logger.info("Vehicle exit processed successfully for: {}".format(plate_or_barcode))
-                return {
-                    'success': True,
-                    'message': 'Vehicle exit processed successfully',
-                    'fee': fee,
-                    'transaction': transaction,
-                    'duration_hours': duration_hours,
-                    'exit_time': exit_time.isoformat(),
-                    'search_method': search_method,
-                    'transaction_id': transaction['_id'],
-                    'transaction_type': 'member' if transaction.get('type') == 'member_entry' else 'parking',
-                    'search_time_ms': total_search_time,
-                    'total_processing_time_ms': total_processing_time
-                }
-            else:
-                logger.error("Failed to update transaction in database")
-                return {
-                    'success': False,
-                    'message': 'Failed to update transaction in database',
-                    'fee': fee,
-                    'error_code': 'UPDATE_FAILED',
-                    'transaction': transaction,
-                    'search_method': search_method,
-                    'search_time_ms': total_search_time
-                }
-                
-                
+            
+            return update_result
             
         except Exception as e:
             total_time = (time.time() - start_time) * 1000 if 'start_time' in locals() else 0

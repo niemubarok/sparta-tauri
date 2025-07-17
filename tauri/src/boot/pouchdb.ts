@@ -1,23 +1,13 @@
-// if (typeof window !== 'undefined') {
-//   (window as any).global = window;
-//   (window as any).process = {
-//     env: { DEBUG: undefined }
-//   };
-
-// }
-
 import PouchDB from 'pouchdb-browser'
 import PouchFind from 'pouchdb-find'
 import { boot } from 'quasar/wrappers'
 import { Notify } from 'quasar'
 import ls from 'localstorage-slim'
+import { ref } from 'vue'
 // Import settings service for dynamic CouchDB configuration
 import { useSettingsService } from 'src/stores/settings-service';
 
-
-
 PouchDB.plugin(PouchFind)
-
 
 interface DatabaseTypes {
   transactions: PouchDB.Database;
@@ -33,50 +23,6 @@ interface DatabaseTypes {
   levels: PouchDB.Database;
   blacklist: PouchDB.Database;
   tarif: PouchDB.Database;
-}
-
-// Local databases
-const localDbs: DatabaseTypes = {
-  transactions: new PouchDB('transactions'),
-  users: new PouchDB('users'),
-  vehicles: new PouchDB('vehicles'),
-  tariffs: new PouchDB('tariffs'),
-  config: new PouchDB('config'),
-  members: new PouchDB('members'),
-  membershipTypes: new PouchDB('membership_types'),
-  // New databases for store integration
-  petugas: new PouchDB('petugas'),
-  kendaraan: new PouchDB('kendaraan'),
-  levels: new PouchDB('levels'),
-  blacklist: new PouchDB('blacklist'),
-  tarif: new PouchDB('tarif')
-}
-
-const createIndexes = async () => {
-  await Promise.all([
-    localDbs.transactions.createIndex({
-      index: { fields: ['type', 'plate_number', 'status'] }
-    }),
-    localDbs.members.createIndex({
-      index: { fields: ['member_id', 'status'] }
-    }),
-    localDbs.vehicles.createIndex({
-      index: { fields: ['type', 'vehicle_id'] }
-    }),
-    // New indexes for store integration
-    localDbs.petugas.createIndex({
-      index: { fields: ['type', 'username', 'status'] }
-    }),
-    localDbs.kendaraan.createIndex({
-      index: { fields: ['type', 'jenis', 'status'] }
-    }),
-    localDbs.blacklist.createIndex({
-      index: { fields: ['type', 'no_pol', 'status'] }
-    }),
-    localDbs.tarif.createIndex({
-      index: { fields: ['type', 'id_jenis_kendaraan', 'status'] }
-    })
-  ])
 }
 
 
@@ -144,235 +90,60 @@ const reinitializeRemoteDatabases = () => {
   try {
     updateRemoteUrl()
     remoteDbs = createRemoteDatabases(currentRemoteUrl.value)
-    // console.log('🔄 Remote databases reinitialized with new URL')
+    console.log('🔄 Remote databases reinitialized with new URL')
     
-    // Restart sync after URL change (using the full implementation defined below)
+    // Restart change handlers after URL change
     setTimeout(() => {
-      // console.log('🔄 Starting delayed sync after URL change...');
-      // Use the function instead of duplicating code
-      restartSyncInitialization().catch(err => {
-        // console.error('❌ Error restarting sync after URL change:', err);
+      console.log('🔄 Starting delayed change handlers after URL change...');
+      startChangeHandlers().catch(err => {
+        console.error('❌ Error restarting change handlers after URL change:', err);
       });
     }, 1000);
   } catch (error) {
-    // console.error('❌ Error reinitializing remote databases:', error);
-    // console.warn('⚠️ Application will continue with previous remote configuration');
+    console.error('❌ Error reinitializing remote databases:', error);
+    console.warn('⚠️ Application will continue with previous remote configuration');
   }
 }
 
-// Sync options
-const syncOpts = {
-  live: true,
-  retry: true,
-}
+// Database change handlers
+const changeHandlers = new Map()
 
-import { ref } from 'vue';
+// Reactive state for database status
+const isConnected = ref(false);
+const lastChangeStatus = ref<'active' | 'error' | 'idle'>('idle');
+const lastChangeError = ref<any>(null);
 
-// Map untuk tracking active sync handlers
-const activeSyncHandlers = new Map();
-
-// Reactive state for sync status
-const isSyncing = ref(false);
-const lastSyncStatus = ref<'active' | 'paused' | 'denied' | 'error' | 'complete'>('paused');
-const lastSyncError = ref<any>(null);
-
-// Start sync for all databases
-const syncDatabases = async (): Promise<void> => {
-  // console.log('🔄 Starting live sync for all databases...');
-  const dbNames = Object.keys(localDbs);
-  let successCount = 0;
-  let failCount = 0;
-  
+// Setup change handler for a specific database
+const setupChangeHandler = async (dbName: string, dbInstance: PouchDB.Database) => {
   try {
-    for (const dbName of dbNames) {
-      // console.log(`🔗 Setting up live sync for ${dbName}...`);
-      try {
-        // Use the new setupSyncHandler function
-        const sync = await setupSyncHandler(
-          currentRemoteUrl.value.replace(/\/+$/, ''),
-          dbName,
-          localDbs[dbName as keyof typeof localDbs]
-        );
-        if (sync) {
-          activeSyncHandlers.set(dbName, sync);
-          // console.log(`✅ Sync handler created for ${dbName}`);
-          successCount++;
-        } else {
-          // console.warn(`⚠️ Sync handler not created for ${dbName}`);
-          failCount++;
-        }
-      } catch (error) {
-        // console.error(`❌ Failed to setup sync for ${dbName}:`, error);
-        failCount++;
-      }
-    }
-    // console.log(`🔄 Sync setup completed: ${successCount} successful, ${failCount} failed (out of ${dbNames.length} databases)`);
-  } catch (error) {
-    // console.error('💥 Critical error in syncDatabases:', error);
-    // console.warn('⚠️ Sync setup may be incomplete, but application will continue');
-  }
-}
+    console.log(`🔄 Setting up change handler for ${dbName}...`);
+    
+    const changeHandler = dbInstance.changes({
+      since: 'now',
+      live: true,
+      include_docs: true,
+      timeout: 30000
+    });
 
-// Function to ensure remote database exists with enhanced error handling
-async function ensureRemoteDatabase(url: string, dbName: string): Promise<boolean> {
-  try {
-    // console.log(`🔍 Checking if remote database ${dbName} exists at ${url}`);
-    
-    // Parse URL to extract credentials and pure URL if needed
-    let remoteDbUrl = `${url}/${dbName}`;
-    let options = {} as any;
-  
-  // If URL doesn't contain credentials, try to add them from env
-  if (!url.includes('@')) {
-    const DB_USER = process.env.DB_USER || 'admin';
-    const DB_PASSWORD = process.env.DB_PASSWORD || 'admin';
-    
-    options = {
-      auth: {
-        username: DB_USER,
-        password: DB_PASSWORD
-      },
-      ajax: {
-        timeout: 30000,
-        withCredentials: false
-      }
-    };
-    
-    // console.log(`🔐 Using explicit auth options for ${dbName}`);
-  }
-  
-  try {
-    // Try to access the database
-    const remoteDb = new PouchDB(remoteDbUrl, options);
-    const info = await remoteDb.info();
-    // console.log(`✅ Remote database ${dbName} is accessible:`, {
-    //   db_name: info.db_name,
-    //   doc_count: info.doc_count,
-    //   update_seq: info.update_seq
-    // });
-    return true;
-  } catch (error: any) {
-    // console.warn(`⚠️ Remote database ${dbName} not accessible:`, error.message);
-    // console.warn(`📝 Error details:`, {
-    //   status: error.status,
-    //   name: error.name,
-    //   reason: error.reason || 'Unknown reason'
-    // });
-    
-    // If it's a 404, try to create the database
-    if (error.status === 404 || error.message.includes('not found')) {
-      try {
-        // console.log(`🏗️ Creating remote database ${dbName}...`);
-        const remoteDb = new PouchDB(remoteDbUrl, options);
-        await remoteDb.put({
-          _id: '_design/init',
-          views: {
-            all: {
-              map: 'function (doc) { emit(doc._id, 1); }'
-            }
-          }
+    changeHandler
+      .on('change', (change) => {
+        console.log(`📊 Database change for ${dbName}:`, {
+          id: change.id,
+          rev: change.changes[0].rev,
+          deleted: change.deleted
         });
-        // console.log(`✅ Remote database ${dbName} created successfully`);
-        return true;
-      } catch (createError: any) {
-        // console.error(`❌ Failed to create remote database ${dbName}:`, createError.message);
-        // console.error('📝 Creation error details:', {
-        //   status: createError.status,
-        //   name: createError.name,
-        //   reason: createError.reason || 'Unknown reason'
-        // });
-        return false;
-      }
-    }
-    
-    // Check for authentication errors
-    if (error.status === 401 || error.status === 403) {
-      // console.error(`🔒 Authentication failure for ${dbName}. Check your credentials.`);
-    }
-    
-    // Check for server errors
-    if (error.status === 500) {
-      // console.error(`🚨 Server error when accessing ${dbName}. CouchDB might be misconfigured or overloaded.`);
-      // Try to access CouchDB root to check if server is responsive
-      try {
-        const rootUrl = url.split('/').slice(0, 3).join('/');
-        // console.log(`🔍 Attempting to access CouchDB root at ${rootUrl}...`);
-        const response = await fetch(rootUrl);
-        if (response.ok) {
-          // console.log(`✅ CouchDB server is responsive at ${rootUrl}`);
-        } else {
-          // console.error(`❌ CouchDB server returned ${response.status} at ${rootUrl}`);
-        }
-      } catch (rootError) {
-        // console.error(`❌ Could not connect to CouchDB root:`, rootError);
-      }
-    }
-    
-    return false;
-  }
-  } catch (error) {
-    // console.error(`❌ Unexpected error checking remote database ${dbName}:`, error);
-    return false;
-  }
-}
-
-// Function to setup sync handler with authorization - based on user's pattern
-async function setupSyncHandler(url: string, dbName: string, dbInstance: PouchDB.Database) {
-  try {
-    // First ensure the remote database exists
-    const dbExists = await ensureRemoteDatabase(url, dbName);
-    if (!dbExists) {
-      // console.warn(`⚠️ Skipping sync for ${dbName} - remote database not available`);
-      return null;
-    }
-  } catch (error) {
-    // console.error(`❌ Error checking remote database ${dbName}:`, error);
-    // console.warn(`⚠️ Skipping sync for ${dbName} due to error check failure`);
-    return null;
-  }
-
-  // Parse URL to get authentication components if they exist
-  let syncUrl = `${url}/${dbName}`;
-  let authHeaders = {};
-  
-  // If URL already has credentials, don't add extra auth headers
-  if (!url.includes('@')) {
-    // Use basic auth instead of Bearer token if no credentials in URL
-    const DB_USER = process.env.DB_USER || 'admin';
-    const DB_PASSWORD = process.env.DB_PASSWORD || 'admin';
-    authHeaders = {
-      Authorization: `Basic ${btoa(`${DB_USER}:${DB_PASSWORD}`)}`,
-    };
-    // console.log(`🔐 Using basic auth for ${dbName} sync`);
-  } else {
-    // console.log(`🔐 Using URL embedded credentials for ${dbName} sync`);
-  }
-  
-  const syncHandler = dbInstance.sync(syncUrl, {
-    live: true,
-    retry: true,
-    // @ts-ignore - PouchDB types might not include all auth options
-    headers: authHeaders,
-    // @ts-ignore - PouchDB types might not include all options
-    credentials: "include",
-    heartbeat: 5000,
-    ajax: {
-      timeout: 30000, // Increase timeout to 30 seconds
-      withCredentials: false // Set to false if using Basic Auth headers
-    }
-  } as any);
-
-  const isFirstVisit = !ls.get("hasVisitedBefore");
-
-  syncHandler
-    .on("change", (info) => {
-      if (dbName === process.env.COUCHDB_MASTER) {
-        if (info.direction === "pull" && !isFirstVisit) {
+        
+        isConnected.value = true;
+        lastChangeStatus.value = 'active';
+        lastChangeError.value = null;
+        
+        // Handle specific change events based on database
+        if (dbName === process.env.COUCHDB_MASTER && !ls.get("hasVisitedBefore")) {
           Notify.create({
-            type: "negative",
-            message: `Ada Perubahan Data Master Silahkan Refresh Halaman`,
+            type: "info",
+            message: `Data ${dbName} telah berubah, silahkan refresh halaman`,
             position: "top",
-            color: "negative",
+            color: "info",
             actions: [
               {
                 label: 'Refresh',
@@ -385,226 +156,164 @@ async function setupSyncHandler(url: string, dbName: string, dbInstance: PouchDB
             timeout: 5000,
           });
         }
-      }
-      
-      // console.log(`📊 Live sync change for ${dbName}:`, {
-      //   direction: info.direction,
-      //   docsWritten: info.change?.docs_written || 0
-      // });
-      isSyncing.value = true;
-      lastSyncStatus.value = 'active';
-    })
-    .on("paused", (err: any) => {
-      // console.log(`⏸️ Live sync paused for ${dbName}:`, (err && typeof err === 'object' && 'message' in err) ? err.message : 'normal pause');
-      isSyncing.value = false;
-      lastSyncStatus.value = 'paused';
-      if (err) {
-        lastSyncError.value = err;
-        // Only auto-restart if it's not a critical error
-        if (err.status !== 404 && err.status !== 500) {
-          setTimeout(() => {
-            // console.log(`🔄 Auto-restarting sync for ${dbName}...`);
-            syncSingleDatabase(dbName);
-          }, 15000);
-        }
-      }
-    })
-    .on("active", () => {
-      // console.log(`🔄 Live sync active for ${dbName}`);
-      isSyncing.value = true;
-      lastSyncStatus.value = 'active';
-      lastSyncError.value = null;
-    })
-    .on("error", (err: any) => {
-      // console.error(`❌ Live sync error for ${dbName}:`, err);
-      // console.error(`🔍 Detailed error info:`, {
-        status: err.status,
-      //   name: err.name,
-      //   message: err.message,
-      //   reason: err.reason || 'Unknown reason'
-      // });
-      
-      isSyncing.value = false;
-      lastSyncStatus.value = 'error';
-      lastSyncError.value = err;
-      
-      // Special handling for auth errors
-      if (err.status === 401 || err.status === 403) {
-        // console.warn(`🔒 Authentication error detected for ${dbName}, attempting to reconnect with different auth...`);
+      })
+      .on('error', (err) => {
+        console.error(`❌ Change handler error for ${dbName}:`, err);
+        lastChangeStatus.value = 'error';
+        lastChangeError.value = err;
+        isConnected.value = false;
         
-        // Try to reinitialize with updated credentials after a short delay
+        // Auto-restart change handler after error
         setTimeout(() => {
-          // console.log(`🔄 Reinitializing remote databases with updated auth...`);
-          reinitializeRemoteDatabases();
+          console.log(`🔄 Restarting change handler for ${dbName}...`);
+          restartChangeHandler(dbName);
         }, 10000);
-        
-        return;
-      }
-      
-      // Only auto-restart if it's not a critical error (404, 500)
-      if (err.status !== 404 && err.status !== 500) {
-        setTimeout(() => {
-          // console.log(`🔄 Auto-restarting sync for ${dbName} after error...`);
-          syncSingleDatabase(dbName);
-        }, 20000);
-      } else {
-        // console.log(`🚫 Not restarting sync for ${dbName} due to critical error (${err.status})`);
-        
-        // For 500 errors, try a different approach after a longer delay
-        if (err.status === 500) {
-          setTimeout(() => {
-            // console.log(`🔄 Attempting special recovery for ${dbName} after 500 error...`);
-            // Try to access the database directly to check what's happening
-            new PouchDB(`${url}/${dbName}`).info()
-              .then(info => {
-                // console.log(`✅ Database ${dbName} is actually accessible:`, info);
-                syncSingleDatabase(dbName);
-              })
-              .catch(checkError => {
-              //
-              });
-          }, 30000);
-        }
-      }
-    });
+      })
+      .on('complete', (info) => {
+        console.log(`✅ Change handler completed for ${dbName}:`, info);
+        lastChangeStatus.value = 'idle';
+      });
 
-  return syncHandler;
+    changeHandlers.set(dbName, changeHandler);
+    console.log(`✅ Change handler set up for ${dbName}`);
+    return changeHandler;
+  } catch (error) {
+    console.error(`❌ Failed to setup change handler for ${dbName}:`, error);
+    return null;
+  }
 }
 
-// Fungsi untuk restart single database sync - definisikan dulu sebelum digunakan
-const syncSingleDatabase = async (dbName: string) => {
+// Start change handlers for all databases
+const startChangeHandlers = async (): Promise<void> => {
+  console.log('🔄 Starting change handlers for all databases...');
+  const dbNames = Object.keys(remoteDbs);
+  let successCount = 0;
+  let failCount = 0;
+  
   try {
-    // Cancel existing sync handler
-    const existingSync = activeSyncHandlers.get(dbName);
-    if (existingSync) {
-  //
-      existingSync.cancel();
-      activeSyncHandlers.delete(dbName);
+    for (const dbName of dbNames) {
+      try {
+        const changeHandler = await setupChangeHandler(
+          dbName,
+          remoteDbs[dbName as keyof typeof remoteDbs]
+        );
+        if (changeHandler) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch (error) {
+        console.error(`❌ Failed to setup change handler for ${dbName}:`, error);
+        failCount++;
+      }
+    }
+    console.log(`🔄 Change handlers setup completed: ${successCount} successful, ${failCount} failed (out of ${dbNames.length} databases)`);
+  } catch (error) {
+    console.error('💥 Critical error in startChangeHandlers:', error);
+  }
+}
+
+// Restart individual change handler
+const restartChangeHandler = async (dbName: string) => {
+  try {
+    // Cancel existing change handler
+    const existingHandler = changeHandlers.get(dbName);
+    if (existingHandler) {
+      existingHandler.cancel();
+      changeHandlers.delete(dbName);
     }
     
-  //
-    
-    // Use the new setupSyncHandler function
-    const sync = await setupSyncHandler(
-      currentRemoteUrl.value.replace(/\/+$/, ''), // Remove trailing slashes
+    // Setup new change handler
+    const changeHandler = await setupChangeHandler(
       dbName,
-      localDbs[dbName as keyof typeof localDbs]
+      remoteDbs[dbName as keyof typeof remoteDbs]
     );
     
-    if (sync) {
-      activeSyncHandlers.set(dbName, sync);
-  //
+    if (changeHandler) {
+      console.log(`✅ Change handler restarted for ${dbName}`);
     } else {
-  //
+      console.warn(`⚠️ Failed to restart change handler for ${dbName}`);
     }
     
   } catch (error) {
-  //
-    // Retry setelah delay
+    console.error(`❌ Error restarting change handler for ${dbName}:`, error);
+    // Retry after delay
     setTimeout(() => {
-  //
-      syncSingleDatabase(dbName);
-    }, 1000);
+      console.log(`🔄 Retrying restart for ${dbName}...`);
+      restartChangeHandler(dbName);
+    }, 15000);
   }
 };
 
-
-/**
- * Force immediate manual sync for all databases
- * Useful for troubleshooting sync issues
- */
-const forceSyncAllDatabases = async (): Promise<void> => {
-  console.log('🔄 Starting forced sync for all databases...');
-  
-  // Update sync status
-  isSyncing.value = true;
-  lastSyncStatus.value = 'active';
-  lastSyncError.value = null;
-  
-  const syncPromises = Object.keys(localDbs).map(dbName => {
-    return new Promise((resolve, reject) => {
-      console.log(`🔄 Forcing sync for ${dbName}...`);
-      
-      const sync = localDbs[dbName as keyof typeof localDbs].sync(
-        remoteDbs[dbName as keyof typeof remoteDbs], 
-        {
-          timeout: 30000, // 30 second timeout
-          retry: true,    // Enable retry for manual sync
-          batch_size: 50  // Reasonable batch size
-        }
-      );
-      
-      let completed = false;
-      
-      sync.on('complete', (info) => {
-        if (!completed) {
-          completed = true;
-          console.log(`✅ Forced sync completed for ${dbName}:`, info);
-          resolve(info);
-        }
-      });
-      
-      sync.on('error', (err) => {
-        if (!completed) {
-          completed = true;
-          console.error(`❌ Forced sync failed for ${dbName}:`, err);
-          reject(err);
-        }
-      });
-      
-      sync.on('change', (info) => {
-        console.log(`🔄 Sync progress for ${dbName}:`, {
-          direction: info.direction,
-          docsWritten: info.change?.docs_written || 0
-        });
-      });
-      
-      // Timeout handler
-      setTimeout(() => {
-        if (!completed) {
-          completed = true;
-          const timeoutError = new Error(`Sync timeout for ${dbName} after 30 seconds`);
-          console.error('⏰ Sync timeout:', timeoutError);
-          sync.cancel();
-          reject(timeoutError);
-        }
-      }, 30000);
-    });
-  });
-  
+// Function to ensure remote database exists with enhanced error handling
+async function ensureRemoteDatabase(url: string, dbName: string): Promise<boolean> {
   try {
-    const results = await Promise.allSettled(syncPromises);
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    console.log(`🔍 Checking if remote database ${dbName} exists at ${url}`);
     
-    console.log(`✅ Forced sync completed: ${successful} successful, ${failed} failed`);
-    
-    // Update sync status based on results
-    if (failed === 0) {
-      isSyncing.value = false;
-      lastSyncStatus.value = 'complete';
-    } else {
-      isSyncing.value = false;
-      lastSyncStatus.value = 'error';
-      lastSyncError.value = new Error(`${failed} databases failed to sync`);
+    // Parse URL to extract credentials and pure URL if needed
+    let remoteDbUrl = `${url}/${dbName}`;
+    let options = {} as any;
+  
+    // If URL doesn't contain credentials, try to add them from env
+    if (!url.includes('@')) {
+      const DB_USER = process.env.DB_USER || 'admin';
+      const DB_PASSWORD = process.env.DB_PASSWORD || 'admin';
+      
+      options = {
+        auth: {
+          username: DB_USER,
+          password: DB_PASSWORD
+        },
+        ajax: {
+          timeout: 30000,
+          withCredentials: false
+        }
+      };
+      
+      console.log(`🔐 Using explicit auth options for ${dbName}`);
     }
     
-    // Log failed syncs
-    results.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        const dbName = Object.keys(localDbs)[index];
-        console.error(`❌ ${dbName} sync failed:`, result.reason);
+    try {
+      // Try to access the database
+      const remoteDb = new PouchDB(remoteDbUrl, options);
+      const info = await remoteDb.info();
+      console.log(`✅ Remote database ${dbName} is accessible:`, {
+        db_name: info.db_name,
+        doc_count: info.doc_count,
+        update_seq: info.update_seq
+      });
+      return true;
+    } catch (error: any) {
+      console.warn(`⚠️ Remote database ${dbName} not accessible:`, error.message);
+      
+      // If it's a 404, try to create the database
+      if (error.status === 404 || error.message.includes('not found')) {
+        try {
+          console.log(`🏗️ Creating remote database ${dbName}...`);
+          const remoteDb = new PouchDB(remoteDbUrl, options);
+          await remoteDb.put({
+            _id: '_design/init',
+            views: {
+              all: {
+                map: 'function (doc) { emit(doc._id, 1); }'
+              }
+            }
+          });
+          console.log(`✅ Remote database ${dbName} created successfully`);
+          return true;
+        } catch (createError: any) {
+          console.error(`❌ Failed to create remote database ${dbName}:`, createError.message);
+          return false;
+        }
       }
-    });
-    
+      
+      return false;
+    }
   } catch (error) {
-    console.error('❌ Critical error in forced sync:', error);
-    isSyncing.value = false;
-    lastSyncStatus.value = 'error';
-    lastSyncError.value = error;
-    throw error;
+    console.error(`❌ Unexpected error checking remote database ${dbName}:`, error);
+    return false;
   }
-};
+}
 
 /**
  * Check if remote database is accessible
@@ -614,409 +323,42 @@ const checkRemoteConnection = async (): Promise<boolean> => {
     console.log('🔗 Checking remote database connection...');
     const info = await remoteDbs.transactions.info();
     console.log('✅ Remote database accessible:', info.db_name);
+    isConnected.value = true;
     return true;
   } catch (error: any) {
     console.error('❌ Remote database not accessible:', error?.message || error);
+    isConnected.value = false;
     return false;
   }
 };
 
 /**
- * Enhanced function to sync and verify specific transaction with connection check
+ * Get database status for monitoring
  */
-const safeSyncTransaction = async (transactionId: string): Promise<boolean> => {
-  try {
-    console.log('🔄 Starting safe sync for transaction:', transactionId);
-    
-    // First check if remote is accessible
-    const isConnected = await checkRemoteConnection();
-    if (!isConnected) {
-      console.warn('⚠️ Remote database not accessible, skipping sync');
-      return false;
-    }
-    
-    // Check if transaction exists locally
-    const localDoc = await localDbs.transactions.get(transactionId);
-    if (!localDoc) {
-      console.error('❌ Transaction not found locally:', transactionId);
-      return false;
-    }
-    
-    // Try simple push replication first (most reliable)
-    const pushResult = await new Promise((resolve, reject) => {
-      const replication = localDbs.transactions.replicate.to(remoteDbs.transactions, {
-        timeout: 20000,
-        retry: false,
-        batch_size: 1,
-        filter: (doc: any) => doc._id === transactionId
-      });
-      
-      let completed = false;
-      
-      replication.on('complete', (info) => {
-        if (!completed) {
-          completed = true;
-          console.log('✅ Push replication completed:', info);
-          resolve(info);
-        }
-      });
-      
-      replication.on('error', (err) => {
-        if (!completed) {
-          completed = true;
-          console.error('❌ Push replication failed:', err);
-          reject(err);
-        }
-      });
-      
-      // Timeout after 20 seconds
-      setTimeout(() => {
-        if (!completed) {
-          completed = true;
-          replication.cancel();
-          reject(new Error('Push replication timeout'));
-        }
-      }, 20000);
-    });
-    
-    // Verify the transaction exists in remote
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for propagation
-    const verified = await checkTransactionInRemote(transactionId);
-    
-    console.log(`🔍 Transaction ${transactionId} sync result:`, {
-      pushed: !!pushResult,
-      verified: verified
-    });
-    
-    return verified;
-  } catch (error) {
-    console.error(`❌ Safe sync failed for transaction ${transactionId}:`, error);
-    return false;
-  }
-};
-
-/**
- * Force sync and verify specific transaction exists in remote
- */
-const forceSyncAndVerifyTransaction = async (transactionId: string): Promise<boolean> => {
-  try {
-    console.log('🔍 Force syncing and verifying transaction:', transactionId);
-    
-    // First force sync the transaction
-    await forceSyncSpecificTransaction(transactionId);
-    
-    // Wait a moment for sync to propagate
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Then verify it exists in remote
-    const exists = await checkTransactionInRemote(transactionId);
-    
-    console.log(`🔍 Transaction ${transactionId} verification result:`, exists ? 'EXISTS' : 'NOT FOUND');
-    
-    return exists;
-  } catch (error) {
-    console.error(`❌ Error verifying transaction ${transactionId}:`, error);
-    return false;
-  }
-};
-
-/**
- * Get detailed sync status with database-specific information
- */
-const getDetailedSyncStatus = () => {
+const getDatabaseStatus = () => {
   return {
-    global: {
-      isSyncing: isSyncing.value,
-      lastSyncStatus: lastSyncStatus.value,
-      lastSyncError: lastSyncError.value?.message || null
-    },
-    databases: Object.keys(localDbs).map(dbName => ({
-      name: dbName,
-      // Add individual database sync status if needed
-      status: 'monitoring' // Placeholder - can be enhanced
-    }))
+    isConnected: isConnected.value,
+    lastChangeStatus: lastChangeStatus.value,
+    lastChangeError: lastChangeError.value
   };
 };
 
 /**
- * Get sync status for monitoring
+ * Add document to database
  */
-const getSyncStatus = () => {
-  return {
-    isSyncing: isSyncing.value,
-    lastSyncStatus: lastSyncStatus.value,
-    lastSyncError: lastSyncError.value
-  };
-};
-
-/**
- * Check if a specific transaction exists in remote database
- */
-const checkTransactionInRemote = async (transactionId: string): Promise<boolean> => {
+const addTransaction = async (transaction: any) => {
   try {
-    await remoteDbs.transactions.get(transactionId);
-    return true;
-  } catch (error: any) {
-    if (error?.status === 404) {
-      return false; // Document not found
-    }
-    throw error; // Other errors
-  }
-};
-
-/**
- * Force immediate manual sync for a specific transaction
- * Useful for ensuring critical transactions are synced immediately
- */
-const forceSyncSpecificTransaction = async (transactionId: string): Promise<void> => {
-  console.log('🔄 Starting forced sync for specific transaction:', transactionId);
-  
-  try {
-    // Check if transaction exists locally first
-    const exists = await localDbs.transactions.get(transactionId);
-    if (!exists) {
-      throw new Error(`Transaction ${transactionId} not found in local database`);
-    }
-    
-    // Use a more aggressive sync configuration
-    const sync = localDbs.transactions.sync(remoteDbs.transactions, {
-      timeout: 60000, // Increase to 60 seconds
-      retry: true,    // Enable retry for better reliability
-      batch_size: 5,  // Small batch for faster processing
-      checkpoint: false, // Disable checkpointing for immediate sync
-      filter: (doc: any) => doc._id === transactionId // Only sync specific transaction
-    });
-    
-    return new Promise((resolve, reject) => {
-      let completed = false;
-      let timeoutHandle: NodeJS.Timeout;
-      
-      const cleanup = () => {
-        if (timeoutHandle) {
-          clearTimeout(timeoutHandle);
-        }
-        try {
-          sync.cancel();
-        } catch (e) {
-          // Ignore cancel errors
-        }
-      };
-      
-      sync.on('complete', (info) => {
-        if (!completed) {
-          completed = true;
-          cleanup();
-          console.log(`✅ Forced sync completed for transaction ${transactionId}:`, info);
-          resolve();
-        }
-      });
-      
-      sync.on('error', (err) => {
-        if (!completed) {
-          completed = true;
-          cleanup();
-          console.error(`❌ Forced sync failed for transaction ${transactionId}:`, err);
-          reject(err);
-        }
-      });
-      
-      sync.on('change', (info) => {
-        console.log(`🔄 Forced sync progress for ${transactionId}:`, {
-          direction: info.direction,
-          docsWritten: info.change?.docs_written || 0
-        });
-      });
-      
-      sync.on('paused', (err) => {
-        if (err) {
-          console.warn(`⚠️ Forced sync paused with error for ${transactionId}:`, err);
-        } else {
-          console.log(`⏸️ Forced sync paused for ${transactionId} (normal)`);
-        }
-      });
-      
-      // Increased timeout handler
-      timeoutHandle = setTimeout(() => {
-        if (!completed) {
-          completed = true;
-          cleanup();
-          const timeoutError = new Error(`Forced sync timeout for transaction ${transactionId} after 60 seconds`);
-          console.error('⏰ Forced sync timeout:', timeoutError);
-          reject(timeoutError);
-        }
-      }, 60000); // 60 seconds timeout
-    });
-  } catch (error) {
-    console.error(`❌ Error in forced sync for transaction ${transactionId}:`, error);
-    throw error;
-  }
-};
-
-const addTransaction = async (transaction: any, immediateSync = false) => {
-  try {
-    const response = await localDbs.transactions.put(transaction);
-    
-    if (immediateSync) {
-      // Update sync status immediately
-      isSyncing.value = true;
-      lastSyncStatus.value = 'active';
-      lastSyncError.value = null;
-      
-      console.log('🔄 Triggering immediate sync for transaction:', response.id);
-      
-      // Create promise for immediate sync with optimized settings
-      const syncPromise = new Promise((resolve, reject) => {
-        const sync = localDbs.transactions.sync(remoteDbs.transactions, {
-          timeout: 45000, // Increased to 45 seconds
-          retry: true,    // Enable retry for better reliability
-          batch_size: 5,  // Smaller batch for faster sync
-          checkpoint: false, // Disable checkpointing for immediate sync
-          filter: (doc: any) => doc._id === response.id // Only sync this transaction
-        });
-        
-        let hasCompleted = false;
-        let timeoutHandle: NodeJS.Timeout;
-        
-        const cleanup = () => {
-          if (timeoutHandle) {
-            clearTimeout(timeoutHandle);
-          }
-          try {
-            sync.cancel();
-          } catch (e) {
-            // Ignore cancel errors
-          }
-        };
-        
-        sync.on('complete', (info) => {
-          if (!hasCompleted) {
-            hasCompleted = true;
-            cleanup();
-            isSyncing.value = false;
-            lastSyncStatus.value = 'complete';
-            
-            console.log('✅ Immediate sync completed for transaction:', response.id, info);
-            console.log('📊 Sync summary:', {
-              transactionId: response.id,
-              docsWritten: info.push?.docs_written || 0,
-              docsRead: info.pull?.docs_written || 0,
-              lastSeq: info.push?.last_seq
-            });
-            
-            resolve(info);
-          }
-        });
-        
-        sync.on('error', (err: any) => {
-          if (!hasCompleted) {
-            hasCompleted = true;
-            cleanup();
-            isSyncing.value = false;
-            lastSyncStatus.value = 'error';
-            lastSyncError.value = err;
-            
-            console.error('❌ Immediate sync failed for transaction:', response.id, err);
-            console.error('🔍 Sync error details:', {
-              transactionId: response.id,
-              error: err?.message || err,
-              status: err?.status,
-              reason: err?.reason,
-              name: err?.name
-            });
-            
-            // Try simpler push-only sync as fallback
-            console.log('🔄 Attempting push-only fallback sync...');
-            const pushSync = localDbs.transactions.replicate.to(remoteDbs.transactions, {
-              timeout: 30000,
-              retry: false,
-              batch_size: 1,
-              filter: (doc: any) => doc._id === response.id
-            });
-            
-            pushSync.on('complete', (pushInfo) => {
-              console.log('✅ Push-only fallback sync completed:', pushInfo);
-              resolve({ fallback: 'push-only', info: pushInfo });
-            });
-            
-            pushSync.on('error', (pushErr) => {
-              console.error('❌ Push-only fallback also failed:', pushErr);
-              reject(pushErr);
-            });
-          }
-        });
-        
-        sync.on('change', (info) => {
-          console.log('🔄 Immediate sync progress for transaction:', response.id, {
-            direction: info.direction,
-            docsWritten: info.change?.docs_written || 0
-          });
-        });
-        
-        sync.on('paused', (err) => {
-          if (err) {
-            console.warn('⚠️ Immediate sync paused with error:', err);
-          } else {
-            console.log('⏸️ Immediate sync paused (normal)');
-          }
-        });
-        
-        sync.on('active', () => {
-          console.log('🔄 Immediate sync active for transaction:', response.id);
-          isSyncing.value = true;
-          lastSyncStatus.value = 'active';
-        });
-        
-        // Set timeout for the entire sync operation
-        timeoutHandle = setTimeout(() => {
-          if (!hasCompleted) {
-            hasCompleted = true;
-            cleanup();
-            isSyncing.value = false;
-            lastSyncStatus.value = 'error';
-            lastSyncError.value = new Error('Sync timeout after 45 seconds');
-            
-            console.warn('⏰ Immediate sync timeout for transaction:', response.id);
-            
-            // Final fallback - simple replication without waiting
-            console.log('🔄 Starting background push as final fallback...');
-            localDbs.transactions.replicate.to(remoteDbs.transactions, {
-              timeout: 10000,
-              retry: false,
-              batch_size: 1,
-              filter: (doc: any) => doc._id === response.id
-            }).on('complete', (bgInfo) => {
-              console.log('✅ Background push completed:', bgInfo);
-            }).on('error', (bgErr) => {
-              console.error('❌ Background push failed:', bgErr);
-            });
-            
-            resolve({ timeout_fallback: true });
-          }
-        }, 45000);
-      });
-      
-      // Start sync but don't block the main thread
-      syncPromise.catch(error => {
-        console.error('🔥 Immediate sync completely failed:', error);
-        // Even if sync fails, the transaction is saved locally
-        // Background sync will eventually pick it up
-      });
-    }
-    
+    const response = await remoteDbs.transactions.put(transaction);
+    console.log('✅ Transaction added successfully:', response.id);
     return response;
   } catch (err) {
-    console.error('Error adding transaction:', err);
+    console.error('❌ Error adding transaction:', err);
     throw err;
   }
 };
 
 /**
- * Menyimpan attachment gambar ke dokumen transaksi.
- * @param transactionId ID dokumen transaksi
- * @param rev Revisi dokumen terakhir
- * @param attachmentName Nama attachment (misal: 'plate.jpg')
- * @param data Data gambar (base64 string tanpa prefix)
- * @param contentType Tipe konten (misal: 'image/jpeg')
+ * Add attachment to document
  */
 const addTransactionAttachment = async (
   transactionId: string,
@@ -1026,7 +368,7 @@ const addTransactionAttachment = async (
   contentType: string = 'image/jpeg'
 ) => {
   try {
-    console.log('📎 Adding attachment:', {
+    console.log('� Adding attachment:', {
       transactionId,
       attachmentName,
       dataLength: data.length,
@@ -1047,7 +389,7 @@ const addTransactionAttachment = async (
       type: blob.type
     });
     
-    const response = await localDbs.transactions.putAttachment(
+    const response = await remoteDbs.transactions.putAttachment(
       transactionId,
       attachmentName,
       rev,
@@ -1059,145 +401,104 @@ const addTransactionAttachment = async (
     return response;
   } catch (err) {
     console.error('❌ Error adding attachment:', err);
-    console.error('📋 Attachment details:', {
-      transactionId,
-      attachmentName,
-      dataLength: data?.length || 0,
-      contentType,
-      rev
-    });
     throw err;
   }
 };
 
-// Fungsi untuk restart semua sync initialization seperti pertama kali buka
-const restartSyncInitialization = async () => {
-  console.log('🔄 Restarting sync initialization...');
-  
-  // 1. Cancel semua sync handlers yang aktif
-  console.log('🛑 Cancelling all active sync handlers...');
-  activeSyncHandlers.forEach((handler, dbName) => {
-    try {
-      handler.cancel();
-      console.log(`✅ Cancelled sync for ${dbName}`);
-    } catch (error) {
-      console.log(`⚠️ Error cancelling sync for ${dbName}:`, error);
-    }
-  });
-  
-  // 2. Clear map handler
-  activeSyncHandlers.clear();
-  console.log('🧹 Cleared sync handlers map');
-  
-  // 3. Tunggu sebentar untuk ensure cancellation
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // 4. Restart sync untuk semua database
-  console.log('🚀 Restarting sync for all databases...');
-  await syncDatabases();
-  
-  console.log('✅ Sync initialization restarted successfully');
+/**
+ * Get attachment from document
+ */
+const getTransactionAttachment = async (
+  transactionId: string,
+  attachmentName: string
+) => {
+  try {
+    const response = await remoteDbs.transactions.getAttachment(
+      transactionId,
+      attachmentName
+    );
+    return response;
+  } catch (err) {
+    console.error('❌ Error getting attachment:', err);
+    throw err;
+  }
 };
 
-// Fungsi untuk health check dan auto-recovery  
-const startSyncHealthCheck = () => {
-  // console.log('🏥 Starting sync health monitoring...');
+// Health check function
+const startDatabaseHealthCheck = () => {
+  console.log('🏥 Starting database health monitoring...');
   
-  // Jalankan health check setiap 45 detik
+  // Check health every 60 seconds
   setInterval(() => {
-    // console.log('🔍 Checking sync health...');
+    console.log('🔍 Checking database health...');
     
-    const dbNames = Object.keys(localDbs);
-    
-    dbNames.forEach(dbName => {
-      const syncHandler = activeSyncHandlers.get(dbName);
+    Object.keys(remoteDbs).forEach(dbName => {
+      const changeHandler = changeHandlers.get(dbName);
       
-      if (!syncHandler) {
-        // console.log(`⚠️ Missing sync handler for ${dbName}, restarting...`);
-        syncSingleDatabase(dbName);
+      if (!changeHandler) {
+        console.log(`⚠️ Missing change handler for ${dbName}, restarting...`);
+        restartChangeHandler(dbName);
         return;
       }
-      
-      // Check if sync handler is still active
-      try {
-        // Jika sync handler sudah cancelled atau error, restart
-        if (syncHandler._destroyed || syncHandler._cancelled) {
-          // console.log(`💀 Dead sync handler detected for ${dbName}, restarting...`);
-          activeSyncHandlers.delete(dbName);
-          syncSingleDatabase(dbName);
-        }
-      } catch (error) {
-        // console.log(`🚨 Sync handler check failed for ${dbName}, restarting...`);
-        activeSyncHandlers.delete(dbName);
-        syncSingleDatabase(dbName);
-      }
     });
-  }, 45000); // Check setiap 45 detik
+  }, 60000); // Check every 60 seconds
   
-  // console.log('✅ Sync health monitoring started');
+  console.log('✅ Database health monitoring started');
 };
 
-
+// Initialize databases function
 const initializeDatabases = async () => {
   try {
-    // Create indexes but don't wait for it to complete
-    createIndexes().catch(error => {
-  //
-    });
+    console.log('🚀 Initializing databases...');
     
-    // Initialize design docs but don't wait for it to complete
-    initializeDesignDocs().catch(error => {
-  //
-    });
-    
-    // Update remote URL from settings before starting sync
+    // Update remote URL from settings
     try {
       updateRemoteUrl();
     } catch (error) {
-  //
+      console.error('❌ Error updating remote URL:', error);
     }
     
-    // Start live sync but don't wait for it to complete
-    syncDatabases().catch(error => {
-  //
+    // Check connection
+    await checkRemoteConnection();
+    
+    // Start change handlers
+    startChangeHandlers().catch(error => {
+      console.error('❌ Error starting change handlers:', error);
     });
     
-    // Start health monitoring setelah 30 detik
+    // Start health monitoring after 30 seconds
     setTimeout(() => {
       try {
-        startSyncHealthCheck();
+        startDatabaseHealthCheck();
       } catch (error) {
-  //
+        console.error('❌ Error starting health check:', error);
       }
     }, 30000);
     
-  //
+    console.log('✅ Database initialization completed');
     return true;
   } catch (error) {
-  //
+    console.error('❌ Database initialization failed:', error);
     return false;
   }
 }
 
 export default boot(({ app }) => {
-  // No async/await here - this makes the boot function truly non-blocking
-  //
+  console.log('🚀 Initializing PouchDB boot...');
   
   try {
     // Start the database initialization in the background
     setTimeout(() => {
-  //
+      console.log('⏰ Starting database initialization...');
       initializeDatabases().catch(err => {
-  //
+        console.error('❌ Database initialization failed:', err);
       });
     }, 100); // Short timeout to ensure app UI is initialized first
   } catch (error) {
-    // Catch any synchronous errors that might occur
-  //
+    console.error('❌ Boot error:', error);
   }
   
-  // Always proceed with app initialization
-  //
+  console.log('✅ PouchDB boot completed');
 })
 
 // New function to diagnose CouchDB connection issues
@@ -1263,7 +564,7 @@ const diagnoseCouchDbConnection = async (): Promise<object> => {
     }
     
     // 3. Check each database
-    for (const dbName of Object.keys(localDbs)) {
+    for (const dbName of Object.keys(remoteDbs)) {
       try {
         const remoteDb = new PouchDB(`${currentRemoteUrl.value}/${dbName}`);
         const info = await remoteDb.info();
@@ -1291,22 +592,11 @@ const diagnoseCouchDbConnection = async (): Promise<object> => {
 };
 
 export { 
-    localDbs,
-    remoteDbs, 
-    syncDatabases,
-    forceSyncAllDatabases, // Enhanced function for manual sync
-    forceSyncSpecificTransaction, // Enhanced function for specific transaction sync
-    forceSyncAndVerifyTransaction, // Function to sync and verify
-    safeSyncTransaction, // New safe sync function with connection check
-    checkRemoteConnection, // New function to check remote connection
-    diagnoseCouchDbConnection, // New diagnostic function
-    getSyncStatus,         // Basic sync monitoring
-    getDetailedSyncStatus, // Detailed sync status
-    checkTransactionInRemote, // Function for transaction verification
-    isSyncing, // Export reactive sync status
-    lastSyncStatus,
-    lastSyncError,
-    addTransaction, // Enhanced with better immediate sync and fallbacks
+    remoteDbs,
+    checkRemoteConnection,
+    diagnoseCouchDbConnection,
+    getDatabaseStatus,
+    addTransaction,
     addTransactionAttachment,
     getTransactionAttachment,
     // Petugas functions
@@ -1342,20 +632,23 @@ export {
     getAllTarifStiker,
     getTarifStikerByMobil,
     calculateParkingFeeFromDB,
-     syncSingleDatabase,        // Fungsi untuk restart individual sync
-    startSyncHealthCheck,      // Fungsi untuk health monitoring
-    restartSyncInitialization, // Fungsi untuk restart sync initialization
-    activeSyncHandlers, 
+    restartChangeHandler,
+    startChangeHandlers,
+    changeHandlers,
     // CouchDB configuration functions
-    updateRemoteUrl,           // Function to update remote URL from settings
-    reinitializeRemoteDatabases, // Function to reinitialize remote databases
-    currentRemoteUrl,          // Current remote URL ref
+    updateRemoteUrl,
+    reinitializeRemoteDatabases,
+    currentRemoteUrl,
+    // Status monitoring
+    isConnected,
+    lastChangeStatus,
+    lastChangeError
 }
 
 // Utility functions for Petugas Store
 const addPetugas = async (petugas: any) => {
   try {
-    const response = await localDbs.petugas.put(petugas);
+    const response = await remoteDbs.petugas.put(petugas);
     return response;
   } catch (err) {
     console.error('Error adding petugas:', err);
@@ -1365,7 +658,7 @@ const addPetugas = async (petugas: any) => {
 
 const updatePetugas = async (petugas: any) => {
   try {
-    const response = await localDbs.petugas.put(petugas);
+    const response = await remoteDbs.petugas.put(petugas);
     return response;
   } catch (err) {
     console.error('Error updating petugas:', err);
@@ -1375,8 +668,8 @@ const updatePetugas = async (petugas: any) => {
 
 const deletePetugas = async (id: string) => {
   try {
-    const doc = await localDbs.petugas.get(id);
-    const response = await localDbs.petugas.remove(doc);
+    const doc = await remoteDbs.petugas.get(id);
+    const response = await remoteDbs.petugas.remove(doc);
     return response;
   } catch (err) {
     console.error('Error deleting petugas:', err);
@@ -1386,12 +679,12 @@ const deletePetugas = async (id: string) => {
 
 const getAllPetugas = async () => {
   try {
-    const result = await localDbs.petugas.allDocs({
+    const result = await remoteDbs.petugas.allDocs({
       include_docs: true,
       startkey: 'petugas_',
       endkey: 'petugas_\ufff0'
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting all petugas:', err);
     throw err;
@@ -1400,7 +693,7 @@ const getAllPetugas = async () => {
 
 const getPetugasByUsername = async (username: string) => {
   try {
-    const result = await localDbs.petugas.find({
+    const result = await remoteDbs.petugas.find({
       selector: { type: 'petugas', username: username }
     });
     return result.docs[0] || null;
@@ -1413,7 +706,7 @@ const getPetugasByUsername = async (username: string) => {
 // Utility functions for Kendaraan Store
 const addJenisKendaraan = async (jenisKendaraan: any) => {
   try {
-    const response = await localDbs.kendaraan.put(jenisKendaraan);
+    const response = await remoteDbs.kendaraan.put(jenisKendaraan);
     return response;
   } catch (err) {
     console.error('Error adding jenis kendaraan:', err);
@@ -1423,7 +716,7 @@ const addJenisKendaraan = async (jenisKendaraan: any) => {
 
 const updateJenisKendaraan = async (jenisKendaraan: any) => {
   try {
-    const response = await localDbs.kendaraan.put(jenisKendaraan);
+    const response = await remoteDbs.kendaraan.put(jenisKendaraan);
     return response;
   } catch (err) {
     console.error('Error updating jenis kendaraan:', err);
@@ -1433,8 +726,8 @@ const updateJenisKendaraan = async (jenisKendaraan: any) => {
 
 const deleteJenisKendaraan = async (id: string) => {
   try {
-    const doc = await localDbs.kendaraan.get(id);
-    const response = await localDbs.kendaraan.remove(doc);
+    const doc = await remoteDbs.kendaraan.get(id);
+    const response = await remoteDbs.kendaraan.remove(doc);
     return response;
   } catch (err) {
     console.error('Error deleting jenis kendaraan:', err);
@@ -1444,12 +737,12 @@ const deleteJenisKendaraan = async (id: string) => {
 
 const getAllJenisKendaraan = async () => {
   try {
-    const result = await localDbs.kendaraan.allDocs({
+    const result = await remoteDbs.kendaraan.allDocs({
       include_docs: true,
       startkey: 'jenis_kendaraan_',
       endkey: 'jenis_kendaraan_\ufff0'
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting all jenis kendaraan:', err);
     throw err;
@@ -1459,7 +752,7 @@ const getAllJenisKendaraan = async () => {
 // Utility functions for Blacklist
 const addToBlacklist = async (blacklistItem: any) => {
   try {
-    const response = await localDbs.blacklist.put(blacklistItem);
+    const response = await remoteDbs.blacklist.put(blacklistItem);
     return response;
   } catch (err) {
     console.error('Error adding to blacklist:', err);
@@ -1469,8 +762,8 @@ const addToBlacklist = async (blacklistItem: any) => {
 
 const removeFromBlacklist = async (id: string) => {
   try {
-    const doc = await localDbs.blacklist.get(id);
-    const response = await localDbs.blacklist.remove(doc);
+    const doc = await remoteDbs.blacklist.get(id);
+    const response = await remoteDbs.blacklist.remove(doc);
     return response;
   } catch (err) {
     console.error('Error removing from blacklist:', err);
@@ -1480,12 +773,12 @@ const removeFromBlacklist = async (id: string) => {
 
 const getAllBlacklist = async () => {
   try {
-    const result = await localDbs.blacklist.allDocs({
+    const result = await remoteDbs.blacklist.allDocs({
       include_docs: true,
       startkey: 'blacklist_',
       endkey: 'blacklist_\ufff0'
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting all blacklist:', err);
     throw err;
@@ -1494,7 +787,7 @@ const getAllBlacklist = async () => {
 
 const checkBlacklist = async (noPol: string) => {
   try {
-    const result = await localDbs.blacklist.find({
+    const result = await remoteDbs.blacklist.find({
       selector: { type: 'blacklist_kendaraan', no_pol: noPol.toUpperCase(), status: 1 }
     });
     return result.docs.length > 0;
@@ -1507,7 +800,7 @@ const checkBlacklist = async (noPol: string) => {
 // Utility functions for Levels
 const addLevel = async (level: any) => {
   try {
-    const response = await localDbs.levels.put(level);
+    const response = await remoteDbs.levels.put(level);
     return response;
   } catch (err) {
     console.error('Error adding level:', err);
@@ -1517,12 +810,12 @@ const addLevel = async (level: any) => {
 
 const getAllLevels = async () => {
   try {
-    const result = await localDbs.levels.allDocs({
+    const result = await remoteDbs.levels.allDocs({
       include_docs: true,
       startkey: 'level_',
       endkey: 'level_\ufff0'
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting all levels:', err);
     throw err;
@@ -1535,7 +828,7 @@ const getAllLevels = async () => {
 
 const createTarif = async (tarif: any) => {
   try {
-    const response = await localDbs.tarif.put(tarif);
+    const response = await remoteDbs.tarif.put(tarif);
     return response;
   } catch (err) {
     console.error('Error creating tarif:', err);
@@ -1545,7 +838,7 @@ const createTarif = async (tarif: any) => {
 
 const updateTarif = async (tarif: any) => {
   try {
-    const response = await localDbs.tarif.put(tarif);
+    const response = await remoteDbs.tarif.put(tarif);
     return response;
   } catch (err) {
     console.error('Error updating tarif:', err);
@@ -1555,8 +848,8 @@ const updateTarif = async (tarif: any) => {
 
 const deleteTarif = async (id: string) => {
   try {
-    const doc = await localDbs.tarif.get(id);
-    const response = await localDbs.tarif.remove(doc);
+    const doc = await remoteDbs.tarif.get(id);
+    const response = await remoteDbs.tarif.remove(doc);
     return response;
   } catch (err) {
     console.error('Error deleting tarif:', err);
@@ -1566,12 +859,12 @@ const deleteTarif = async (id: string) => {
 
 const getAllTarif = async () => {
   try {
-    const result = await localDbs.tarif.allDocs({
+    const result = await remoteDbs.tarif.allDocs({
       include_docs: true,
       startkey: 'tarif_',
       endkey: 'tarif_\ufff0'
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting all tarif:', err);
     throw err;
@@ -1580,11 +873,11 @@ const getAllTarif = async () => {
 
 const getTarifByMobil = async (idMobil: string) => {
   try {
-    const result = await localDbs.tarif.query('tarif/by_id_mobil', {
+    const result = await remoteDbs.tarif.query('tarif/by_id_mobil', {
       key: idMobil,
       include_docs: true
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting tarif by mobil:', err);
     throw err;
@@ -1593,11 +886,11 @@ const getTarifByMobil = async (idMobil: string) => {
 
 const getTarifByJamKe = async (idMobil: string, jamKe: number) => {
   try {
-    const result = await localDbs.tarif.query('tarif/by_jam_ke', {
+    const result = await remoteDbs.tarif.query('tarif/by_jam_ke', {
       key: [idMobil, jamKe],
       include_docs: true
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting tarif by jam ke:', err);
     throw err;
@@ -1606,12 +899,12 @@ const getTarifByJamKe = async (idMobil: string, jamKe: number) => {
 
 const getAllTarifInap = async () => {
   try {
-    const result = await localDbs.tarif.allDocs({
+    const result = await remoteDbs.tarif.allDocs({
       include_docs: true,
       startkey: 'tarif_inap_',
       endkey: 'tarif_inap_\ufff0'
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting all tarif inap:', err);
     throw err;
@@ -1620,11 +913,11 @@ const getAllTarifInap = async () => {
 
 const getTarifInapByMobil = async (idMobil: string) => {
   try {
-    const result = await localDbs.tarif.query('tarif/tarif_inap_by_mobil', {
+    const result = await remoteDbs.tarif.query('tarif/tarif_inap_by_mobil', {
       key: idMobil,
       include_docs: true
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting tarif inap by mobil:', err);
     throw err;
@@ -1633,12 +926,12 @@ const getTarifInapByMobil = async (idMobil: string) => {
 
 const getAllTarifMember = async () => {
   try {
-    const result = await localDbs.tarif.allDocs({
+    const result = await remoteDbs.tarif.allDocs({
       include_docs: true,
       startkey: 'tarif_member_',
       endkey: 'tarif_member_\ufff0'
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting all tarif member:', err);
     throw err;
@@ -1647,11 +940,11 @@ const getAllTarifMember = async () => {
 
 const getTarifMemberByMobil = async (idMobil: string) => {
   try {
-    const result = await localDbs.tarif.query('tarif/tarif_member_by_mobil', {
+    const result = await remoteDbs.tarif.query('tarif/tarif_member_by_mobil', {
       key: idMobil,
       include_docs: true
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting tarif member by mobil:', err);
     throw err;
@@ -1660,12 +953,12 @@ const getTarifMemberByMobil = async (idMobil: string) => {
 
 const getAllTarifStiker = async () => {
   try {
-    const result = await localDbs.tarif.allDocs({
+    const result = await remoteDbs.tarif.allDocs({
       include_docs: true,
       startkey: 'tarif_stiker_',
       endkey: 'tarif_stiker_\ufff0'
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting all tarif stiker:', err);
     throw err;
@@ -1674,11 +967,11 @@ const getAllTarifStiker = async () => {
 
 const getTarifStikerByMobil = async (idMobil: string) => {
   try {
-    const result = await localDbs.tarif.query('tarif/tarif_stiker_by_mobil', {
+    const result = await remoteDbs.tarif.query('tarif/tarif_stiker_by_mobil', {
       key: idMobil,
       include_docs: true
     });
-    return result.rows.map(row => row.doc);
+    return result.rows.map((row: any) => row.doc);
   } catch (err) {
     console.error('Error getting tarif stiker by mobil:', err);
     throw err;
@@ -1848,34 +1141,13 @@ const initializeDesignDocs = async () => {
   };
 
   try {
-    await localDbs.petugas.put(petugasDesignDoc);
-    await localDbs.kendaraan.put(kendaraanDesignDoc);
-    await localDbs.tarif.put(tarifDesignDoc);
+    await remoteDbs.petugas.put(petugasDesignDoc);
+    await remoteDbs.kendaraan.put(kendaraanDesignDoc);
+    await remoteDbs.tarif.put(tarifDesignDoc);
   } catch (err: any) {
     if (err.name !== 'conflict') {
       console.error('Error initializing design docs:', err);
     }
-  }
-};
-
-/**
- * Mengambil attachment gambar dari dokumen transaksi.
- * @param transactionId ID dokumen transaksi
- * @param attachmentName Nama attachment (misal: 'entry.jpg')
- */
-const getTransactionAttachment = async (
-  transactionId: string,
-  attachmentName: string
-) => {
-  try {
-    const response = await localDbs.transactions.getAttachment(
-      transactionId,
-      attachmentName
-    );
-    return response;
-  } catch (err) {
-    console.error('Error getting attachment:', err);
-    throw err;
   }
 };
 

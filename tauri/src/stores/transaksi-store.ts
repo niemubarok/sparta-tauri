@@ -132,6 +132,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
   const vehicleInToday = ref(0);
   const totalVehicleOut = ref(0);
   const totalVehicleInside = ref(0);
+  const memberInsideCount = ref(0);
+  const regularInsideCount = ref(0);
   const gateStatuses = ref<Record<string, boolean>>({});
   
   // Configuration
@@ -328,113 +330,67 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     return durationHours * hourlyRate;
   };
 
-  const saveTransactionToLocal = async (transaction: TransaksiParkir, immediateSync: boolean = false): Promise<void> => {
+  // Direct save to remote database (optimized for immediate sync)
+  const saveTransactionDirectToRemote = async (transaction: TransaksiParkir): Promise<any> => {
     try {
-      if (immediateSync) {
-        // Use addTransaction from boot/pouchdb for immediate sync
-        console.log('💾 Saving transaction with immediate sync enabled:', transaction.id);
-        
-        const response = await addTransaction({
-          ...transaction,
-          _id: `transaction_${transaction.id}`,
-          type: 'parking_transaction'
-        }, true); // Enable immediate sync
+      console.log('💾 Saving transaction directly to remote database:', transaction.id);
+      
+      // Use addTransaction from boot/pouchdb for direct remote save
+      const response = await addTransaction({
+        ...transaction,
+        _id: `transaction_${transaction.id}`,
+        type: 'parking_transaction'
+      });
 
-        console.log('✅ Transaction saved with immediate sync response:', response);
+      console.log('✅ Transaction saved directly to remote:', response);
 
-        // Save images as attachments if they exist
-        await saveTransactionAttachments(transaction.id, response.rev);
-        
-        // Verify sync after a short delay
-        setTimeout(async () => {
-          try {
-            const { checkTransactionInRemote } = await import('src/boot/pouchdb');
-            const exists = await checkTransactionInRemote(`transaction_${transaction.id}`);
-            console.log(`🔍 Transaction ${transaction.id} exists in remote after immediate sync:`, exists);
-            
-            if (!exists) {
-              console.warn(`⚠️ Transaction ${transaction.id} not found in remote after immediate sync - triggering manual sync`);
-              const { forceSyncSpecificTransaction } = await import('src/boot/pouchdb');
-              await forceSyncSpecificTransaction(`transaction_${transaction.id}`);
-            }
-          } catch (verifyError) {
-            console.warn('⚠️ Could not verify transaction in remote:', verifyError);
-          }
-        }, 2000); // Check after 2 seconds
-        
-      } else {
-        // Save to PouchDB using the internal db instance (regular way)
-        const response = await db.post({
-          ...transaction,
-          _id: `transaction_${transaction.id}`,
-          type: 'parking_transaction'
-        });
-
-        // Save images as attachments if they exist
-        await saveTransactionAttachments(transaction.id, response.rev);
-
-        console.log('Transaction saved locally (regular sync):', response);
+      // Save images as attachments if they exist
+      if (entry_pic.value && entry_pic.value.trim() !== '') {
+        await saveTransactionAttachmentsDirectToRemote(transaction.id, response.rev);
       }
+      
+      return response;
     } catch (error) {
-      console.error('Error saving transaction locally:', error);
+      console.error('❌ Error saving transaction directly to remote:', error);
       throw error;
     }
   };
 
-  const saveTransactionAttachments = async (transactionId: string, rev: string): Promise<void> => {
+  // Direct save attachments to remote
+  const saveTransactionAttachmentsDirectToRemote = async (transactionId: string, rev: string): Promise<void> => {
     try {
-      let currentRev = rev;
-      
-      // Save entrance image (hanya untuk transaksi entry)
       if (entry_pic.value && entry_pic.value.trim() !== '') {
         const entryImageData = entry_pic.value.replace(/^data:image\/[a-z]+;base64,/, '');
         
-        // Convert base64 to Blob using browser-compatible method
-        const byteCharacters = atob(entryImageData);
-        const byteArray = new Uint8Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteArray[i] = byteCharacters.charCodeAt(i);
-        }
-        const blob = new Blob([byteArray], { type: 'image/jpeg' });
+        console.log('📎 Saving attachment directly to remote:', {
+          transactionId,
+          attachmentName: 'entry.jpg',
+          dataLength: entryImageData.length,
+          rev
+        });
         
-        const entryResponse = await db.putAttachment(
+        const response = await addTransactionAttachment(
           `transaction_${transactionId}`,
+          rev,
           'entry.jpg',
-          currentRev,
-          blob,
+          entryImageData,
           'image/jpeg'
         );
-        currentRev = entryResponse.rev;
-        console.log('Entry image saved as attachment');
+        
+        console.log('✅ Entry image attachment saved directly to remote');
+        // return response;
       }
-
-      // Save exit image (hanya untuk transaksi exit - ketika currentTransaction.status === 1)
-      // if (exit_pic.value && exit_pic.value.trim() !== '' && currentTransaction.value?.status === 1) {
-      //   const exitImageData = exit_pic.value.replace(/^data:image\/[a-z]+;base64,/, '');
-        
-      //   // Convert base64 to Blob using browser-compatible method
-      //   const byteCharacters = atob(exitImageData);
-      //   const byteArray = new Uint8Array(byteCharacters.length);
-      //   for (let i = 0; i < byteCharacters.length; i++) {
-      //     byteArray[i] = byteCharacters.charCodeAt(i);
-      //   }
-      //   const blob = new Blob([byteArray], { type: 'image/jpeg' });
-        
-      //   const exitResponse = await db.putAttachment(
-      //     `transaction_${transactionId}`,
-      //     'exit_image.jpg',
-      //     currentRev,
-      //     blob,
-      //     'image/jpeg'
-      //   );
-      //   currentRev = exitResponse.rev;
-      //   console.log('Exit image saved as attachment');
-      // }
-
     } catch (error) {
-      console.error('Error saving transaction attachments:', error);
+      console.error('❌ Error saving attachments directly to remote:', error);
       // Don't throw error, just log it to avoid breaking the main transaction save
     }
+  };
+
+  // Legacy function - use saveTransactionAttachmentsDirectToRemote instead
+  const saveTransactionAttachments = async (transactionId: string, rev: string): Promise<void> => {
+    console.warn('⚠️ Using legacy saveTransactionAttachments, consider using saveTransactionAttachmentsDirectToRemote for better performance');
+    // Redirect to direct remote function for consistency
+    return await saveTransactionAttachmentsDirectToRemote(transactionId, rev);
   };
 
   const getTransactionAttachments = async (transactionId: string): Promise<{
@@ -442,7 +398,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     exitImage?: string;
   }> => {
     try {
-      const doc = await db.get(`transaction_${transactionId}`, { attachments: true });
+      // Use remote database directly for real-time access
+      const doc = await remoteDbs.transactions.get(`transaction_${transactionId}`, { attachments: true });
       const attachments: any = {};
 
       if (doc._attachments) {
@@ -465,7 +422,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
       return attachments;
     } catch (error) {
-      console.error('Error getting transaction attachments:', error);
+      console.error('Error getting transaction attachments from remote:', error);
       return {};
     }
   };
@@ -512,9 +469,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       
       const transaction = await createEntryTransaction(isPrepaidMode);
       
-      // Save locally with immediate sync to ensure data is available for exit gate
-      await saveTransactionToLocal(transaction, true); // Enable immediate sync
-      console.log('✅ Entry transaction saved with immediate sync for exit gate availability');
+      // Save directly to remote database for immediate availability across gates
+      await saveTransactionDirectToRemote(transaction);
+      console.log('✅ Entry transaction saved directly to remote database');
       
       // Add to history
       transactionHistory.value.unshift(transaction);
@@ -535,12 +492,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     try {
       const transaction = await createExitTransaction();
       
-      // Save locally with immediate sync for real-time updates
-      await saveTransactionToLocal(transaction, true); // Enable immediate sync
-      console.log('✅ Exit transaction saved with immediate sync');
-      
-      // Try to save to server
-      await saveTransactionToServer(transaction);
+      // Save directly to remote database for immediate updates across all gates
+      await saveTransactionDirectToRemote(transaction);
+      console.log('✅ Exit transaction saved directly to remote database');
       
       // Update history
       const existingIndex = transactionHistory.value.findIndex(t => t.id === transaction.id);
@@ -583,25 +537,32 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     isProcessing.value = false;
   };
 
+  // Soft reset for smooth UI transitions (minimal state change)
+  const resetTransactionStateMinimal = (): void => {
+    platNomor.value = '';
+    selectedJenisKendaraan.value = null;
+    currentTransaction.value = null;
+    entry_pic.value = '';
+    isProcessing.value = false;
+    isCheckedIn.value = false; // FIXED: Reset isCheckedIn to show UI elements
+    // Keep other states intact for smoother transitions
+  };
+
   // Statistics methods
   const getCountVehicleInToday = async (): Promise<void> => {
     try {
-      if (API_URL.value && API_URL.value !== '-') {
-        const response = await api.get('/statistics/vehicle-in-today');
-        vehicleInToday.value = response.data?.count || 0;
-      } else {
-        // Local count from PouchDB
+        // Local count from remote PouchDB
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        const result = await db.query('transaksi/by_date', {
+        const result = await remoteDbs.transactions.query('transaksi/by_date', {
           startkey: today.toISOString(),
           endkey: new Date().toISOString(),
           reduce: true
         });
         
         vehicleInToday.value = result.rows[0]?.value || 0;
-      }
+      
     } catch (error) {
       console.error('Error fetching vehicle in count:', error);
       vehicleInToday.value = 0;
@@ -614,11 +575,11 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       //   const response = await api.get('/statistics/vehicle-out-today');
       //   totalVehicleOut.value = response.data?.count || 0;
       // } else {
-        // Local count from PouchDB
+        // Local count from remote PouchDB
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        const result = await db.query('transaksi/out_by_date', {
+        const result = await remoteDbs.transactions.query('transaksi/out_by_date', {
           startkey: today.toISOString(),
           endkey: new Date().toISOString(),
           reduce: true
@@ -645,7 +606,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         endOfDay: endOfDay.toISOString()
       });
 
-      const result = await db.allDocs({
+      const result = await remoteDbs.transactions.allDocs({
         include_docs: true,
         startkey: 'transaction_',
         endkey: 'transaction_\ufff0'
@@ -759,6 +720,67 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     }
   };
 
+  const getCountMemberAndRegularInside = async (): Promise<void> => {
+    try {
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+      // Query untuk mencari transaksi hari ini yang masih aktif (belum keluar)
+      const result = await db.find({
+        selector: {
+          entry_time: {
+            $gte: startOfDay.toISOString(),
+            $lt: endOfDay.toISOString()
+          },
+          $and: [
+            {
+              $or: [
+                { exit_time: { $exists: false } },
+                { exit_time: null },
+                { exit_time: "" }
+              ]
+            },
+            {
+              $or: [
+                { status: 0 },
+                { status: "in" }
+              ]
+            }
+          ]
+        },
+        limit: 1000
+      });
+
+      let memberCount = 0;
+      let regularCount = 0;
+
+      for (const docAny of result.docs) {
+        const doc = docAny as any;
+        // Cek apakah ini transaksi member atau regular
+        if (doc.type === 'member_entry' || doc.is_member === true) {
+          memberCount++;
+        } else if (doc.type === 'parking_transaction' || doc.type === 'transaction') {
+          regularCount++;
+        }
+      }
+
+      memberInsideCount.value = memberCount;
+      regularInsideCount.value = regularCount;
+
+      console.log('📊 Member dan Regular Inside Count:', {
+        member: memberCount,
+        regular: regularCount,
+        total: memberCount + regularCount
+      });
+
+    } catch (error) {
+      console.error('Error calculating member and regular inside count:', error);
+      memberInsideCount.value = 0;
+      regularInsideCount.value = 0;
+    }
+  };
+
   const setManualOpenGate = async (gateId: string): Promise<boolean> => {
     try {
       // Create manual entry transaction
@@ -785,13 +807,13 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         alasan: 'Manual gate open by operator'
       };
 
-      await saveTransactionToLocal(transaction, true); // Enable immediate sync for manual gate
-      await saveTransactionToServer(transaction);
+      await saveTransactionDirectToRemote(transaction); // Save directly to remote for immediate access
+      console.log('✅ Manual gate transaction saved directly to remote database');
       
       transactionHistory.value.unshift(transaction);
 
-      // Record the manual gate opening in logs
-      await db.post({
+      // Record the manual gate opening in logs directly to remote
+      await remoteDbs.transactions.post({
         type: 'manual_open',
         gateId,
         timestamp: new Date().toISOString(),
@@ -826,38 +848,38 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
   // Initialize design documents and indexes for queries
   const initializeDesignDocs = async (): Promise<void> => {
-    // Create indexes for sorting
+    // Create indexes for sorting on remote database
     try {
       // Index for entry_time field (used for sorting)
-      await db.createIndex({
+      await remoteDbs.transactions.createIndex({
         index: {
           fields: ['type', 'entry_time']
         }
       });
 
       // Index for status field (used for filtering)
-      await db.createIndex({
+      await remoteDbs.transactions.createIndex({
         index: {
           fields: ['type', 'status']
         }
       });
 
       // Index for no_pol field (used for filtering)
-      await db.createIndex({
+      await remoteDbs.transactions.createIndex({
         index: {
           fields: ['type', 'no_pol']
         }
       });
 
       // Index for tanggal field (used for filtering)
-      await db.createIndex({
+      await remoteDbs.transactions.createIndex({
         index: {
           fields: ['type', 'tanggal']
         }
       });
 
       // Index for id_kendaraan field (used for filtering)
-      await db.createIndex({
+      await remoteDbs.transactions.createIndex({
         index: {
           fields: ['type', 'id_kendaraan']
         }
@@ -879,34 +901,51 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     const designDoc = {
       _id: '_design/transaksi',
       views: {
-        by_date: {
-          map: `function (doc) {
-            if (doc.type === 'parking_transaction' && doc.status === 0) {
-              emit(doc.tanggal, 1);
-            }
-          }`,
-          reduce: '_count'
-        },
-        out_by_date: {
-          map: `function (doc) {
-            if (doc.type === 'parking_transaction' && doc.status === 1) {
-              emit(doc.tanggal, 1);
-            }
-          }`,
-          reduce: '_count'
-        },
-        by_no_pol: {
-          map: `function (doc) {
-            if (doc.type === 'parking_transaction' || doc.type === 'member_entry') {
-              emit(doc.no_pol, doc);
-            }
-          }`
+      by_date: {
+        map: `function (doc) {
+        if (
+          (doc.type === 'parking_transaction') ||
+          (doc.type === 'member_entry' )
+        ) {
+          var tanggal = doc.tanggal;
+          if (!tanggal && doc.entry_time) {
+          tanggal = doc.entry_time.split('T')[0];
+          }
+          emit(tanggal, 1);
         }
+        }`,
+        reduce: '_count'
+      },
+      out_by_date: {
+        map: `function (doc) {
+        if (
+          (doc.type === 'parking_transaction' && doc.status === 1) ||
+          (doc.type === 'member_entry' && doc.status === 1)
+        ) {
+          var tanggal = doc.tanggal;
+          if (!tanggal && doc.exit_time) {
+          tanggal = doc.exit_time.split('T')[0];
+          }
+          emit(tanggal, 1);
+        }
+        }`,
+        reduce: '_count'
+      },
+      by_no_pol: {
+        map: `function (doc) {
+        if (doc.type === 'parking_transaction' && doc.no_pol) {
+          emit(doc.no_pol, doc);
+        }
+        if (doc.type === 'member_entry' && doc.plat_nomor) {
+          emit(doc.plat_nomor, doc);
+        }
+        }`
+      }
       }
     };
 
     try {
-      await db.put(designDoc);
+      await remoteDbs.transactions.put(designDoc);
     } catch (err: any) {
       if (err.name !== 'conflict') {
         console.error('Error creating design document:', err);
@@ -1070,7 +1109,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
         status: status !== null && status !== undefined ? status : 'not set',
         tanggalMulai: tanggalMulai ? `"${tanggalMulai}"` : 'empty',
         tanggalAkhir: tanggalAkhir ? `"${tanggalAkhir}"` : 'empty',
-        jenisKendaraan: jenisKendaraan ? `"${jenisKendaraan}"` : 'empty'
+        jenisKendaraan: jenisKendaraan ? `"${jenisKendaraan}"` : 'empty',
+        isMember: isMember !== null ? isMember : 'not set'
       });
 
       // Use allDocs to get all transactions, then filter and sort manually
@@ -1085,59 +1125,94 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       console.log("📋 Raw database result:", result.rows.length, "documents");
 
       // Debug: Log all raw documents first
-      console.log('📋 Raw docs from database:', result.rows.map(row => {
-        const doc = row.doc as any;
-        return {
-          id: row.id,
-          doc_type: doc?.type,
-          doc_status: doc?.status,
-          doc_bayar_keluar: doc?.bayar_keluar,
-          doc_bayar_masuk: doc?.bayar_masuk,
-          doc_no_pol: doc?.no_pol,
-          doc_plat_nomor: doc?.plat_nomor,
-          doc_member_id: doc?.member_id
-        };
-      }));
+      const allDocs = result.rows.map(row => row.doc as any);
+      console.log('📋 Raw docs from database:', allDocs.map(doc => ({
+        id: doc?._id,
+        doc_type: doc?.type,
+        doc_status: doc?.status,
+        doc_no_pol: doc?.no_pol,
+        doc_plat_nomor: doc?.plat_nomor,
+        doc_entry_time: doc?.entry_time,
+        doc_tanggal: doc?.tanggal
+      })));
 
       // Get jenis kendaraan data once for filtering
       const jenisKendaraanData = await getJenisKendaraan();
 
-      // Apply filters using the reusable function
-      let filteredDocs = applyTransactionFilters(
-        result.rows.map(row => row.doc),
-        { platNomor, status, tanggalMulai, tanggalAkhir, jenisKendaraan, isMember },
-        jenisKendaraanData
+      console.log('🔍 Starting filter process...');
+      console.log('🔍 Total documents before filtering:', allDocs.length);
+
+      // First, let's see if we have any valid transaction documents at all
+      const validTransactionDocs = allDocs.filter(doc => {
+        const isValid = doc && (doc.type === 'parking_transaction' || doc.type === 'member_entry');
+        if (!isValid && doc) {
+          console.log('🔍 Invalid document type:', doc.type, 'ID:', doc._id);
+        }
+        return isValid;
+      });
+
+      console.log('🔍 Valid transaction documents:', validTransactionDocs.length);
+
+      // Check if we have any filters applied
+      const hasFilters = Boolean(
+        platNomor || 
+        status !== null && status !== undefined || 
+        tanggalMulai || 
+        tanggalAkhir || 
+        jenisKendaraan || 
+        isMember !== null && isMember !== undefined
       );
 
-      console.log('🔍 Filtered documents:', filteredDocs.length);
-      
-      // Debug filter results by type
-      const parkingCount = filteredDocs.filter(doc => doc.type === 'parking_transaction').length;
-      const memberCount = filteredDocs.filter(doc => doc.type === 'member_entry').length;
-      console.log(`🔍 Filtered breakdown: Parking: ${parkingCount}, Members: ${memberCount}`);
-      
-      if (filteredDocs.length > 0) {
-        console.log('🔍 Sample filtered documents:');
-        filteredDocs.slice(0, 3).forEach((doc: any, index) => {
-          console.log(`  ${index + 1}. ID: ${doc._id}, Type: ${doc.type}, Plat: ${doc.no_pol || doc.plat_nomor}, Status: ${doc.status}, Date: ${doc.tanggal || doc.entry_time?.split('T')[0]}, Vehicle: ${doc.id_kendaraan || doc.jenis_kendaraan?.label}`);
-        });
+      console.log('🔍 Has filters applied:', hasFilters, {
+        platNomor: Boolean(platNomor),
+        status: status !== null && status !== undefined,
+        tanggalMulai: Boolean(tanggalMulai),
+        tanggalAkhir: Boolean(tanggalAkhir),
+        jenisKendaraan: Boolean(jenisKendaraan),
+        isMember: isMember !== null && isMember !== undefined
+      });
+
+      let resultDocs;
+
+      if (!hasFilters) {
+        console.log('🔍 No filters applied, returning all valid transactions');
+        resultDocs = validTransactionDocs;
       } else {
-        console.log('⚠️ No documents passed the filter!');
-        console.log('🔍 Debug: Total raw docs before filtering:', result.rows.length);
-        console.log('🔍 Debug: Parking transactions count:', result.rows.filter(row => (row.doc as any)?.type === 'parking_transaction').length);
-        console.log('🔍 Debug: Member transactions count:', result.rows.filter(row => (row.doc as any)?.type === 'member_entry').length);
+        console.log('🔍 Filters applied, applying filter logic...');
+        // Apply filters using the reusable function
+        resultDocs = applyTransactionFilters(
+          validTransactionDocs,
+          { platNomor, status, tanggalMulai, tanggalAkhir, jenisKendaraan, isMember },
+          jenisKendaraanData
+        );
+
+        console.log('🔍 Filtered documents:', resultDocs.length);
+        
+        // Debug filter results by type
+        const parkingCount = resultDocs.filter(doc => doc.type === 'parking_transaction').length;
+        const memberCount = resultDocs.filter(doc => doc.type === 'member_entry').length;
+        console.log(`🔍 Filtered breakdown: Parking: ${parkingCount}, Members: ${memberCount}`);
+        
+        if (resultDocs.length > 0) {
+          console.log('🔍 Sample filtered documents:');
+          resultDocs.slice(0, 3).forEach((doc: any, index) => {
+            console.log(`  ${index + 1}. ID: ${doc._id}, Type: ${doc.type}, Plat: ${doc.no_pol || doc.plat_nomor}, Status: ${doc.status}, Date: ${doc.tanggal || doc.entry_time?.split('T')[0]}, Vehicle: ${doc.id_kendaraan || doc.jenis_kendaraan?.label}`);
+          });
+        } else {
+          console.log('⚠️ No documents passed the filter!');
+          console.log('🔍 Debug: Total raw docs before filtering:', allDocs.length);
+          console.log('🔍 Debug: Valid transaction docs before filtering:', validTransactionDocs.length);
+          console.log('🔍 Debug: Parking transactions count:', validTransactionDocs.filter(doc => doc.type === 'parking_transaction').length);
+          console.log('🔍 Debug: Member transactions count:', validTransactionDocs.filter(doc => doc.type === 'member_entry').length);
+        }
       }
 
       // Sort manually
       if (sortBy && sortBy.trim() !== '') {
         console.log('🔀 Sorting by:', sortBy, 'order:', sortOrder);
-        filteredDocs.sort((a: any, b: any) => {
-          let aVal = a[sortBy];
-          let bVal = b[sortBy];
-
-          // Handle null/undefined values
-          if (aVal === null || aVal === undefined) aVal = '';
-          if (bVal === null || bVal === undefined) bVal = '';
+        resultDocs.sort((a: any, b: any) => {
+          let aVal = a[sortBy] || '';
+          let bVal = b[sortBy] || '';
 
           // Handle date/time fields
           if (sortBy === 'entry_time' || sortBy === 'exit_time' || sortBy === 'tanggal') {
@@ -1167,10 +1242,10 @@ export const useTransaksiStore = defineStore('transaksi', () => {
       }
 
       // Apply pagination
-      const total = filteredDocs.length;
+      const total = resultDocs.length;
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
-      const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+      const paginatedDocs = resultDocs.slice(startIndex, endIndex);
 
       console.log('🔍 Total documents:', total);
       console.log('🔍 Current page results:', paginatedDocs.length);
@@ -1188,7 +1263,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
               ? (doc.jenis_kendaraan?.label || 'Motor')
               : getJenisKendaraanLabel(doc.id_kendaraan || 1),
             entry_time: doc.entry_time || '',
-            exit_time: doc.exit_time || null,
+            exit_time: doc.exit_time || doc.waktu_keluar || null,
             status: isMemberTransaction ? (doc.status === 'in' ? 0 : 1) : (doc.status || 0),
             tarif: doc.bayar_keluar || doc.bayar_masuk || doc.tarif || 0,
             petugas: doc.id_op_masuk || doc.created_by || '',
@@ -1424,7 +1499,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
 
       // Save to local DB with immediate sync
       const { addTransaction } = await import('src/boot/pouchdb');
-      await addTransaction(exitTransaction, true); // Enable immediate sync for exit transactions
+      await addTransaction(exitTransaction); // Enable immediate sync for exit transactions
 
       // Try to sync to server if available
       try {
@@ -1666,7 +1741,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
   const searchTransactionByPlateNumber = async (plateNumber: string): Promise<TransaksiParkir[]> => {
     console.log("🚀 ~ searchTransactionByPlateNumber ~ plateNumber:", plateNumber)
     try {
-      const result = await db.query('transaksi/by_no_pol', {
+      const result = await remoteDbs.transactions.query('transaksi/by_no_pol', {
         key: plateNumber.toUpperCase(),
         include_docs: true
       });
@@ -1683,7 +1758,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     try {
       console.log('🔍 Debug: Checking for member transactions...');
       
-      const result = await db.allDocs({
+      const result = await remoteDbs.transactions.allDocs({
         include_docs: true,
         startkey: 'transaction_',
         endkey: 'transaction_\ufff0'
@@ -1900,6 +1975,8 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     vehicleInToday,
     totalVehicleOut,
     totalVehicleInside,
+    memberInsideCount,
+    regularInsideCount,
     gateStatuses,
     API_URL,
     lokasiPos,
@@ -1919,7 +1996,9 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     processExitTransaction,
     setManualOpenGate,
     resetTransactionState,
-    saveTransactionToLocal,
+    resetTransactionStateMinimal,
+    saveTransactionDirectToRemote,
+    saveTransactionAttachmentsDirectToRemote,
     saveTransactionToServer,
     saveTransactionAttachments,
     getTransactionAttachments,
@@ -1929,6 +2008,7 @@ export const useTransaksiStore = defineStore('transaksi', () => {
     getCountVehicleOutToday,
     getVehicleOutDetailsToday,
     getCountVehicleInside,
+    getCountMemberAndRegularInside,
     searchTransactionByPlateNumber,
     calculateParkingFeeForTransaction,
     getJenisKendaraanLabel,

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import ls from 'localstorage-slim';
-import { localDbs } from 'src/boot/pouchdb';
+import { remoteDbs } from 'src/boot/pouchdb';
 
 // Interface untuk tarif berdasarkan struktur database
 export interface Tarif {
@@ -81,7 +81,7 @@ export interface TarifPrepaid {
 
 export const useTarifStore = defineStore('tarif', () => {
   const $q = useQuasar();
-  const db = localDbs.tarif;
+  const db = remoteDbs.tarif;
   
   // State variables
   const daftarTarif = ref<Tarif[]>([]);

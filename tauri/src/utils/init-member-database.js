@@ -367,14 +367,14 @@ const initializeMemberDatabase = async () => {
   
   try {
     // Import PouchDB from boot file
-    const { localDbs } = await import('src/boot/pouchdb')
+    const { remoteDbs } = await import('src/boot/pouchdb')
     
     console.log('📝 Creating membership types...')
     
     // Create membership types
     for (const type of sampleMembershipTypes) {
       try {
-        await localDbs.membershipTypes.put(type)
+        await remoteDbs.membershipTypes.put(type)
         console.log(`✅ Created membership type: ${type.name}`)
       } catch (error) {
         if (error.status === 409) {
@@ -390,7 +390,7 @@ const initializeMemberDatabase = async () => {
     // Create members
     for (const member of sampleMembers) {
       try {
-        await localDbs.members.put(member)
+        await remoteDbs.members.put(member)
         console.log(`✅ Created member: ${member.name} (${member.member_id})`)
       } catch (error) {
         if (error.status === 409) {
@@ -415,7 +415,7 @@ const initializeMemberDatabase = async () => {
     
     for (const index of memberIndexes) {
       try {
-        await localDbs.members.createIndex({ index })
+        await remoteDbs.members.createIndex({ index })
         console.log(`✅ Created member index: ${JSON.stringify(index.fields)}`)
       } catch (error) {
         console.log(`⚠️  Member index already exists: ${JSON.stringify(index.fields)}`)
@@ -431,7 +431,7 @@ const initializeMemberDatabase = async () => {
     
     for (const index of typeIndexes) {
       try {
-        await localDbs.membershipTypes.createIndex({ index })
+        await remoteDbs.membershipTypes.createIndex({ index })
         console.log(`✅ Created type index: ${JSON.stringify(index.fields)}`)
       } catch (error) {
         console.log(`⚠️  Type index already exists: ${JSON.stringify(index.fields)}`)
@@ -441,11 +441,11 @@ const initializeMemberDatabase = async () => {
     console.log('📊 Checking database statistics...')
     
     // Get statistics
-    const memberResult = await localDbs.members.find({
+    const memberResult = await remoteDbs.members.find({
       selector: { type: 'member' }
     })
     
-    const typeResult = await localDbs.membershipTypes.find({
+    const typeResult = await remoteDbs.membershipTypes.find({
       selector: { type: 'membership_type' }
     })
     

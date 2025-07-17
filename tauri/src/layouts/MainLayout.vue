@@ -25,12 +25,12 @@ const essentialLinks = [
         icon: 'person',
         link: '/petugas',
     },
-    // {
-    //     title: 'Kendaraan',
-    //     caption: 'Kelola jenis kendaraan & blacklist',
-    //     icon: 'directions_car',
-    //     link: '/kendaraan',
-    // },
+    {
+        title: 'Post Masuk',
+        caption: 'Post Masuk',
+        icon: 'directions_car',
+        link: '/manual-gate',
+    },
     {
         title: 'Tarif',
         caption: 'Kelola tarif parkir',

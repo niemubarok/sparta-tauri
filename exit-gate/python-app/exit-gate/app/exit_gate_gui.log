@@ -1793,3 +1793,378 @@
 2025-07-17 09:35:07,248 - __main__ - INFO - Gate closing - GPIO LOW
 2025-07-17 09:35:14,114 - camera_service - ERROR - Timeout capturing from camera 'exit'
 2025-07-17 09:35:14,123 - __main__ - INFO - \u274c Auto-capture failed for barcode 0934462713: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 09:36:56,410 - __main__ - INFO - Auto-processing barcode: 0930357281
+2025-07-17 09:36:56,428 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 09:36:56,433 - __main__ - INFO - Raw barcode: '0930357281'
+2025-07-17 09:36:56,435 - __main__ - INFO - Barcode length: 10
+2025-07-17 09:36:56,438 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 09:36:56,441 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 09:36:56,455 - __main__ - INFO - Barcode: 0930357281
+2025-07-17 09:36:56,464 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 09:36:56,480 - __main__ - INFO - Capturing exit images...
+2025-07-17 09:36:56,482 - database_service - INFO - Processing vehicle exit for: 0930357281
+2025-07-17 09:36:56,493 - database_service - INFO - Searching for transaction with barcode: 0930357281
+2025-07-17 09:36:56,503 - __main__ - INFO - Auto-capturing exit images for barcode: 0930357281
+2025-07-17 09:36:56,504 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 09:36:56,515 - database_service - INFO - Found transaction by primary ID: transaction_0930357281
+2025-07-17 09:36:56,516 - database_service - INFO - Found transaction by barcode (23.60ms)
+2025-07-17 09:36:56,516 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-17 09:36:56,516 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-17 09:36:56,542 - database_service - INFO - Transaction transaction_0930357281 marked as exited
+2025-07-17 09:36:56,542 - database_service - INFO - Vehicle exit processed successfully for: 0930357281
+2025-07-17 09:36:56,547 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 09:36:56,553 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 09:36:56,562 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 09:36:56,563 - gate_service - ERROR - GPIO not available
+2025-07-17 09:36:56,567 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 09:36:57,576 - gate_service - ERROR - GPIO not available
+2025-07-17 09:36:57,587 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 09:37:06,521 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 09:37:06,523 - __main__ - INFO - \u274c Auto-capture failed for barcode 0930357281: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 10:03:28,422 - __main__ - INFO - Auto-processing barcode: 1003147794
+2025-07-17 10:03:28,431 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 10:03:28,432 - __main__ - INFO - Raw barcode: '1003147794'
+2025-07-17 10:03:28,433 - __main__ - INFO - Barcode length: 10
+2025-07-17 10:03:28,435 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 10:03:28,439 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 10:03:28,448 - __main__ - INFO - Barcode: 1003147794
+2025-07-17 10:03:28,462 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 10:03:28,467 - __main__ - INFO - Capturing exit images...
+2025-07-17 10:03:28,477 - database_service - INFO - Processing vehicle exit for: 1003147794
+2025-07-17 10:03:28,508 - __main__ - INFO - Auto-capturing exit images for barcode: 1003147794
+2025-07-17 10:03:28,510 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 10:03:30,572 - database_service - INFO - Searching for transaction with barcode: 1003147794
+2025-07-17 10:03:30,581 - database_service - INFO - Found transaction by primary ID: transaction_1003147794
+2025-07-17 10:03:30,581 - database_service - INFO - Found transaction by barcode (9.17ms)
+2025-07-17 10:03:30,583 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-17 10:03:30,583 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-17 10:03:30,602 - database_service - INFO - Transaction transaction_1003147794 marked as exited
+2025-07-17 10:03:30,604 - database_service - INFO - Vehicle exit processed successfully for: 1003147794
+2025-07-17 10:03:30,610 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 10:03:30,621 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 10:03:30,628 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 10:03:30,630 - gate_service - ERROR - GPIO not available
+2025-07-17 10:03:30,637 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 10:03:31,655 - gate_service - ERROR - GPIO not available
+2025-07-17 10:03:31,663 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 10:03:38,541 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 10:03:38,552 - __main__ - INFO - \u274c Auto-capture failed for barcode 1003147794: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 10:04:16,880 - __main__ - INFO - Auto-processing barcode: 1002051477
+2025-07-17 10:04:16,882 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 10:04:16,884 - __main__ - INFO - Raw barcode: '1002051477'
+2025-07-17 10:04:16,885 - __main__ - INFO - Barcode length: 10
+2025-07-17 10:04:16,886 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 10:04:16,908 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 10:04:16,918 - __main__ - INFO - Barcode: 1002051477
+2025-07-17 10:04:16,928 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 10:04:16,953 - __main__ - INFO - Capturing exit images...
+2025-07-17 10:04:16,954 - database_service - INFO - Processing vehicle exit for: 1002051477
+2025-07-17 10:04:16,965 - database_service - INFO - Searching for transaction with barcode: 1002051477
+2025-07-17 10:04:16,967 - __main__ - INFO - Auto-capturing exit images for barcode: 1002051477
+2025-07-17 10:04:16,969 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 10:04:16,990 - database_service - INFO - Found transaction by primary ID: transaction_1002051477
+2025-07-17 10:04:16,990 - database_service - INFO - Found transaction by barcode (25.54ms)
+2025-07-17 10:04:16,991 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-17 10:04:16,992 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-17 10:04:17,026 - database_service - INFO - Transaction transaction_1002051477 marked as exited
+2025-07-17 10:04:17,027 - database_service - INFO - Vehicle exit processed successfully for: 1002051477
+2025-07-17 10:04:17,032 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 10:04:17,045 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 10:04:17,057 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 10:04:17,058 - gate_service - ERROR - GPIO not available
+2025-07-17 10:04:17,070 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 10:04:18,076 - gate_service - ERROR - GPIO not available
+2025-07-17 10:04:18,084 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 10:04:26,985 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 10:04:27,006 - __main__ - INFO - \u274c Auto-capture failed for barcode 1002051477: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 10:07:53,737 - __main__ - INFO - Auto-processing barcode: 1007450155
+2025-07-17 10:07:53,739 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 10:07:53,740 - __main__ - INFO - Raw barcode: '1007450155'
+2025-07-17 10:07:53,757 - __main__ - INFO - Barcode length: 10
+2025-07-17 10:07:53,761 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 10:07:53,781 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 10:07:53,798 - __main__ - INFO - Barcode: 1007450155
+2025-07-17 10:07:53,818 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 10:07:53,834 - __main__ - INFO - Capturing exit images...
+2025-07-17 10:07:53,839 - database_service - INFO - Processing vehicle exit for: 1007450155
+2025-07-17 10:07:53,847 - database_service - INFO - Searching for transaction with barcode: 1007450155
+2025-07-17 10:07:53,852 - __main__ - INFO - Auto-capturing exit images for barcode: 1007450155
+2025-07-17 10:07:53,853 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 10:07:53,869 - database_service - INFO - Found transaction by primary ID: transaction_1007450155
+2025-07-17 10:07:53,870 - database_service - INFO - Found transaction by barcode (22.91ms)
+2025-07-17 10:07:53,870 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-17 10:07:53,871 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-17 10:07:53,904 - database_service - INFO - Transaction transaction_1007450155 marked as exited
+2025-07-17 10:07:53,904 - database_service - INFO - Vehicle exit processed successfully for: 1007450155
+2025-07-17 10:07:53,916 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 10:07:53,925 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 10:07:53,959 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 10:07:53,960 - gate_service - ERROR - GPIO not available
+2025-07-17 10:07:53,971 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 10:07:54,987 - gate_service - ERROR - GPIO not available
+2025-07-17 10:07:54,995 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 10:08:03,870 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 10:08:03,883 - __main__ - INFO - \u274c Auto-capture failed for barcode 1007450155: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 10:09:30,880 - __main__ - INFO - Auto-processing barcode: 1007450155
+2025-07-17 10:09:30,881 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 10:09:30,882 - __main__ - INFO - Raw barcode: '1007450155'
+2025-07-17 10:09:30,883 - __main__ - INFO - Barcode length: 10
+2025-07-17 10:09:30,889 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 10:09:30,898 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 10:09:30,910 - __main__ - INFO - Barcode: 1007450155
+2025-07-17 10:09:30,913 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 10:09:30,916 - __main__ - INFO - Capturing exit images...
+2025-07-17 10:09:30,924 - database_service - INFO - Processing vehicle exit for: 1007450155
+2025-07-17 10:09:30,930 - __main__ - INFO - Auto-capturing exit images for barcode: 1007450155
+2025-07-17 10:09:30,931 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 10:09:30,940 - database_service - INFO - Searching for transaction with barcode: 1007450155
+2025-07-17 10:09:30,965 - database_service - INFO - Found transaction by primary ID: transaction_1007450155
+2025-07-17 10:09:30,965 - database_service - INFO - Found transaction by barcode (24.68ms)
+2025-07-17 10:09:30,966 - database_service - WARNING - Vehicle already exited at: 2025-07-17T10:07:53.870443
+2025-07-17 10:09:30,976 - __main__ - INFO - \u274c No transaction found in database: Vehicle already exited at: 2025-07-17T10:07:53.870443
+2025-07-17 10:09:30,987 - __main__ - INFO - ACCESS DENIED: No transaction found and debug mode disabled
+2025-07-17 10:09:31,005 - __main__ - INFO - Gate NOT opened - access denied
+2025-07-17 10:09:40,961 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 10:09:40,967 - __main__ - INFO - \u274c Auto-capture failed for barcode 1007450155: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 10:10:14,476 - __main__ - INFO - Auto-processing barcode: 1007411940
+2025-07-17 10:10:14,479 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 10:10:14,481 - __main__ - INFO - Raw barcode: '1007411940'
+2025-07-17 10:10:14,484 - __main__ - INFO - Barcode length: 10
+2025-07-17 10:10:14,486 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 10:10:14,508 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 10:10:14,518 - __main__ - INFO - Barcode: 1007411940
+2025-07-17 10:10:14,593 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 10:10:14,610 - __main__ - INFO - Capturing exit images...
+2025-07-17 10:10:14,615 - database_service - INFO - Processing vehicle exit for: 1007411940
+2025-07-17 10:10:14,624 - database_service - INFO - Searching for transaction with barcode: 1007411940
+2025-07-17 10:10:14,643 - database_service - INFO - Found transaction by primary ID: transaction_1007411940
+2025-07-17 10:10:14,644 - database_service - INFO - Found transaction by barcode (20.49ms)
+2025-07-17 10:10:14,645 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-17 10:10:14,646 - __main__ - INFO - Auto-capturing exit images for barcode: 1007411940
+2025-07-17 10:10:14,646 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-17 10:10:14,648 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 10:10:14,681 - database_service - INFO - Transaction transaction_1007411940 marked as exited
+2025-07-17 10:10:14,682 - database_service - INFO - Vehicle exit processed successfully for: 1007411940
+2025-07-17 10:10:14,715 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 10:10:14,741 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 10:10:14,747 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 10:10:14,749 - gate_service - ERROR - GPIO not available
+2025-07-17 10:10:14,756 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 10:10:15,768 - gate_service - ERROR - GPIO not available
+2025-07-17 10:10:15,772 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 10:10:24,664 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 10:10:24,681 - __main__ - INFO - \u274c Auto-capture failed for barcode 1007411940: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 10:30:43,659 - __main__ - INFO - Auto-processing barcode: 1030002877
+2025-07-17 10:30:43,668 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 10:30:43,670 - __main__ - INFO - Raw barcode: '1030002877'
+2025-07-17 10:30:43,671 - __main__ - INFO - Barcode length: 10
+2025-07-17 10:30:43,676 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 10:30:43,687 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 10:30:43,697 - __main__ - INFO - Barcode: 1030002877
+2025-07-17 10:30:43,706 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 10:30:43,718 - __main__ - INFO - Capturing exit images...
+2025-07-17 10:30:43,721 - database_service - INFO - Processing vehicle exit for: 1030002877
+2025-07-17 10:30:43,733 - __main__ - INFO - Auto-capturing exit images for barcode: 1030002877
+2025-07-17 10:30:43,735 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 10:30:45,803 - database_service - INFO - Searching for transaction with barcode: 1030002877
+2025-07-17 10:30:45,815 - database_service - INFO - Found transaction by primary ID: transaction_1030002877
+2025-07-17 10:30:45,816 - database_service - INFO - Found transaction by barcode (11.62ms)
+2025-07-17 10:30:45,817 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-17 10:30:45,817 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-17 10:30:45,837 - database_service - INFO - Transaction transaction_1030002877 marked as exited
+2025-07-17 10:30:45,837 - database_service - INFO - Vehicle exit processed successfully for: 1030002877
+2025-07-17 10:30:45,849 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 10:30:45,866 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 10:30:45,878 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 10:30:45,880 - gate_service - ERROR - GPIO not available
+2025-07-17 10:30:45,891 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 10:30:46,896 - gate_service - ERROR - GPIO not available
+2025-07-17 10:30:46,907 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 10:30:53,763 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 10:30:53,769 - __main__ - INFO - \u274c Auto-capture failed for barcode 1030002877: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 10:37:39,387 - __main__ - INFO - Auto-processing barcode: 1037263566
+2025-07-17 10:37:39,390 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 10:37:39,390 - __main__ - INFO - Raw barcode: '1037263566'
+2025-07-17 10:37:39,392 - __main__ - INFO - Barcode length: 10
+2025-07-17 10:37:39,393 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 10:37:39,412 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 10:37:39,414 - __main__ - INFO - Barcode: 1037263566
+2025-07-17 10:37:39,423 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 10:37:39,428 - __main__ - INFO - Capturing exit images...
+2025-07-17 10:37:39,431 - database_service - INFO - Processing vehicle exit for: 1037263566
+2025-07-17 10:37:39,436 - __main__ - INFO - Auto-capturing exit images for barcode: 1037263566
+2025-07-17 10:37:39,437 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 10:37:41,489 - database_service - INFO - Searching for transaction with barcode: 1037263566
+2025-07-17 10:37:41,499 - database_service - INFO - Found transaction by primary ID: transaction_1037263566
+2025-07-17 10:37:41,500 - database_service - INFO - Found transaction by barcode (11.01ms)
+2025-07-17 10:37:41,507 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-17 10:37:41,507 - database_service - INFO - Calculated fee: 0 for 0 hours
+2025-07-17 10:37:41,524 - database_service - INFO - Transaction transaction_1037263566 marked as exited
+2025-07-17 10:37:41,524 - database_service - INFO - Vehicle exit processed successfully for: 1037263566
+2025-07-17 10:37:41,531 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 10:37:41,536 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 10:37:41,545 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 10:37:41,546 - gate_service - ERROR - GPIO not available
+2025-07-17 10:37:41,559 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 10:37:42,570 - gate_service - ERROR - GPIO not available
+2025-07-17 10:37:42,578 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 10:37:49,447 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 10:37:49,459 - __main__ - INFO - \u274c Auto-capture failed for barcode 1037263566: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 14:31:23,799 - gate_service - INFO - \U0001f9f9 Cleaning up gate service...
+2025-07-17 14:31:23,802 - gate_service - INFO - \u2705 Gate service cleanup completed successfully
+2025-07-17 14:31:27,840 - __main__ - INFO - GUI Setup completed
+2025-07-17 14:31:27,843 - __main__ - INFO - Initializing services...
+2025-07-17 14:31:27,898 - config - INFO - Loaded configuration from config.ini
+2025-07-17 14:31:27,898 - gate_service - INFO - Not running on Raspberry Pi - GPIO disabled
+2025-07-17 14:31:27,909 - gate_service - INFO - \U0001f6aa Initializing Gate Service...
+2025-07-17 14:31:27,909 - gate_service - WARNING - \u26a0\ufe0f Hardware not available - running in SIMULATION mode
+2025-07-17 14:31:27,910 - gate_service - INFO - Gate Service initialized successfully in SIMULATION mode
+2025-07-17 14:31:27,910 - gate_service - INFO - Global gate service instance created successfully
+2025-07-17 14:31:27,914 - __main__ - INFO - Gate service imported successfully (fallback)
+2025-07-17 14:31:27,931 - __main__ - INFO - WARNING: USB scanner import failed: No module named 'app'
+2025-07-17 14:31:27,943 - __main__ - INFO - Fallback also failed: No module named 'termios'
+2025-07-17 14:31:29,031 - member_cache - INFO - Member cache initialized (max_size: 1000, ttl: 300s)
+2025-07-17 14:31:31,099 - database_service - INFO - Connected to CouchDB server: Unknown (legacy method)
+2025-07-17 14:31:31,104 - database_service - INFO - Connected to existing database: transactions
+2025-07-17 14:31:31,115 - database_service - INFO - Initializing member optimization views...
+2025-07-17 14:31:31,120 - database_service - INFO - Member views already up to date
+2025-07-17 14:31:31,126 - database_service - INFO - Enhanced transaction views already up to date
+2025-07-17 14:31:31,126 - database_service - INFO - Index creation attempted
+2025-07-17 14:31:31,126 - database_service - INFO - Preloading active members into cache...
+2025-07-17 14:31:31,138 - member_cache - INFO - Preloaded 3 members into cache
+2025-07-17 14:31:31,138 - database_service - INFO - \u2705 Preloaded 3 active members (12.02ms)
+2025-07-17 14:31:31,139 - database_service - INFO - Member optimization views initialized successfully
+2025-07-17 14:31:31,139 - database_service - INFO - Database connection established
+2025-07-17 14:31:31,146 - __main__ - INFO - Database service imported successfully (fallback)
+2025-07-17 14:31:31,151 - root - WARNING - pygame not available, audio functionality disabled
+2025-07-17 14:31:31,158 - __main__ - INFO - Audio service imported successfully (fallback)
+2025-07-17 14:31:31,164 - __main__ - INFO - Audio service is disabled or not available
+2025-07-17 14:31:31,395 - camera_service - INFO - PIL/Pillow loaded successfully
+2025-07-17 14:31:31,400 - camera_service - INFO - No Raspberry Pi camera libraries available
+2025-07-17 14:31:31,403 - camera_service - INFO - OpenCV not available
+2025-07-17 14:31:31,404 - camera_service - INFO - Driver camera disabled in configuration
+2025-07-17 14:31:31,405 - camera_service - INFO - Initialized 1 cameras
+2025-07-17 14:31:31,434 - __main__ - INFO - Camera service imported successfully (fallback)
+2025-07-17 14:31:31,446 - __main__ - INFO - Scanner not available - manual input only
+2025-07-17 14:31:31,453 - __main__ - INFO - Adding gate status listener...
+2025-07-17 14:31:31,461 - __main__ - INFO - Gate status listener added
+2025-07-17 14:31:31,473 - __main__ - INFO - Gate Service Diagnostics:
+2025-07-17 14:31:31,480 - __main__ - INFO -   Control Mode: SIMULATION
+2025-07-17 14:31:31,489 - __main__ - INFO -   GPIO Available: No
+2025-07-17 14:31:31,503 - __main__ - INFO -   GPIO Error: Not running on Raspberry Pi
+2025-07-17 14:31:31,516 - __main__ - INFO - Testing gate service functionality...
+2025-07-17 14:31:31,517 - gate_service - INFO - \U0001f9ea Testing hardware functionality...
+2025-07-17 14:31:31,517 - gate_service - INFO - \u2705 Simulation mode test passed
+2025-07-17 14:31:31,522 - __main__ - INFO - Gate hardware test: PASSED
+2025-07-17 14:31:31,532 - __main__ - INFO - Services initialization completed
+2025-07-17 14:31:31,537 - __main__ - INFO - System ready - waiting for barcode input...
+2025-07-17 14:31:31,545 - __main__ - INFO - Exit Gate GUI initialized
+2025-07-17 14:31:31,549 - __main__ - INFO - Exit Gate GUI started
+2025-07-17 14:31:31,880 - __main__ - INFO - Auto-listener started
+2025-07-17 14:31:34,618 - __main__ - INFO - Fullscreen mode: OFF
+2025-07-17 14:31:43,905 - __main__ - INFO - Auto-processing barcode: 1752724247489585
+2025-07-17 14:31:43,907 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 14:31:43,910 - __main__ - INFO - Raw barcode: '1752724247489585'
+2025-07-17 14:31:43,911 - __main__ - INFO - Barcode length: 16
+2025-07-17 14:31:43,913 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 14:31:43,934 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 14:31:43,966 - __main__ - INFO - Barcode: 1752724247489585
+2025-07-17 14:31:43,996 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 14:31:44,013 - __main__ - INFO - Capturing exit images...
+2025-07-17 14:31:44,019 - database_service - INFO - Processing vehicle exit for: 1752724247489585
+2025-07-17 14:31:44,028 - database_service - INFO - Searching for transaction with barcode: 1752724247489585
+2025-07-17 14:31:44,032 - __main__ - INFO - Auto-capturing exit images for barcode: 1752724247489585
+2025-07-17 14:31:44,033 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 14:31:44,053 - database_service - INFO - Found transaction by primary ID: transaction_1752724247489585
+2025-07-17 14:31:44,053 - database_service - INFO - Found transaction by barcode (24.84ms)
+2025-07-17 14:31:44,096 - database_service - INFO - \u2705 Updated member transaction status to exited: transaction_1752724247489585 (fee: 0)
+2025-07-17 14:31:44,097 - database_service - INFO - Vehicle exit processed successfully for: 1752724247489585
+2025-07-17 14:31:44,750 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 14:31:44,756 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 14:31:44,760 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 14:31:44,761 - gate_service - ERROR - GPIO not available
+2025-07-17 14:31:44,764 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 14:31:45,773 - gate_service - ERROR - GPIO not available
+2025-07-17 14:31:45,776 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 14:31:54,084 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 14:31:54,093 - __main__ - INFO - \u274c Auto-capture failed for barcode 1752724247489585: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 14:32:38,150 - __main__ - INFO - Auto-processing barcode: 1037212487
+2025-07-17 14:32:38,152 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 14:32:38,153 - __main__ - INFO - Raw barcode: '1037212487'
+2025-07-17 14:32:38,155 - __main__ - INFO - Barcode length: 10
+2025-07-17 14:32:38,156 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 14:32:38,159 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 14:32:38,178 - __main__ - INFO - Barcode: 1037212487
+2025-07-17 14:32:38,225 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 14:32:38,249 - __main__ - INFO - Capturing exit images...
+2025-07-17 14:32:38,253 - database_service - INFO - Processing vehicle exit for: 1037212487
+2025-07-17 14:32:38,261 - database_service - INFO - Searching for transaction with barcode: 1037212487
+2025-07-17 14:32:38,268 - __main__ - INFO - Auto-capturing exit images for barcode: 1037212487
+2025-07-17 14:32:38,269 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 14:32:38,278 - database_service - INFO - Found transaction by primary ID: transaction_1037212487
+2025-07-17 14:32:38,279 - database_service - INFO - Found transaction by barcode (17.90ms)
+2025-07-17 14:32:38,279 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-17 14:32:38,298 - database_service - INFO - \u2705 Updated parking transaction status to exited: transaction_1037212487 (fee: 0)
+2025-07-17 14:32:38,298 - database_service - INFO - Vehicle exit processed successfully for: 1037212487
+2025-07-17 14:32:38,305 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 14:32:38,310 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 14:32:38,318 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 14:32:38,319 - gate_service - ERROR - GPIO not available
+2025-07-17 14:32:38,326 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 14:32:39,331 - gate_service - ERROR - GPIO not available
+2025-07-17 14:32:39,344 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 14:32:48,285 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 14:32:48,296 - __main__ - INFO - \u274c Auto-capture failed for barcode 1037212487: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 14:44:17,735 - __main__ - INFO - Auto-processing barcode: 1037125536
+2025-07-17 14:44:17,745 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 14:44:17,747 - __main__ - INFO - Raw barcode: '1037125536'
+2025-07-17 14:44:17,749 - __main__ - INFO - Barcode length: 10
+2025-07-17 14:44:17,758 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 14:44:17,773 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 14:44:17,794 - __main__ - INFO - Barcode: 1037125536
+2025-07-17 14:44:17,798 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 14:44:17,831 - __main__ - INFO - Capturing exit images...
+2025-07-17 14:44:17,834 - database_service - INFO - Processing vehicle exit for: 1037125536
+2025-07-17 14:44:17,864 - __main__ - INFO - Auto-capturing exit images for barcode: 1037125536
+2025-07-17 14:44:17,865 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 14:44:19,915 - database_service - INFO - Searching for transaction with barcode: 1037125536
+2025-07-17 14:44:19,926 - database_service - INFO - Found transaction by primary ID: transaction_1037125536
+2025-07-17 14:44:19,928 - database_service - INFO - Found transaction by barcode (11.52ms)
+2025-07-17 14:44:19,929 - database_service - ERROR - Error calculating parking fee: can't subtract offset-naive and offset-aware datetimes
+2025-07-17 14:44:19,960 - database_service - INFO - \u2705 Updated parking transaction status to exited: transaction_1037125536 (fee: 0)
+2025-07-17 14:44:19,961 - database_service - INFO - Vehicle exit processed successfully for: 1037125536
+2025-07-17 14:44:19,965 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 14:44:19,986 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 14:44:20,008 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 14:44:20,011 - gate_service - ERROR - GPIO not available
+2025-07-17 14:44:20,022 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 14:44:21,028 - gate_service - ERROR - GPIO not available
+2025-07-17 14:44:21,037 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 14:44:27,906 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 14:44:27,909 - __main__ - INFO - \u274c Auto-capture failed for barcode 1037125536: Exit camera: Timeout capturing from camera 'exit'
+2025-07-17 14:45:05,424 - __main__ - INFO - Auto-processing barcode: 175272421623953
+2025-07-17 14:45:05,425 - __main__ - INFO - === BARCODE INPUT RECEIVED ===
+2025-07-17 14:45:05,426 - __main__ - INFO - Raw barcode: '175272421623953'
+2025-07-17 14:45:05,427 - __main__ - INFO - Barcode length: 15
+2025-07-17 14:45:05,428 - __main__ - INFO - Barcode valid - calling process_vehicle_exit
+2025-07-17 14:45:05,430 - __main__ - INFO - === PROCESSING VEHICLE EXIT ===
+2025-07-17 14:45:05,439 - __main__ - INFO - Barcode: 175272421623953
+2025-07-17 14:45:05,450 - __main__ - INFO - Debug mode: DISABLED
+2025-07-17 14:45:05,454 - __main__ - INFO - Capturing exit images...
+2025-07-17 14:45:05,456 - database_service - INFO - Processing vehicle exit for: 175272421623953
+2025-07-17 14:45:05,460 - __main__ - INFO - Auto-capturing exit images for barcode: 175272421623953
+2025-07-17 14:45:05,460 - camera_service - INFO - Attempting capture from: http://admin:***@192.168.10.70/Snapshot/1/RemoteImageCapture?ImageFormat=2
+2025-07-17 14:45:05,463 - database_service - INFO - Searching for transaction with barcode: 175272421623953
+2025-07-17 14:45:05,472 - database_service - INFO - Found transaction by primary ID: transaction_175272421623953
+2025-07-17 14:45:05,472 - database_service - INFO - Found transaction by barcode (9.21ms)
+2025-07-17 14:45:05,484 - database_service - INFO - \u2705 Updated member transaction status to exited: transaction_175272421623953 (fee: 0)
+2025-07-17 14:45:05,484 - database_service - INFO - Vehicle exit processed successfully for: 175272421623953
+2025-07-17 14:45:05,496 - __main__ - INFO - \u2705 Valid transaction found in database
+2025-07-17 14:45:05,507 - __main__ - INFO - Opening gate - Valid transaction
+2025-07-17 14:45:05,527 - __main__ - INFO - Gate service available - triggering open
+2025-07-17 14:45:05,528 - gate_service - ERROR - GPIO not available
+2025-07-17 14:45:05,532 - __main__ - INFO - Gate opening - GPIO HIGH
+2025-07-17 14:45:06,545 - gate_service - ERROR - GPIO not available
+2025-07-17 14:45:06,558 - __main__ - INFO - Gate closing - GPIO LOW
+2025-07-17 14:45:15,481 - camera_service - ERROR - Timeout capturing from camera 'exit'
+2025-07-17 14:45:15,517 - __main__ - INFO - \u274c Auto-capture failed for barcode 175272421623953: Exit camera: Timeout capturing from camera 'exit'

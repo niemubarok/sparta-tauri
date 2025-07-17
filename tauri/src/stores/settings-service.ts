@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, readonly, computed } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
-import { localDbs } from 'src/boot/pouchdb'; // Asumsi path ini benar
+import { remoteDbs } from 'src/boot/pouchdb'; // Asumsi path ini benar
 
 type OperationMode = 'manless' | 'manual';
 type ManualPaymentMode = 'postpaid' | 'prepaid';
@@ -225,7 +225,7 @@ export const useSettingsService = defineStore('settings-service', () => {
     console.log(`Loading gate settings for ID: ${gateId}`);
     
     try {
-      const doc = await localDbs.config.get(`gate_${gateId}`) as GateSetting;
+      const doc = await remoteDbs.config.get(`gate_${gateId}`) as GateSetting;
       console.log("🚀 ~ loadGateSettings ~ doc:", doc)
       gateSettings.value = { ...defaultGateSettings, ...doc, _id: doc._id, gateId: doc.gateId };
       console.log(`Gate settings loaded successfully for ${gateId}:`, gateSettings.value);
@@ -240,7 +240,7 @@ export const useSettingsService = defineStore('settings-service', () => {
         };
         
         try {
-          const response = await localDbs.config.put(newDefaultGateDoc);
+          const response = await remoteDbs.config.put(newDefaultGateDoc);
           gateSettings.value = { ...newDefaultGateDoc, _rev: response.rev };
           console.log(`Default settings created and saved for gate ${gateId}:`, gateSettings.value);
         } catch (putError) {
@@ -315,7 +315,7 @@ export const useSettingsService = defineStore('settings-service', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const result = await localDbs.config.allDocs<GateSetting>({
+      const result = await remoteDbs.config.allDocs<GateSetting>({
         include_docs: true,
         startkey: 'gate_',
         endkey: 'gate_\uffff'
@@ -342,7 +342,7 @@ export const useSettingsService = defineStore('settings-service', () => {
     try {
       let docToSave: GateSetting;
       try {
-        const existingDoc = await localDbs.config.get(`gate_${currentActiveGateId}`) as GateSetting;
+        const existingDoc = await remoteDbs.config.get(`gate_${currentActiveGateId}`) as GateSetting;
         docToSave = {
           ...existingDoc,
           ...newSettingsPartial,
@@ -363,7 +363,7 @@ export const useSettingsService = defineStore('settings-service', () => {
         }
       }
 
-      const response = await localDbs.config.put(docToSave);
+      const response = await remoteDbs.config.put(docToSave);
       gateSettings.value = { ...docToSave, _rev: response.rev };
       console.log(`Gate settings saved for ${currentActiveGateId}:`, gateSettings.value);
     } catch (e) {

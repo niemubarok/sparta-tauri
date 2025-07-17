@@ -26,7 +26,7 @@ timeout: 45000, // 45 second timeout for immediate sync
 
 ### 2. **Enhanced Sync Configuration**
 ```typescript
-const sync = localDbs.transactions.sync(remoteDbs.transactions, {
+const sync = remoteDbs.transactions.sync(remoteDbs.transactions, {
   timeout: 60000,     // Increased timeout
   retry: true,        // Enable retry for better reliability
   batch_size: 5,      // Smaller batch for faster processing
@@ -40,7 +40,7 @@ const sync = localDbs.transactions.sync(remoteDbs.transactions, {
 // Level 1: Full bidirectional sync
 sync.on('error', (err) => {
   // Level 2: Push-only sync as fallback
-  const pushSync = localDbs.transactions.replicate.to(remoteDbs.transactions, {
+  const pushSync = remoteDbs.transactions.replicate.to(remoteDbs.transactions, {
     timeout: 30000,
     retry: false,
     batch_size: 1,
@@ -49,7 +49,7 @@ sync.on('error', (err) => {
   
   pushSync.on('error', (pushErr) => {
     // Level 3: Background push without waiting
-    localDbs.transactions.replicate.to(remoteDbs.transactions, {
+    remoteDbs.transactions.replicate.to(remoteDbs.transactions, {
       timeout: 10000,
       retry: false,
       batch_size: 1,

@@ -494,7 +494,7 @@ import PlatNomor from './PlatNomor.vue';
 import QRCodeScannerDialog from './QRCodeScannerDialog.vue'; // Keep for ExitGate
 
 import { api, detectedPlates as globalDetectedPlates } from 'src/boot/axios';
-import { localDbs } from 'src/boot/pouchdb'; // Import PouchDB instance
+import { remoteDbs } from 'src/boot/pouchdb'; // Import PouchDB instance
 import { formatDate, formatTime } from 'src/utils/time-util';
 
 const themeStore = useThemeStore();
@@ -624,7 +624,7 @@ const fetchTransactionByTicketId = async (ticketId) => {
   isLoadingTransaction.value = true;
   addActivityLog(`Fetching transaction for ticket: ${ticketId}`);
   try {
-    const doc = await localDbs.transactions.get(ticketId);
+    const doc = await remoteDbs.transactions.get(ticketId);
     transactionData.value = doc;
     addActivityLog(`Transaction found: ${doc._id}`);
     $q.notify({ type: 'positive', message: 'Transaction data loaded.' });
@@ -641,7 +641,7 @@ const fetchTransactionByPlateNumber = async (plateNumber) => {
   isLoadingTransaction.value = true;
   addActivityLog(`Fetching transaction for plate: ${plateNumber}`);
   try {
-    const result = await localDbs.transactions.find({
+    const result = await remoteDbs.transactions.find({
       selector: { 
         plate_number: plateNumber, // Field name from ManlessEntryGate save
         status: 'entry' 
@@ -1088,7 +1088,7 @@ const processExitTransaction = async () => {
   };
 
   try {
-    const response = await localDbs.transactions.put(updatedTransaction);
+    const response = await remoteDbs.transactions.put(updatedTransaction);
     addActivityLog(`Transaction ${updatedTransaction._id} updated successfully. Rev: ${response.rev}`);
     $q.notify({ type: 'positive', message: `Exit processed. Fee: Rp ${fee}. Gate will open.` });
       // Simulate gate opening by calling the existing manualOpen function

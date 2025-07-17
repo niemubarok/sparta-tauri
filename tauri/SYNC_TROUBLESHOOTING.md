@@ -41,7 +41,7 @@ Masalah "data masih tidak syncron, harus di refresh dulu baru sinkron" telah dip
 ### 1. Enhanced addTransaction Function
 ```typescript
 // Dengan timeout 30 detik dan retry
-const sync = localDbs.transactions.sync(remoteDbs.transactions, {
+const sync = remoteDbs.transactions.sync(remoteDbs.transactions, {
   timeout: 30000, // 30 second timeout
   retry: true,    // Enable retry for better reliability
   batch_size: 10  // Smaller batch for faster sync

@@ -17,7 +17,6 @@
     </q-card>
   </div>
   <div
-    :key="componentStore.outGateKey"
     v-else
     class="relative fixed-top window-height full-width overflow-hidden bg-primary"
   >
@@ -46,24 +45,36 @@
       </q-card>
 
       <div class="content-end q-pr-md">
-        <div class="flex row no-wrap justify-end">
+        <div class="flex row no-wrap justify-end q-gutter-xs">
           <ShinyCard
             class="bg-grey-7"
-            title="Kendaraan Masuk"
+            style="min-width: 140px;"
+            title="Total kendaraan Masuk"
             :jumlah="transaksiStore.vehicleInToday"
           />
-          <!-- shortkey="F3" -->
           <ShinyCard
-            :key="componentStore.vehicleOutKey"
-            class="bg-grey-8 q-mx-md"
+            class="bg-grey-8"
+            style="min-width: 140px;"
             title="Kendaraan Keluar"
-            :jumlah="transaksiStore.totalVehicleOut"
+            :jumlah="kendaraanKeluarCount"
           />
           <ShinyCard
+            class="bg-purple-7"
+            style="min-width: 120px;"
+            title="Member Parkir"
+            :jumlah="memberParkedCount"
+          />
+          <ShinyCard
+            class="bg-indigo-7"
+            style="min-width: 120px;"
+            title="Regular Parkir"
+            :jumlah="regularParkedCount"
+          />
+          <!-- <ShinyCard
             class="bg-grey-9"
             title="Kendaraan Parkir"
-            :jumlah="Math.max(0, transaksiStore.totalVehicleInside)"
-          />
+            :jumlah="transaksiStore.vehicleInToday"
+          /> -->
           <!-- shortkey="F5" -->
         </div>
       </div>
@@ -434,6 +445,18 @@
             <q-tooltip>Lihat status sistem dan komponen</q-tooltip>
           </q-btn>
 
+          <!-- Vehicle Statistics Debug (only for admin) -->
+          <q-btn
+            v-if="isAdmin"
+            color="indigo"
+            size="sm"
+            @click="testVehicleStatistics"
+            label="Test Stats"
+            icon="analytics"
+          >
+            <q-tooltip>Test statistik kendaraan real-time</q-tooltip>
+          </q-btn>
+
           <!-- Manual Sync Button (only for admin) -->
           <!-- <q-btn
             v-if="isAdmin"
@@ -503,7 +526,7 @@ import ApiUrlDialog from "src/components/ApiUrlDialog.vue";
 import { invoke } from '@tauri-apps/api/core';
 import { getTime, checkSubscriptionExpiration } from "src/utils/time-util";
 import ls from "localstorage-slim";
-import { syncSingleDatabase, getSyncStatus, isSyncing, lastSyncStatus, lastSyncError, forceSyncAllDatabases, safeSyncTransaction, checkRemoteConnection, forceSyncAndVerifyTransaction } from "src/boot/pouchdb"
+import { checkRemoteConnection } from "src/boot/pouchdb"
 import MemberCard from "src/components/MemberCard.vue";
 
 //Components
@@ -711,34 +734,36 @@ function cardReaderKeydownHandler(e) {
 }
 
 // Fungsi utama: handle tap kartu member
-import { localDbs, addTransaction, addTransactionAttachment } from 'src/boot/pouchdb';
+import { remoteDbs, addTransaction, addTransactionAttachment, changeHandlers, startChangeHandlers } from 'src/boot/pouchdb';
 
-const findMemberByCardNumber = (cardNumber) => {
-  // Debug: log search attempt
-  console.log('🔍 Searching for card number:', cardNumber);
-  console.log('📋 Available members:', membershipStore.members.length);
+// const findMemberByCardNumber = (cardNumber) => {
+//   // Debug: log search attempt
+//   console.log('🔍 Searching for card number:', cardNumber);
+//   console.log('📋 Available members:', membershipStore.members.length);
   
-  // Debug: log all card numbers in store
-  membershipStore.members.forEach((member, index) => {
-    console.log(`Member ${index + 1}:`, {
-      name: member.name,
-      card_number: member.card_number,
-      member_id: member.member_id,
-      active: member.active
-    });
-  });
+//   // Debug: log all card numbers in store
+//   membershipStore.members.forEach((member, index) => {
+//     console.log(`Member ${index + 1}:`, {
+//       name: member.name,
+//       card_number: member.card_number,
+//       member_id: member.member_id,
+//       active: member.active,
+//       vehicles: member.vehicles?.length || 0
+//     });
+//   });
   
-  // Cari member di state store
-  const foundMember = membershipStore.members.find(m => m.card_number === cardNumber);
+//   // Cari member di state store berdasarkan card_number
+//   const foundMember = membershipStore.members.find(m => m.card_number === cardNumber);
   
-  if (foundMember) {
-    console.log('✅ Member found:', foundMember.name);
-  } else {
-    console.log('❌ Member not found for card number:', cardNumber);
-  }
+//   if (foundMember) {
+//     console.log('✅ Member found:', foundMember.name);
+//     console.log('🚗 Member vehicles:', foundMember.vehicles);
+//   } else {
+//     console.log('❌ Member not found for card number:', cardNumber);
+//   }
   
-  return foundMember;
-};
+//   return foundMember;
+// };
 
 const cardTapping = ref(false)
 const processingMemberTransaction = ref(false)
@@ -870,14 +895,26 @@ const handleMemberCardTap = async (member) => {
 
     // showMemberDialog.value = true
 
-    // Reset form setelah small delay untuk memastikan semua proses selesai
+      $q.notify({
+        type: 'positive',
+        message: `Selamat datang ${member.name}! Gate akan dibuka.`,
+        position: 'top',
+        timeout: 2000,
+        icon: 'how_to_reg'
+      });
+      
+      await updateStatistics();
+      await gateStore.openGate();    // Reset form setelah proses selesai dengan transisi yang lebih smooth
     setTimeout(() => {
-      resetFormState();
-    }, 500);
-
-    await updateStatistics();
-
-    await gateStore.openGate();
+      // Gunakan reset minimal untuk menghindari reload visual
+      transaksiStore.resetTransactionStateMinimal();
+      componentStore.hideInputPlatNomor = false;
+      
+      // Focus input dengan delay yang lebih singkat
+      setTimeout(() => {
+        inputPlatNomorRef.value?.focus();
+      }, 100);
+    }, 200); // Kurangi delay untuk responsivitas lebih baik
     
   } catch (error) {
     console.error('Error handleMemberCardTap:', error);
@@ -1264,9 +1301,10 @@ const captureExitImages = async () => {
   }
 };
 
-// Reset form and focus back to input
+// Reset form dengan minimal state change untuk menghindari reload visual
 const resetFormState = () => {
-  transaksiStore.resetTransactionState();
+  // Gunakan reset minimal untuk transisi yang lebih smooth
+  transaksiStore.resetTransactionStateMinimal();
   componentStore.hideInputPlatNomor = false;
   
   setTimeout(() => {
@@ -1692,24 +1730,47 @@ const processEntry = async (isPrepaidMode = false) => {
     await gateStore.writeToPort('entry', '*OPEN1#');
 
     // Sync database
-    syncSingleDatabase('transactions')
     
-    // Update statistics
+    // Update statistics dan UI state tanpa reload visual
     await updateStatistics();
     
     // Form handling
     if (isPrepaidMode) {
-      // Reset form for next vehicle in prepaid mode
-      transaksiStore.resetTransactionState();
+      // Success notification first
+      $q.notify({
+        type: 'positive',
+        message: 'Transaksi berhasil! Siap untuk kendaraan berikutnya.',
+        position: 'top',
+        timeout: 2000
+      });
+      
+      // For prepaid mode: use minimal reset untuk smooth transition
+      transaksiStore.resetTransactionStateMinimal();
+      
       componentStore.hideInputPlatNomor = false;
       
       // Focus back to plate input for next vehicle
       setTimeout(() => {
         inputPlatNomorRef.value?.focus();
-      }, 1000);
+      }, 500); // Slight delay for smooth transition
     } else {
-      // Hide input and show payment card for postpaid mode
-      componentStore.hideInputPlatNomor = true;
+      // For postpaid mode: since PaymentCard is commented out, reset immediately
+      // TODO: Uncomment PaymentCard component if payment processing is needed
+      $q.notify({
+        type: 'positive',
+        message: 'Transaksi berhasil! Silahkan bayar di kasir saat keluar.',
+        position: 'top',
+        timeout: 3000
+      });
+      
+      // Reset immediately for postpaid mode to show UI again
+      transaksiStore.resetTransactionStateMinimal();
+      componentStore.hideInputPlatNomor = false;
+      
+      // Focus back to plate input for next vehicle
+      setTimeout(() => {
+        inputPlatNomorRef.value?.focus();
+      }, 500);
     }
     
   } catch (error) {
@@ -1730,12 +1791,100 @@ const updateStatistics = async () => {
     await transaksiStore.getCountVehicleInToday();
     await transaksiStore.getCountVehicleOutToday();
     await transaksiStore.getCountVehicleInside();
+    await transaksiStore.getCountMemberAndRegularInside();
     
     // Note: Removed componentStore.vehicleOutKey = Date.now(); 
     // as it was causing Camera components to recreate and start new intervals
     
   } catch (error) {
     console.error('Error updating statistics:', error);
+  }
+};
+
+// Enhanced statistics update with real-time vehicle data
+const updateVehicleStatisticsRealtime = async () => {
+  try {
+    console.log('📊 Updating real-time vehicle statistics...');
+    
+    // Get today's date for filtering
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    
+    // Query transactions for today
+    const result = await remoteDbs.transactions.find({
+      selector: {
+        entry_time: {
+          $gte: todayStart.toISOString(),
+          $lt: todayEnd.toISOString()
+        }
+      },
+      limit: 1000
+    });
+    
+    const todayTransactions = result.docs;
+    
+    // Calculate vehicle statistics dengan konsistensi yang sama seperti daftar-transaksi.vue
+    const vehicleStats = {
+      totalIn: todayTransactions.length,
+      // Transaksi selesai (ditampilkan sebagai "Kendaraan Keluar")
+      // Gunakan status === 1 untuk konsistensi dengan daftar-transaksi.vue
+      // Fallback ke exit_time jika status tidak ada (untuk data legacy)
+      transaksiSelesai: todayTransactions.filter(t => t.status === 1 || (t.status !== 0 && t.exit_time)).length,
+      // Kendaraan masih di dalam: status === 0 AND tidak ada exit_time
+      currentlyInside: todayTransactions.filter(t => t.status === 0 || (!t.exit_time && t.status !== 1)).length,
+      memberEntries: todayTransactions.filter(t => t.type === 'member_entry' && (t.status === 0 || (!t.exit_time && t.status !== 1))).length,
+      regularEntries: todayTransactions.filter(t => (t.type === 'parking_transaction' || t.type === 'transaction') && (t.status === 0 || (!t.exit_time && t.status !== 1))).length,
+      vehicleTypes: {}
+    };
+    
+    // Count by vehicle type dengan konsistensi status (transaksi selesai)
+    todayTransactions.forEach(transaction => {
+      const vehicleType = transaction.jenis_kendaraan?.label || 'Unknown';
+      if (!vehicleStats.vehicleTypes[vehicleType]) {
+        vehicleStats.vehicleTypes[vehicleType] = { in: 0, transaksiSelesai: 0, inside: 0 };
+      }
+      vehicleStats.vehicleTypes[vehicleType].in++;
+      // Gunakan status === 1 untuk konsistensi (transaksi selesai), fallback ke exit_time
+      if (transaction.status === 1 || (transaction.status !== 0 && transaction.exit_time)) {
+        vehicleStats.vehicleTypes[vehicleType].transaksiSelesai++;
+      } else if (transaction.status === 0 || (!transaction.exit_time && transaction.status !== 1)) {
+        vehicleStats.vehicleTypes[vehicleType].inside++;
+      }
+    });
+    
+    // Update transaksi store with calculated values
+    transaksiStore.vehicleInToday = vehicleStats.totalIn;
+    // Simpan transaksi selesai ke totalVehicleOut (untuk kompatibilitas dengan store)
+    transaksiStore.totalVehicleOut = vehicleStats.transaksiSelesai;
+    transaksiStore.totalVehicleInside = vehicleStats.currentlyInside;
+    transaksiStore.memberInsideCount = vehicleStats.memberEntries;
+    transaksiStore.regularInsideCount = vehicleStats.regularEntries;
+    
+    console.log('✅ Real-time vehicle statistics updated (transaksi selesai concept):', vehicleStats);
+    console.log('📊 Statistics comparison debug (daftar-transaksi.vue compatible):', {
+      totalTransactions: todayTransactions.length,
+      transaksiSelesai_byStatus: todayTransactions.filter(t => t.status === 1).length,
+      transaksiSelesai_byExitTime: todayTransactions.filter(t => t.exit_time).length,
+      transaksiSelesai_combined: vehicleStats.transaksiSelesai,
+      transaksiAktif_byStatus: todayTransactions.filter(t => t.status === 0).length,
+      inconsistentData: todayTransactions.filter(t => 
+        (t.exit_time && t.status === 0) || (!t.exit_time && t.status === 1)
+      ).length
+    });
+    
+    // Show notification for significant changes (optional)
+    if (vehicleStats.currentlyInside !== transaksiStore.previousVehicleInside) {
+      console.log(`📈 Vehicle count changed: ${transaksiStore.previousVehicleInside || 0} → ${vehicleStats.currentlyInside}`);
+      transaksiStore.previousVehicleInside = vehicleStats.currentlyInside;
+    }
+    
+    return vehicleStats;
+    
+  } catch (error) {
+    console.error('❌ Error updating real-time vehicle statistics:', error);
+    // Fallback to regular statistics update
+    await updateStatistics();
   }
 };
 
@@ -1765,6 +1914,23 @@ const logout = async () => {
 };
 
 const isAdmin = ref(ls.get("isAdmin")) || false;
+
+// Computed property untuk kendaraan keluar (berdasarkan transaksi selesai)
+// KONSEP: Sama dengan "transaksi selesai" di daftar-transaksi.vue (status === 1)
+// TAMPILAN: Tetap menggunakan label "Kendaraan Keluar" untuk user experience
+const kendaraanKeluarCount = computed(() => {
+  // Gunakan totalVehicleOut yang sudah dihitung berdasarkan status === 1 (transaksi selesai)
+  return transaksiStore.totalVehicleOut || 0;
+});
+
+// Computed properties untuk jumlah member dan regular yang sedang parkir
+const memberParkedCount = computed(() => {
+  return transaksiStore.memberInsideCount || 0;
+});
+
+const regularParkedCount = computed(() => {
+  return transaksiStore.regularInsideCount || 0;
+});
 
 // Computed properties for sync status indicator
 const syncStatusColor = computed(() => {
@@ -2253,15 +2419,8 @@ const testDatabaseSync = async () => {
       timeout: 2000
     });
 
-    const { forceSyncAllDatabases, getSyncStatus, checkTransactionInRemote } = await import('src/boot/pouchdb');
+    const { checkTransactionInRemote } = await import('src/boot/pouchdb');
     
-    // Check current sync status
-    const currentStatus = getSyncStatus();
-    console.log('📊 Current sync status:', currentStatus);
-    
-    // Force manual sync
-    console.log('🔄 Starting forced sync...');
-    await forceSyncAllDatabases();
     
     // Verify recent transactions are synced
     const recentTransactions = transaksiStore.transactionHistory.slice(0, 3);
@@ -2423,19 +2582,204 @@ const initializeMembershipStore = async (retryCount = 0) => {
   }
 };
 
+// Setup database change listeners for vehicle statistics
+const setupVehicleStatisticsChangeListeners = () => {
+  try {
+    console.log('🔄 Setting up vehicle statistics change listeners...');
+    
+    // Listen to changes in transactions database for vehicle statistics
+    if (remoteDbs.transactions) {
+      const transactionsChangeHandler = remoteDbs.transactions.changes({
+        since: 'now',
+        live: true,
+        include_docs: true,
+        timeout: 30000
+      });
+
+      transactionsChangeHandler
+        .on('change', async (change) => {
+          console.log('📊 Transaction change detected for vehicle statistics:', {
+            id: change.id,
+            deleted: change.deleted,
+            type: change.doc?.type
+          });
+          
+          // Update statistics when transaction changes
+          if (change.doc && (change.doc.type === 'parking_transaction' || change.doc.type === 'transaction' || change.doc.type === 'member_entry')) {
+            try {
+              const oldInside = transaksiStore.totalVehicleInside;
+              const oldMember = transaksiStore.memberInsideCount;
+              const oldRegular = transaksiStore.regularInsideCount;
+              
+              await updateVehicleStatisticsRealtime();
+              
+              // Show brief notification for vehicle count changes
+              const newInside = transaksiStore.totalVehicleInside;
+              const newMember = transaksiStore.memberInsideCount;
+              const newRegular = transaksiStore.regularInsideCount;
+              
+              if (oldInside !== newInside || oldMember !== newMember || oldRegular !== newRegular) {
+                $q.notify({
+                  type: 'info',
+                  message: `Kendaraan: ${newInside} (Member: ${newMember}, Regular: ${newRegular})`,
+                  position: 'top-right',
+                  timeout: 2000,
+                  icon: 'directions_car',
+                  classes: 'text-caption'
+                });
+              }
+              
+              console.log('✅ Vehicle statistics updated after transaction change');
+            } catch (error) {
+              console.error('❌ Error updating statistics after transaction change:', error);
+            }
+          }
+        })
+        .on('error', (err) => {
+          console.error('❌ Transaction change listener error:', err);
+          // Auto-restart after error
+          setTimeout(() => {
+            console.log('🔄 Restarting transaction change listener...');
+            setupVehicleStatisticsChangeListeners();
+          }, 10000);
+        })
+        .on('complete', (info) => {
+          console.log('✅ Transaction change listener completed:', info);
+        });
+
+      // Store handler for cleanup
+      changeHandlers.set('vehicle-statistics-transactions', transactionsChangeHandler);
+    }
+
+    // Listen to changes in kendaraan database for vehicle type statistics
+    if (remoteDbs.kendaraan) {
+      const kendaraanChangeHandler = remoteDbs.kendaraan.changes({
+        since: 'now',
+        live: true,
+        include_docs: true,
+        timeout: 30000
+      });
+
+      kendaraanChangeHandler
+        .on('change', async (change) => {
+          console.log('🚗 Vehicle type change detected:', {
+            id: change.id,
+            deleted: change.deleted,
+            type: change.doc?.type
+          });
+          
+          // Update vehicle type related statistics
+          if (change.doc && change.doc.type === 'jenis_kendaraan') {
+            try {
+              // Refresh vehicle type data if needed
+              console.log('🔄 Vehicle type data changed, may need to refresh statistics');
+            } catch (error) {
+              console.error('❌ Error handling vehicle type change:', error);
+            }
+          }
+        })
+        .on('error', (err) => {
+          console.error('❌ Kendaraan change listener error:', err);
+          // Auto-restart after error
+          setTimeout(() => {
+            console.log('🔄 Restarting kendaraan change listener...');
+            setupVehicleStatisticsChangeListeners();
+          }, 10000);
+        });
+
+      // Store handler for cleanup
+      changeHandlers.set('vehicle-statistics-kendaraan', kendaraanChangeHandler);
+    }
+
+    // Listen to changes in members database for member statistics
+    if (remoteDbs.members) {
+      const membersChangeHandler = remoteDbs.members.changes({
+        since: 'now',
+        live: true,
+        include_docs: true,
+        timeout: 30000
+      });
+
+      membersChangeHandler
+        .on('change', async (change) => {
+          console.log('👥 Member change detected for statistics:', {
+            id: change.id,
+            deleted: change.deleted,
+            type: change.doc?.type
+          });
+          
+          // Update member related statistics
+          if (change.doc && change.doc.type === 'member') {
+            try {
+              // Update member-related vehicle statistics if needed
+              await updateVehicleStatisticsRealtime();
+              console.log('✅ Statistics updated after member change');
+            } catch (error) {
+              console.error('❌ Error updating statistics after member change:', error);
+            }
+          }
+        })
+        .on('error', (err) => {
+          console.error('❌ Members change listener error:', err);
+          // Auto-restart after error
+          setTimeout(() => {
+            console.log('🔄 Restarting members change listener...');
+            setupVehicleStatisticsChangeListeners();
+          }, 10000);
+        });
+
+      // Store handler for cleanup
+      changeHandlers.set('vehicle-statistics-members', membersChangeHandler);
+    }
+
+    console.log('✅ Vehicle statistics change listeners setup completed');
+    
+  } catch (error) {
+    console.error('❌ Error setting up vehicle statistics change listeners:', error);
+  }
+};
+
+// Cleanup vehicle statistics change listeners
+const cleanupVehicleStatisticsChangeListeners = () => {
+  try {
+    console.log('🧹 Cleaning up vehicle statistics change listeners...');
+    
+    // Cancel and remove transaction listener
+    const transactionHandler = changeHandlers.get('vehicle-statistics-transactions');
+    if (transactionHandler) {
+      transactionHandler.cancel();
+      changeHandlers.delete('vehicle-statistics-transactions');
+      console.log('✅ Transaction statistics listener cleaned up');
+    }
+    
+    // Cancel and remove kendaraan listener
+    const kendaraanHandler = changeHandlers.get('vehicle-statistics-kendaraan');
+    if (kendaraanHandler) {
+      kendaraanHandler.cancel();
+      changeHandlers.delete('vehicle-statistics-kendaraan');
+      console.log('✅ Kendaraan statistics listener cleaned up');
+    }
+    
+    // Cancel and remove members listener
+    const membersHandler = changeHandlers.get('vehicle-statistics-members');
+    if (membersHandler) {
+      membersHandler.cancel();
+      changeHandlers.delete('vehicle-statistics-members');
+      console.log('✅ Members statistics listener cleaned up');
+    }
+    
+    console.log('✅ All vehicle statistics change listeners cleaned up');
+    
+  } catch (error) {
+    console.error('❌ Error cleaning up vehicle statistics change listeners:', error);
+  }
+};
+
 onMounted(async () => {
   console.log('🚀 Component mounting started...');
   
   // Set current page first
   componentStore.currentPage = "outgate";
-  console.log('✅ Current page set to outgate');
-
-
-  // Sync all main databases on mount
-  // syncSingleDatabase('transactions');
-  // syncSingleDatabase('members');
-  // syncSingleDatabase('tarif');
-  // syncSingleDatabase('petugas');
   
   // Initialize settings service first
   try {
@@ -2574,6 +2918,9 @@ onMounted(async () => {
     console.error('Error loading initial statistics:', error);
   }
 
+  // Setup database change listeners for vehicle statistics
+  setupVehicleStatisticsChangeListeners();
+
   // Check required configurations
   // if (transaksiStore.lokasiPos.value === "-" || !transaksiStore.lokasiPos.value) {
   //   $q.notify({
@@ -2627,113 +2974,12 @@ onMounted(async () => {
 });
 
 
-// Tambahkan function setelah testSyncConnectivity_
-
-const testLiveSync = async () => {
-  console.log('🧪 Testing live sync functionality...');
-  
-  $q.notify({
-    type: 'info',
-    message: 'Testing live sync, tunggu 30 detik...',
-    position: 'top',
-    timeout: 2000
-  });
-  
-  try {
-    const { activeSyncHandlers, syncSingleDatabase } = await import('src/boot/pouchdb');
-    
-    // Check active sync handlers
-    const activeCount = activeSyncHandlers.size;
-    const expectedCount = Object.keys(await import('src/boot/pouchdb').then(m => m.localDbs)).length;
-    
-    console.log(`📊 Active sync handlers: ${activeCount}/${expectedCount}`);
-    
-    if (activeCount < expectedCount) {
-      console.warn('⚠️ Some sync handlers missing, restarting...');
-      
-      // Restart missing handlers
-      const { localDbs } = await import('src/boot/pouchdb');
-      Object.keys(localDbs).forEach(dbName => {
-        if (!activeSyncHandlers.has(dbName)) {
-          console.log(`🔄 Restarting sync for ${dbName}...`);
-          syncSingleDatabase(dbName);
-        }
-      });
-    }
-    
-    // Create test transaction untuk test live sync
-    const testTransaction = {
-      _id: `test-live-sync-${Date.now()}`,
-      type: 'parking_transaction', 
-      test_data: true,
-      created_at: new Date().toISOString(),
-      status: 0
-    };
-    
-    console.log('🧪 Creating test transaction for live sync test...');
-    const { addTransaction } = await import('src/boot/pouchdb');
-    await addTransaction(testTransaction, false); // No immediate sync
-    
-    console.log('✅ Test transaction created, live sync should handle it automatically');
-    console.log('⏰ Wait 30 seconds and check CouchDB admin panel for the test transaction');
-    
-    $q.notify({
-      type: 'positive',
-      message: 'Live sync test started - cek console dan CouchDB panel',
-      position: 'top',
-      timeout: 5000
-    });
-    
-  } catch (error) {
-    console.error('❌ Live sync test failed:', error);
-    
-    $q.notify({
-      type: 'negative',
-      message: `Live sync test error: ${error.message}`,
-      position: 'top',
-      timeout: 5000
-    });
-  }
-};
-
-// Function untuk restart sync initialization
-const restartSyncInitialization = async () => {
-  console.log('🔄 Starting sync initialization restart...');
-  
-  try {
-    $q.notify({
-      type: 'info',
-      message: 'Restarting sync initialization...',
-      position: 'top',
-      timeout: 3000
-    });
-    
-    const { restartSyncInitialization: restartSync } = await import('src/boot/pouchdb');
-    await restartSync();
-    
-    console.log('✅ Sync initialization restarted successfully');
-    
-    $q.notify({
-      type: 'positive',
-      message: 'Sync initialization restarted successfully!',
-      position: 'top',
-      timeout: 5000
-    });
-    
-  } catch (error) {
-    console.error('❌ Restart sync initialization failed:', error);
-    
-    $q.notify({
-      type: 'negative',
-      message: `Restart sync failed: ${error.message}`,
-      position: 'top',
-      timeout: 5000
-    });
-  }
-};
 
 onUnmounted(() => {
   console.log('🧹 Cleaning up component...');
+  
+  // Clean up vehicle statistics change listeners
+  cleanupVehicleStatisticsChangeListeners();
   
   // Clean up card reader
   cardReaderStatus.value = {
@@ -2966,6 +3212,87 @@ const testTransactionVerification = async () => {
   }
 };
 
+// Test vehicle statistics and change listeners
+const testVehicleStatistics = async () => {
+  try {
+    $q.notify({
+      type: 'info',
+      message: 'Testing vehicle statistics...',
+      position: 'top',
+      timeout: 2000
+    });
+
+    // Get current statistics
+    const stats = await updateVehicleStatisticsRealtime();
+    
+    // Check if change listeners are active
+    const listenersStatus = {
+      transactions: changeHandlers.has('vehicle-statistics-transactions'),
+      kendaraan: changeHandlers.has('vehicle-statistics-kendaraan'),
+      members: changeHandlers.has('vehicle-statistics-members')
+    };
+
+    $q.dialog({
+      title: '📊 Vehicle Statistics Test',
+      message: `
+        <div style="text-align: left; font-family: monospace; font-size: 12px;">
+          <h6>📈 Current Statistics</h6>
+          <p><strong>Total In Today:</strong> ${stats?.totalIn || transaksiStore.vehicleInToday || 0}</p>
+          <p><strong>Transaksi Selesai (Kendaraan Keluar):</strong> ${vehicleStats?.transaksiSelesai || transaksiStore.totalVehicleOut || 0}</p>
+          <p><strong>Currently Inside:</strong> ${stats?.currentlyInside || transaksiStore.totalVehicleInside || 0}</p>
+          <p><strong>Member Entries:</strong> ${stats?.memberEntries || 0}</p>
+          <p><strong>Regular Entries:</strong> ${stats?.regularEntries || 0}</p>
+          
+          <h6>🎧 Change Listeners Status</h6>
+          <p>Transactions: ${listenersStatus.transactions ? '✅ Active' : '❌ Inactive'}</p>
+          <p>Kendaraan: ${listenersStatus.kendaraan ? '✅ Active' : '❌ Inactive'}</p>
+          <p>Members: ${listenersStatus.members ? '✅ Active' : '❌ Inactive'}</p>
+          
+          ${stats?.vehicleTypes ? `
+          <h6>🚗 Vehicle Types</h6>
+          ${Object.entries(stats.vehicleTypes).map(([type, counts]) => 
+            `<p>${type}: In=${counts.in}, Out=${counts.out}, Inside=${counts.inside}</p>`
+          ).join('')}
+          ` : ''}
+          
+          <p><small><em>Change listeners will automatically update these statistics when database changes occur.</em></small></p>
+        </div>
+      `,
+      html: true,
+      ok: {
+        label: 'Refresh Stats',
+        color: 'primary',
+        handler: () => {
+          updateVehicleStatisticsRealtime();
+        }
+      },
+      cancel: {
+        label: 'Restart Listeners',
+        color: 'warning',
+        handler: () => {
+          cleanupVehicleStatisticsChangeListeners();
+          setTimeout(() => {
+            setupVehicleStatisticsChangeListeners();
+            $q.notify({
+              type: 'positive',
+              message: 'Vehicle statistics listeners restarted',
+              position: 'top'
+            });
+          }, 1000);
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error testing vehicle statistics:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal melakukan test statistik kendaraan',
+      position: 'top'
+    });
+  }
+};
+
 // ...existing functions...
 </script>
 
@@ -2977,6 +3304,16 @@ const testTransactionVerification = async () => {
 
 .rounded-corner {
   border-radius: 10px;
+}
+
+/* Smooth transitions untuk mencegah visual reload */
+.relative.fixed-top {
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Smooth transition untuk input plat nomor */
+.input-box {
+  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
 /* Prevent horizontal and vertical scrolling */

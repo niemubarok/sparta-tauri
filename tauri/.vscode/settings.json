@@ -1,5 +1,20 @@
 {
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": true,
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/your-folder-name": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/venv": true,
+    "**/target": true,
+    "**/resources": true,
+    "**/lib": true,
+    "**/scripts": true,
+  }
 }

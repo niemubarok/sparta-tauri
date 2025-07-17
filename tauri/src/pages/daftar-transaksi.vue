@@ -4,35 +4,65 @@
     <div class="row items-center justify-between q-mb-md">
       <div>
         <h4 class="q-my-none">Daftar Transaksi</h4>
-        <p class="text-grey-6 q-my-none">Kelola dan lihat semua transaksi parkir</p>
+        <p class="text-grey-6 q-my-none">
+          Kelola dan lihat semua transaksi parkir
+          <span v-if="loading" class="text-orange-6">
+            <q-spinner-dots size="sm" class="q-ml-sm" />
+            Memuat...
+          </span>
+         
+        </p>
       </div>
       <div class="q-gutter-sm">
+        <q-btn
+          :color="isListeningToChanges ? 'green' : 'grey'"
+          :icon="isListeningToChanges ? 'sync' : 'sync_disabled'"
+          :label="isListeningToChanges ? 'Auto-sync ON' : 'Auto-sync OFF'"
+          @click="toggleAutoSync"
+          outline
+          size="sm"
+        >
+          <q-tooltip>
+            {{ isListeningToChanges ? 'Matikan auto-sync' : 'Aktifkan auto-sync' }}
+          </q-tooltip>
+        </q-btn>
         <q-btn
           color="primary"
           icon="refresh"
           label="Refresh"
           @click="refreshData"
           :loading="loading"
+          :disable="loading"
         />
-        <q-btn
+        <!-- <q-btn
+          color="blue"
+          icon="bug_report"
+          label="Debug DB"
+          @click="debugDatabase"
+          v-if="isAdmin"
+        /> -->
+        <!-- <q-btn
           color="purple"
           icon="science"
           label="Add Test Data"
           @click="addTestData"
           v-if="isAdmin"
-        />
+          :disable="loading"
+        /> -->
         <q-btn
           color="orange"
           icon="exit_to_app"
           label="Process Exit All"
           @click="processExitAll"
           v-if="isAdmin"
+          :disable="loading"
         />
         <q-btn
           color="green"
           icon="download"
           label="Export"
           @click="exportData"
+          :disable="loading"
         />
         <q-btn
           color="grey-8"
@@ -145,7 +175,7 @@
         <q-card class="bg-blue-1">
           <q-card-section class="text-center">
             <div class="text-h4 text-blue">
-              <q-skeleton v-if="statsLoading" type="text" width="60px" />
+              <q-skeleton v-if="statsLoading || loading" type="text" width="60px" />
               <span v-else>{{ displayStatistics.totalTransaksi || 0 }}</span>
             </div>
             <div class="text-caption text-blue-8">Total Transaksi</div>
@@ -156,7 +186,7 @@
         <q-card class="bg-purple-1">
           <q-card-section class="text-center">
             <div class="text-h4 text-purple">
-              <q-skeleton v-if="statsLoading" type="text" width="60px" />
+              <q-skeleton v-if="statsLoading || loading" type="text" width="60px" />
               <span v-else>{{ displayStatistics.transaksiMember || 0 }}</span>
             </div>
             <div class="text-caption text-purple-8">Transaksi Member</div>
@@ -167,7 +197,7 @@
         <q-card class="bg-indigo-1">
           <q-card-section class="text-center">
             <div class="text-h4 text-indigo">
-              <q-skeleton v-if="statsLoading" type="text" width="60px" />
+              <q-skeleton v-if="statsLoading || loading" type="text" width="60px" />
               <span v-else>{{ displayStatistics.transaksiUmum || 0 }}</span>
             </div>
             <div class="text-caption text-indigo-8">Transaksi Umum</div>
@@ -178,7 +208,7 @@
         <q-card class="bg-green-1">
           <q-card-section class="text-center">
             <div class="text-h4 text-green">
-              <q-skeleton v-if="statsLoading" type="text" width="60px" />
+              <q-skeleton v-if="statsLoading || loading" type="text" width="60px" />
               <span v-else>{{ displayStatistics.transaksiSelesai || 0 }}</span>
             </div>
             <div class="text-caption text-green-8">Transaksi Selesai</div>
@@ -189,7 +219,7 @@
         <q-card class="bg-orange-1">
           <q-card-section class="text-center">
             <div class="text-h4 text-orange">
-              <q-skeleton v-if="statsLoading" type="text" width="60px" />
+              <q-skeleton v-if="statsLoading || loading" type="text" width="60px" />
               <span v-else>{{ displayStatistics.transaksiAktif || 0 }}</span>
             </div>
             <div class="text-caption text-orange-8">Transaksi Aktif</div>
@@ -200,7 +230,7 @@
         <q-card class="bg-teal-1">
           <q-card-section class="text-center">
             <div class="text-h4 text-teal">
-              <q-skeleton v-if="statsLoading" type="text" width="80px" />
+              <q-skeleton v-if="statsLoading || loading" type="text" width="80px" />
               <span v-else>{{ formatCurrency(displayStatistics.totalPendapatan || 0) }}</span>
             </div>
             <div class="text-caption text-teal-8">Total Pendapatan</div>
@@ -220,6 +250,8 @@
       binary-state-sort
       :rows-per-page-options="[10, 25, 50, 100]"
       class="my-sticky-header-table"
+      loading-label="Memuat data transaksi..."
+      no-data-label="Tidak ada data transaksi"
     >
       <template v-slot:body-cell-member_status="props">
         <q-td :props="props">
@@ -345,9 +377,28 @@
       </template>
 
       <template v-slot:no-data="{ message }">
-        <div class="full-width row flex-center text-grey-6 q-gutter-sm">
-          <q-icon size="2em" name="sentiment_dissatisfied" />
-          <span>{{ message }}</span>
+        <div class="full-width row flex-center text-grey-6 q-gutter-sm q-pa-xl">
+          <div class="text-center">
+            <q-icon size="3em" name="sentiment_neutral" class="q-mb-md" />
+            <div class="text-h6 q-mb-sm">
+              {{ hasActiveFilters ? 'Tidak ada data yang sesuai filter' : 'Belum ada transaksi' }}
+            </div>
+            <div class="text-body2 text-grey-5">
+              {{ hasActiveFilters 
+                ? 'Coba ubah atau hapus filter untuk melihat lebih banyak data'
+                : 'Transaksi akan muncul di sini setelah ada kendaraan yang masuk'
+              }}
+            </div>
+            <q-btn 
+              v-if="hasActiveFilters"
+              flat 
+              color="primary" 
+              label="Hapus Filter" 
+              icon="clear_all"
+              class="q-mt-md"
+              @click="clearFilters"
+            />
+          </div>
         </div>
       </template>
     </q-table>
@@ -647,11 +698,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useTransaksiStore } from 'src/stores/transaksi-store'
 import { invoke } from '@tauri-apps/api/core'
-import { getTransactionAttachment, syncSingleDatabase } from 'src/boot/pouchdb'
+import { getTransactionAttachment, remoteDbs, changeHandlers } from 'src/boot/pouchdb'
 import ls from 'localstorage-slim'
 
 // Utility function for date formatting (alternative to date-fns)
@@ -686,9 +737,16 @@ const exitTransaction = ref(null)
 const showDetailDialog = ref(false)
 const showImageModal = ref(false)
 const showExitDialog = ref(false)
+const hasInitialized = ref(false)
+
+// Database change listener
+const dbChangeListener = ref(null)
+const lastRefreshTime = ref(Date.now())
+const isListeningToChanges = ref(false)
 
 // Computed statistics based on current filtered data
 const computedStatistics = computed(() => {
+  console.log("🚀 ~ computedStatistics ~ transaksiList.value:", transaksiList.value)
   if (!transaksiList.value.length) {
     return {
       totalTransaksi: 0,
@@ -706,16 +764,26 @@ const computedStatistics = computed(() => {
 
   const totalTransaksi = pagination.value.rowsNumber || transaksiList.value.length
   // Support both legacy string status ('out') and new integer status (1) for completed transactions
-  const selesai = transaksiList.value.filter(t => t.status === 1 || t.status === 'out').length
+  const selesai = transaksiList.value.filter(t => t.status === 1 ).length
   // Support both legacy string status ('in') and new integer status (0) for active transactions
-  const aktif = transaksiList.value.filter(t => t.status === 0 || t.status === 'in').length
-  const pendapatan = transaksiList.value
-    .filter(t => t.status === 1 || t.status === 'out')
-    .reduce((total, t) => total + (t.tarif || 0), 0)
-
+  const aktif = transaksiList.value.filter(t => t.status === 0 ).length
+  // Total pendapatan hanya dari transaksi yang sudah selesai (sudah bayar)
+  
   // Separate member and regular transactions
   const memberTransactions = transaksiList.value.filter(t => t.type === 'member_entry' || t.is_member === true)
   const regularTransactions = transaksiList.value.filter(t => t.type === 'parking_transaction' && !t.is_member)
+  
+  // Total pendapatan dari semua transaksi yang tampil sesuai filter
+  // Jika user filter status tertentu, maka pendapatan akan sesuai filter tersebut
+  // Jika tidak ada filter status, maka pendapatan dari semua transaksi (aktif + selesai)
+  const pendapatan = transaksiList.value.reduce((total, t) => total + (t.tarif || 0), 0)
+  
+  console.log("📊 Perhitungan pendapatan:", {
+    totalData: transaksiList.value.length,
+    dataWithTarif: transaksiList.value.filter(t => t.tarif > 0).length,
+    totalPendapatan: pendapatan,
+    detailTarif: transaksiList.value.map(t => ({ id: t.id, status: t.status, tarif: t.tarif }))
+  })
   
   // Member transactions: support both legacy ('out'/1) and new integer (1) status
   const memberSelesai = memberTransactions.filter(t => t.status === 1 || t.status === 'out').length
@@ -896,9 +964,159 @@ const columns = [
 ]
 
 // Methods
-const loadTransaksi = async (props = {}) => {
-  loading.value = true
+const setupDatabaseChangeListener = () => {
   try {
+    console.log('🔄 Setting up database change listener for transactions...')
+    
+    // Setup listener untuk database transaksi
+    const transactionsDb = remoteDbs.transactions
+    
+    if (!transactionsDb) {
+      console.warn('⚠️ Transactions database not available')
+      return
+    }
+
+    // Stop existing listener jika ada
+    if (dbChangeListener.value) {
+      try {
+        dbChangeListener.value.cancel()
+      } catch (error) {
+        console.warn('Warning canceling previous listener:', error)
+      }
+    }
+
+    // Setup new change listener
+    dbChangeListener.value = transactionsDb.changes({
+      since: 'now',
+      live: true,
+      include_docs: false, // Tidak perlu doc lengkap untuk detect changes
+      timeout: false,
+      heartbeat: 10000
+    })
+
+    dbChangeListener.value
+      .on('change', (change) => {
+        console.log('📊 Transaction database changed:', {
+          id: change.id,
+          rev: change.changes[0]?.rev,
+          deleted: change.deleted,
+          seq: change.seq
+        })
+
+        // Debounce refresh untuk menghindari terlalu sering refresh
+        const now = Date.now()
+        if (now - lastRefreshTime.value > 2000) { // Minimal 2 detik interval
+          lastRefreshTime.value = now
+          
+          // Auto refresh data dengan delay kecil untuk memastikan data sudah tersinkron
+          setTimeout(() => {
+            console.log('🔄 Auto refreshing data due to database change...')
+            refreshDataSilently()
+          }, 500)
+
+          // Show notification untuk user
+          $q.notify({
+            type: 'info',
+            message: 'Data transaksi telah diperbarui',
+            position: 'top-right',
+            timeout: 2000,
+            icon: 'sync',
+            color: 'blue-5'
+          })
+        }
+      })
+      .on('error', (err) => {
+        console.error('❌ Database change listener error:', err)
+        isListeningToChanges.value = false
+        
+        // Auto restart listener setelah error
+        setTimeout(() => {
+          console.log('🔄 Restarting database change listener...')
+          setupDatabaseChangeListener()
+        }, 5000)
+      })
+      .on('complete', (info) => {
+        console.log('✅ Database change listener completed:', info)
+        isListeningToChanges.value = false
+      })
+
+    isListeningToChanges.value = true
+    console.log('✅ Database change listener setup successfully')
+    
+  } catch (error) {
+    console.error('❌ Failed to setup database change listener:', error)
+    isListeningToChanges.value = false
+  }
+}
+
+const stopDatabaseChangeListener = () => {
+  if (dbChangeListener.value) {
+    try {
+      console.log('🛑 Stopping database change listener...')
+      dbChangeListener.value.cancel()
+      dbChangeListener.value = null
+      isListeningToChanges.value = false
+      console.log('✅ Database change listener stopped')
+    } catch (error) {
+      console.error('❌ Error stopping change listener:', error)
+    }
+  }
+}
+
+const toggleAutoSync = () => {
+  if (isListeningToChanges.value) {
+    stopDatabaseChangeListener()
+    ls.set('daftarTransaksiAutoSync', false)
+    $q.notify({
+      type: 'info',
+      message: 'Auto-sync dimatikan',
+      position: 'top-right',
+      timeout: 2000,
+      icon: 'sync_disabled'
+    })
+  } else {
+    setupDatabaseChangeListener()
+    ls.set('daftarTransaksiAutoSync', true)
+    $q.notify({
+      type: 'positive',
+      message: 'Auto-sync diaktifkan',
+      position: 'top-right',
+      timeout: 2000,
+      icon: 'sync'
+    })
+  }
+}
+
+const refreshDataSilently = async () => {
+  try {
+    // Refresh tanpa loading indicator dan notification untuk auto-refresh
+    await refreshData(true)
+  } catch (error) {
+    console.error('❌ Error in silent refresh:', error)
+  }
+}
+
+const loadTransaksi = async (props = {}) => {
+  try {
+    // Prevent concurrent loading
+    if (loading.value) {
+      console.log('🔄 Loading already in progress, skipping...')
+      return
+    }
+    
+    loading.value = true
+    
+    // DEBUG: Log the initial state
+    console.log('🚀 loadTransaksi called with:', props)
+    console.log('🚀 Current filters state:', filters.value)
+    console.log('🚀 hasActiveFilters:', hasActiveFilters.value)
+    
+    // Ensure database is ready before loading
+    if (!transaksiStore.jenisKendaraan.value || transaksiStore.jenisKendaraan.value.length === 0) {
+      console.log('🔧 Initializing vehicle types...')
+      await transaksiStore.getJenisKendaraan()
+    }
+    
     const { page = pagination.value.page, rowsPerPage = pagination.value.rowsPerPage, sortBy, descending } = props.pagination || {}
     
     // Build filter parameters - make sure to clean empty values
@@ -917,28 +1135,54 @@ const loadTransaksi = async (props = {}) => {
     }
 
     console.log('🔍 Loading transaksi with filterParams:', filterParams)
-    console.log('🔍 Current filters.value:', filters.value)
-    console.log('🔍 Member filter (isMember):', filters.value.isMember)
+    console.log('🔍 Are all filters empty?', {
+      platNomor: !filterParams.platNomor,
+      status: filterParams.status === null || filterParams.status === undefined,
+      tanggalMulai: !filterParams.tanggalMulai,
+      tanggalAkhir: !filterParams.tanggalAkhir,
+      jenisKendaraan: !filterParams.jenisKendaraan,
+      isMember: filterParams.isMember === null || filterParams.isMember === undefined
+    })
 
-    const result = await transaksiStore.getAllTransaksi(filterParams)
+    // Load transactions with timeout to prevent hanging
+    const loadPromise = transaksiStore.getAllTransaksi(filterParams)
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), 30000)
+    )
     
-    transaksiList.value = result.data || []
+    const result = await Promise.race([loadPromise, timeoutPromise])
+    
+    console.log('🔍 Raw result from store:', result)
+    
+    // Update state with loaded data
+    transaksiList.value = Array.isArray(result.data) ? result.data : []
     pagination.value.page = page
     pagination.value.rowsPerPage = rowsPerPage
     pagination.value.sortBy = sortBy || pagination.value.sortBy
     pagination.value.descending = descending !== undefined ? descending : pagination.value.descending
     pagination.value.rowsNumber = result.total || 0
 
-    console.log('Loaded transaksi:', transaksiList.value.length, 'total:', result.total)
+    console.log('✅ Loaded transaksi:', transaksiList.value.length, 'total:', result.total)
+    console.log('✅ Updated transaksiList:', transaksiList.value)
 
     // Update statistics with same filters (excluding pagination)
     await loadStatistics()
   } catch (error) {
-    console.error('Error loading transaksi:', error)
+    console.error('❌ Error loading transaksi:', error)
+    
+    // Set empty state on error
+    transaksiList.value = []
+    pagination.value.rowsNumber = 0
+    
+    const errorMessage = error.message === 'Request timeout' 
+      ? 'Permintaan timeout, coba lagi' 
+      : 'Gagal memuat data transaksi'
+    
     $q.notify({
       type: 'negative',
-      message: 'Gagal memuat data transaksi',
-      position: 'top'
+      message: errorMessage,
+      position: 'top',
+      timeout: 3000
     })
   } finally {
     loading.value = false
@@ -947,7 +1191,14 @@ const loadTransaksi = async (props = {}) => {
 
 const loadStatistics = async () => {
   try {
+    // Prevent concurrent statistics loading
+    if (statsLoading.value) {
+      console.log('📊 Statistics loading already in progress, skipping...')
+      return
+    }
+    
     statsLoading.value = true
+    
     // Use same filters as main query but without pagination - clean empty values
     const statsParams = {
       platNomor: filters.value.platNomor?.trim() || '',
@@ -959,13 +1210,36 @@ const loadStatistics = async () => {
     }
     
     console.log('📊 Loading statistics with filters:', statsParams)
-    console.log('📊 Member filter in stats:', statsParams.isMember)
-    console.log('📊 Member filter type:', typeof statsParams.isMember, 'value:', statsParams.isMember)
-    const stats = await transaksiStore.getTransaksiStatistics(statsParams)
+    
+    // Load statistics with timeout
+    const statsPromise = transaksiStore.getTransaksiStatistics(statsParams)
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Statistics timeout')), 15000)
+    )
+    
+    const stats = await Promise.race([statsPromise, timeoutPromise])
     console.log('📊 Loaded statistics:', stats)
-    statistics.value = stats
+    
+    // Validate stats structure before assigning
+    if (stats && typeof stats === 'object') {
+      statistics.value = {
+        totalTransaksi: stats.totalTransaksi || 0,
+        transaksiSelesai: stats.transaksiSelesai || 0,
+        transaksiAktif: stats.transaksiAktif || 0,
+        totalPendapatan: stats.totalPendapatan || 0,
+        transaksiMember: stats.transaksiMember || 0,
+        memberSelesai: stats.memberSelesai || 0,
+        memberAktif: stats.memberAktif || 0,
+        transaksiUmum: stats.transaksiUmum || 0,
+        umumSelesai: stats.umumSelesai || 0,
+        umumAktif: stats.umumAktif || 0
+      }
+    } else {
+      throw new Error('Invalid statistics response')
+    }
   } catch (error) {
-    console.error('Error loading statistics:', error)
+    console.error('❌ Error loading statistics:', error)
+    
     // Set default values on error
     statistics.value = {
       totalTransaksi: 0,
@@ -978,6 +1252,15 @@ const loadStatistics = async () => {
       transaksiUmum: 0,
       umumSelesai: 0,
       umumAktif: 0
+    }
+    
+    if (error.message !== 'Statistics timeout') {
+      $q.notify({
+        type: 'warning',
+        message: 'Gagal memuat statistik',
+        position: 'top',
+        timeout: 2000
+      })
     }
   } finally {
     statsLoading.value = false
@@ -1028,9 +1311,124 @@ const clearFilters = () => {
   onFilterChange()
 }
 
-const refreshData = () => {
-  console.log('Refreshing data with current filters:', filters.value)
-  loadTransaksi()
+const refreshData = async (silent = false) => {
+  try {
+    if (!silent) {
+      console.log('🔄 Refreshing data with current filters:', filters.value)
+      
+      // Show refresh indication
+      $q.notify({
+        type: 'info',
+        message: 'Memuat ulang data...',
+        position: 'top',
+        timeout: 1000,
+        icon: 'refresh'
+      })
+    }
+    
+    // Use same logic as onMounted - ensure database is ready
+    if (!transaksiStore.jenisKendaraan.value || transaksiStore.jenisKendaraan.value.length === 0) {
+      if (!silent) console.log('🔧 Initializing vehicle types during refresh...')
+      await transaksiStore.getJenisKendaraan()
+    }
+    
+    await loadTransaksi()
+    
+    if (!silent) {
+      $q.notify({
+        type: 'positive',
+        message: 'Data berhasil dimuat ulang',
+        position: 'top',
+        timeout: 2000,
+        icon: 'check_circle'
+      })
+    }
+  } catch (error) {
+    console.error('❌ Error refreshing data:', error)
+    if (!silent) {
+      $q.notify({
+        type: 'negative',
+        message: 'Gagal memuat ulang data',
+        position: 'top',
+        timeout: 3000,
+        icon: 'error'
+      })
+    }
+  }
+}
+
+const debugDatabase = async () => {
+  try {
+    console.log('🔧 Debug: Starting database inspection...')
+    
+    // Import database directly
+    const { remoteDbs } = await import('src/boot/pouchdb')
+    const db = remoteDbs.transactions
+    
+    // Get all documents
+    const result = await db.allDocs({
+      include_docs: true,
+      startkey: 'transaction_',
+      endkey: 'transaction_\ufff0'
+    })
+    
+    console.log('🔧 Debug: Total documents in database:', result.rows.length)
+    
+    // Analyze document types
+    const docTypes = {}
+    const statusBreakdown = {}
+    
+    result.rows.forEach(row => {
+      const doc = row.doc
+      const type = doc.type || 'unknown'
+      docTypes[type] = (docTypes[type] || 0) + 1
+      
+      if (doc.status !== undefined) {
+        const status = `${type}_${doc.status}`
+        statusBreakdown[status] = (statusBreakdown[status] || 0) + 1
+      }
+    })
+    
+    console.log('🔧 Debug: Document types:', docTypes)
+    console.log('🔧 Debug: Status breakdown:', statusBreakdown)
+    
+    // Show first few documents
+    const sampleDocs = result.rows.slice(0, 5).map(row => ({
+      id: row.doc._id,
+      type: row.doc.type,
+      status: row.doc.status,
+      no_pol: row.doc.no_pol,
+      plat_nomor: row.doc.plat_nomor,
+      entry_time: row.doc.entry_time,
+      tanggal: row.doc.tanggal
+    }))
+    
+    console.log('🔧 Debug: Sample documents:', sampleDocs)
+    
+    // Test getAllTransaksi with no filters
+    console.log('🔧 Debug: Testing getAllTransaksi with no filters...')
+    const testResult = await transaksiStore.getAllTransaksi({
+      page: 1,
+      limit: 50
+    })
+    
+    console.log('🔧 Debug: getAllTransaksi result:', testResult)
+    
+    $q.notify({
+      type: 'info',
+      message: `Database contains ${result.rows.length} documents. Check console for details.`,
+      position: 'top',
+      timeout: 5000
+    })
+    
+  } catch (error) {
+    console.error('🔧 Debug error:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Debug failed: ' + error.message,
+      position: 'top'
+    })
+  }
 }
 
 const viewDetail = async (transaction) => {
@@ -1375,8 +1773,8 @@ const addTestData = async () => {
       await transaksiStore.addSampleDataForTesting()
     } else {
       // Direct database access as fallback
-      const { localDbs } = await import('src/boot/pouchdb')
-      const db = localDbs.transactions
+      const { remoteDbs } = await import('src/boot/pouchdb')
+      const db = remoteDbs.transactions
       
       const testTransactions = [
         {
@@ -1707,38 +2105,83 @@ const activeFilterCount = computed(() => {
   return count
 })
 
-// Use statistics from store, fallback to computed if needed
+// Use statistics from computed, bukan dari store untuk konsistensi dengan data yang ditampilkan
 const displayStatistics = computed(() => {
-  if (statsLoading.value) {
-    return statistics.value
-  }
-  
-  // If we have statistics from store, use them, otherwise use computed
-  if (statistics.value.totalTransaksi > 0 || 
-      statistics.value.transaksiSelesai > 0 || 
-      statistics.value.transaksiAktif > 0 || 
-      statistics.value.totalPendapatan > 0 ||
-      statistics.value.transaksiMember > 0 ||
-      statistics.value.transaksiUmum > 0) {
-    return statistics.value
-  }
-  
+  // Selalu gunakan computedStatistics yang menghitung dari data yang ditampilkan
+  // Ini memastikan statistik konsisten dengan data yang user lihat di tabel
   return computedStatistics.value
 })
 
 // Lifecycle
-onMounted(() => {
-  console.log('🚀 Component mounted, loading data...')
-    syncSingleDatabase('transactions');
-  syncSingleDatabase('members');
-  syncSingleDatabase('tarif');
-  syncSingleDatabase('petugas');
+onMounted(async () => {
+  try {
+    console.log('🚀 Initializing page...')
+    
+    // Use same logic as refreshData - just call refreshData directly
+    await refreshData()
+    
+    // Setup database change listener setelah data pertama dimuat
+    // Cek preferensi auto-sync dari localStorage (default true)
+    const autoSyncEnabled = ls.get('daftarTransaksiAutoSync') !== false
+    if (autoSyncEnabled) {
+      setupDatabaseChangeListener()
+    }
+    
+    hasInitialized.value = true
+    console.log('✅ Page initialized successfully with change listener')
+  } catch (error) {
+    console.error('❌ Error initializing page:', error)
+    
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal memuat halaman. Menyiapkan mode offline...',
+      position: 'top',
+      timeout: 5000,
+      actions: [
+        {
+          label: 'Coba Lagi',
+          color: 'white',
+          handler: () => {
+            window.location.reload()
+          }
+        }
+      ]
+    })
+    
+    // Set minimal state for offline mode
+    transaksiList.value = []
+    pagination.value.rowsNumber = 0
+    statistics.value = {
+      totalTransaksi: 0,
+      transaksiSelesai: 0,
+      transaksiAktif: 0,
+      totalPendapatan: 0,
+      transaksiMember: 0,
+      memberSelesai: 0,
+      memberAktif: 0,
+      transaksiUmum: 0,
+      umumSelesai: 0,
+      umumAktif: 0
+    }
+  } finally {
+    loading.value = false
+  }
+})
+
+// Cleanup saat component di-unmount
+onUnmounted(() => {
+  console.log('🧹 Cleaning up page resources...')
   
-  // Don't set default dates - let user choose
-  // This prevents unwanted filtering on first load
-  console.log('🔍 Initial filters:', filters.value)
+  // Stop database change listener
+  stopDatabaseChangeListener()
   
-  loadTransaksi()
+  // Clear any pending timers
+  if (filterTimer) {
+    clearTimeout(filterTimer)
+    filterTimer = null
+  }
+  
+  console.log('✅ Page cleanup completed')
 })
 
 </script>

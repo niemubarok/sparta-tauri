@@ -4,7 +4,7 @@ import { useQuasar } from 'quasar';
 import ls from 'localstorage-slim';
 import { api } from 'src/boot/axios';
 import { 
-  localDbs,
+  remoteDbs,
   addPetugas,
   updatePetugas,
   deletePetugas,
@@ -50,7 +50,7 @@ export interface LoginLog {
 
 export const usePetugasStore = defineStore('petugas', () => {
   const $q = useQuasar();
-  const db = localDbs.petugas;
+  const db = remoteDbs.petugas;
   
   // State variables
   const daftarPetugas = ref<Petugas[]>([]);
@@ -184,7 +184,7 @@ export const usePetugasStore = defineStore('petugas', () => {
         ...petugas
       }));
 
-      await localDbs.petugas.bulkDocs(docs);
+      await remoteDbs.petugas.bulkDocs(docs);
     } catch (error) {
       console.error('Error saving petugas to local:', error);
     }
@@ -269,7 +269,7 @@ export const usePetugasStore = defineStore('petugas', () => {
 
       // Update local database
       try {
-        const doc = await localDbs.petugas.get(`petugas_${id}`);
+        const doc = await remoteDbs.petugas.get(`petugas_${id}`);
         await updatePetugas({
           ...doc,
           ...updatedPetugas

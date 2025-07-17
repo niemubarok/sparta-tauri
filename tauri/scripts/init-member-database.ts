@@ -1,4 +1,4 @@
-import { localDbs } from '../src/boot/pouchdb'
+import { remoteDbs } from '../src/boot/pouchdb'
 
 /**
  * Initialize member database with design documents and indexes
@@ -119,7 +119,7 @@ export const initializeMemberDatabase = async () => {
 
     // Put design documents
     try {
-      await localDbs.members.put(memberDesignDoc)
+      await remoteDbs.members.put(memberDesignDoc)
       console.log('Member design document created')
     } catch (error) {
       if (error.name !== 'conflict') {
@@ -128,7 +128,7 @@ export const initializeMemberDatabase = async () => {
     }
 
     try {
-      await localDbs.membershipTypes.put(membershipTypeDesignDoc)
+      await remoteDbs.membershipTypes.put(membershipTypeDesignDoc)
       console.log('Membership type design document created')
     } catch (error) {
       if (error.name !== 'conflict') {
@@ -138,47 +138,47 @@ export const initializeMemberDatabase = async () => {
 
     // Create indexes
     await Promise.all([
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'member_id'] }
       }),
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'active', 'end_date'] }
       }),
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'membership_type_id'] }
       }),
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'vehicles.license_plate'] }
       }),
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'phone'] }
       }),
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'email'] }
       }),
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'createdAt'] }
       }),
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['type', 'name'] }
       }),
-      localDbs.members.createIndex({
+      remoteDbs.members.createIndex({
         index: { fields: ['createdAt'] }
       }),
-      localDbs.membershipTypes.createIndex({
+      remoteDbs.membershipTypes.createIndex({
         index: { fields: ['type', 'category'] }
       }),
-      localDbs.membershipTypes.createIndex({
+      remoteDbs.membershipTypes.createIndex({
         index: { fields: ['type', 'name'] }
       }),
-      localDbs.membershipTypes.createIndex({
+      remoteDbs.membershipTypes.createIndex({
         index: { fields: ['name'] }
       }),
       // Index for member usage history
-      localDbs.transactions.createIndex({
+      remoteDbs.transactions.createIndex({
         index: { fields: ['type', 'member_id', 'timestamp'] }
       }),
-      localDbs.transactions.createIndex({
+      remoteDbs.transactions.createIndex({
         index: { fields: ['type', 'timestamp'] }
       })
     ])
@@ -202,7 +202,7 @@ export const initializeMemberDatabase = async () => {
 export const initializeDefaultMembershipTypes = async () => {
   try {
     // Check if membership types already exist
-    const existingTypes = await localDbs.membershipTypes.find({
+    const existingTypes = await remoteDbs.membershipTypes.find({
       selector: { type: 'membership_type' }
     })
 
@@ -296,7 +296,7 @@ export const initializeDefaultMembershipTypes = async () => {
 
     // Insert default membership types
     for (const type of defaultTypes) {
-      await localDbs.membershipTypes.put(type)
+      await remoteDbs.membershipTypes.put(type)
     }
 
     console.log('Default membership types created')
@@ -313,7 +313,7 @@ export const initializeDefaultMembershipTypes = async () => {
 export const createSampleMembers = async () => {
   try {
     // Get membership types
-    const membershipTypes = await localDbs.membershipTypes.find({
+    const membershipTypes = await remoteDbs.membershipTypes.find({
       selector: { type: 'membership_type' }
     })
 
@@ -400,7 +400,7 @@ export const createSampleMembers = async () => {
 
     // Insert sample members
     for (const member of sampleMembers) {
-      await localDbs.members.put(member)
+      await remoteDbs.members.put(member)
     }
 
     console.log('Sample members created')
@@ -420,7 +420,7 @@ export const verifyMemberDatabase = async () => {
 
     // Check design documents
     try {
-      await localDbs.members.get('_design/members')
+      await remoteDbs.members.get('_design/members')
       console.log('✓ Member design document exists')
     } catch (error) {
       console.error('✗ Member design document missing')
@@ -428,7 +428,7 @@ export const verifyMemberDatabase = async () => {
     }
 
     try {
-      await localDbs.membershipTypes.get('_design/membership_types')
+      await remoteDbs.membershipTypes.get('_design/membership_types')
       console.log('✓ Membership type design document exists')
     } catch (error) {
       console.error('✗ Membership type design document missing')
@@ -436,20 +436,20 @@ export const verifyMemberDatabase = async () => {
     }
 
     // Check membership types
-    const membershipTypes = await localDbs.membershipTypes.find({
+    const membershipTypes = await remoteDbs.membershipTypes.find({
       selector: { type: 'membership_type' }
     })
     console.log(`✓ Found ${membershipTypes.docs.length} membership types`)
 
     // Check members
-    const members = await localDbs.members.find({
+    const members = await remoteDbs.members.find({
       selector: { type: 'member' }
     })
     console.log(`✓ Found ${members.docs.length} members`)
 
     // Test views
     try {
-      const activeMembers = await localDbs.members.query('members/active_members')
+      const activeMembers = await remoteDbs.members.query('members/active_members')
       console.log(`✓ Active members view working: ${activeMembers.rows.length} active members`)
     } catch (error) {
       console.error('✗ Active members view failed:', error)
@@ -476,8 +476,8 @@ export const resetMemberDatabase = async () => {
 
     // Get all members and membership types
     const [members, membershipTypes] = await Promise.all([
-      localDbs.members.allDocs({ include_docs: true }),
-      localDbs.membershipTypes.allDocs({ include_docs: true })
+      remoteDbs.members.allDocs({ include_docs: true }),
+      remoteDbs.membershipTypes.allDocs({ include_docs: true })
     ])
 
     // Delete all documents
@@ -485,13 +485,13 @@ export const resetMemberDatabase = async () => {
 
     for (const row of members.rows) {
       if (row.doc && !row.id.startsWith('_design/')) {
-        deletePromises.push(localDbs.members.remove(row.doc))
+        deletePromises.push(remoteDbs.members.remove(row.doc))
       }
     }
 
     for (const row of membershipTypes.rows) {
       if (row.doc && !row.id.startsWith('_design/')) {
-        deletePromises.push(localDbs.membershipTypes.remove(row.doc))
+        deletePromises.push(remoteDbs.membershipTypes.remove(row.doc))
       }
     }
 
